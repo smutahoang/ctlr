@@ -105,8 +105,7 @@ public class CTLR {
 				grad[k] = gradLikelihood_topicalInterest(u, currentX[k], k);
 				x[k] = currentX[k] - learning_rate_topicalInterest * grad[k];
 			}
-			x = simplexProjection(x, nTopics);// this step to make sure that we
-												// have theta_uk summing up to 1
+			x = simplexProjection(x, nTopics);// this step to make sure that we have theta_uk summing up to 1
 			double f = getLikelihood_topicalInterest(u, x);
 			if (f < currentF) {
 				currentF = f;
