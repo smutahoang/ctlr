@@ -33,8 +33,8 @@ public class Dataset {
 		loadVocabulary(path+"vocabulary.csv");
 		loadFollowers(path+"followers/");
 		loadFollowees(path+"followees/");
-		generateNonFollowers();
-		generateNonFollowees();
+		loadNonFollowers(path+"nonfollowers/");
+		loadNonFollowees(path+"nonfollowees/");
 	}
 	
 	public void loadUsers(String filename) {
@@ -157,9 +157,13 @@ public class Dataset {
 			
 			br = new BufferedReader(new FileReader(file));
 			while ((line = br.readLine()) != null) {
-				String[] tokens = line.split(",");
-				int index = Integer.parseInt(tokens[0]);
-				vocabulary[index] = tokens[1];
+				sc = new Scanner(line.toString());
+				sc.useDelimiter(",");
+				while (sc.hasNext()) {
+					int index = sc.nextInt();
+					String vocab = sc.next();
+					vocabulary[index] = vocab;
+				}				
 			}
 			br.close();
 			
@@ -179,7 +183,7 @@ public class Dataset {
 		try {
 			// Read the followers from each user file
 			for (File followerFile : followersFolder.listFiles()) {
-				// Read the number of posts from user
+				// Read the number of followers from user
 				int nFollower = 0;
 				br = new BufferedReader(new FileReader(followerFile.getAbsolutePath()));
 				while (br.readLine() != null) {
@@ -208,7 +212,7 @@ public class Dataset {
 				}
 			}
 		}catch (Exception e){
-			System.out.println("Error in reading post file!");
+			System.out.println("Error in reading follower file!");
 			e.printStackTrace();
 			System.exit(0);
 		}
@@ -223,7 +227,7 @@ public class Dataset {
 		try {
 			// Read the followees from each user file
 			for (File followeeFile : followeesFolder.listFiles()) {
-				// Read the number of posts from user
+				// Read the number of followees from user
 				int nFollowee = 0;
 				br = new BufferedReader(new FileReader(followeeFile.getAbsolutePath()));
 				while (br.readLine() != null) {
@@ -264,7 +268,97 @@ public class Dataset {
 		}
 	}
 
-	public void generateNonFollowers(){}
+	public void loadNonFollowers(String folder){
+		Scanner sc = null;
+		BufferedReader br = null;
+		String line = null;
+		File followersFolder = new File(folder);
+		
+		try {
+			// Read the non followers from each user file
+			for (File nonFollowerFile : followersFolder.listFiles()) {
+				// Read the number of non followers from user
+				int nNonFollower = 0;
+				br = new BufferedReader(new FileReader(nonFollowerFile.getAbsolutePath()));
+				while (br.readLine() != null) {
+					nNonFollower++;
+				}
+				br.close();
+				
+				String userId = FilenameUtils.removeExtension(nonFollowerFile.getName());
+				int u = userId2Index.get(userId);
+						
+				// Declare the number of non followers from user
+				users[u].nonFollowers = new int[nNonFollower]; 
 
-	public void generateNonFollowees(){}
+				// Read each of the non followers
+				br = new BufferedReader(new FileReader(nonFollowerFile.getAbsolutePath()));
+				int j = -1;
+				while ((line = br.readLine()) != null) {
+					j++;
+					sc = new Scanner(line.toString());
+					sc.useDelimiter(",");
+					while (sc.hasNext()) {
+						String nonFollowerId = sc.next();
+						// Set non follower's user index
+						users[u].nonFollowers[j] = userId2Index.get(nonFollowerId);		
+					}
+				}
+			}
+		}catch (Exception e){
+			System.out.println("Error in reading non follower file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+
+	public void loadNonFollowees(String folder){
+		Scanner sc = null;
+		BufferedReader br = null;
+		String line = null;
+		File followeesFolder = new File(folder);
+		
+		try {
+			// Read the non followees from each user file
+			for (File nonFolloweeFile : followeesFolder.listFiles()) {
+				// Read the number of non followees from user
+				int nNonFollowee = 0;
+				br = new BufferedReader(new FileReader(nonFolloweeFile.getAbsolutePath()));
+				while (br.readLine() != null) {
+					nNonFollowee++;
+				}
+				br.close();
+				
+				String userId = FilenameUtils.removeExtension(nonFolloweeFile.getName());
+				int u = userId2Index.get(userId);
+				
+				// Declare the number of non followees from user
+				users[u].nonFollowees = new int[nNonFollowee]; 
+				
+				// Declare the number of non followees batches from user
+				users[u].nonFolloweeBatches = new int[nNonFollowee]; 
+
+				// Read each of the non followees
+				br = new BufferedReader(new FileReader(nonFolloweeFile.getAbsolutePath()));
+				int j = -1;
+				while ((line = br.readLine()) != null) {
+					j++;
+					sc = new Scanner(line.toString());
+					sc.useDelimiter(",");
+					while (sc.hasNext()) {
+						String nonFolloweeId = sc.next();
+						int batch = sc.nextInt();
+						// Set followee's user index
+						users[u].nonFollowees[j] = userId2Index.get(nonFolloweeId);
+						// Set followee's batch
+						users[u].nonFolloweeBatches[j] = batch;
+					}
+				}
+			}
+		}catch (Exception e){
+			System.out.println("Error in reading non followee file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
 }

@@ -41,6 +41,8 @@ public class CTLR {
 	 */
 	private double getLikelihood() {
 		// to be written
+		// Compute the likelihood to make sure that it is improving L(text) + L(link)
+		// value can be more than 1
 		return 0;
 	}
 
@@ -54,6 +56,7 @@ public class CTLR {
 	 */
 	private double getLikelihood_topicalInterest(int u, double[] x) {
 		// to be written
+		// Refer to Eqn 9 in Learning paper
 		return 0;
 	}
 
@@ -70,6 +73,7 @@ public class CTLR {
 	 */
 	private double gradLikelihood_topicalInterest(int u, double x, int k) {
 		// to be written
+		// Refer to Eqn 11 in Learning paper
 		return 0;
 	}
 
@@ -83,6 +87,8 @@ public class CTLR {
 	 */
 	private double[] simplexProjection(double[] x, int n) {
 		// to be written
+		// given all the k that u have, it adds up to 1
+		// Refer to https://github.com/blei-lab/ctr/blob/master/opt.cpp
 		return null;
 	}
 
@@ -126,6 +132,7 @@ public class CTLR {
 	 */
 	private double getLikelihood_authority(int u, double[] x) {
 		// to be written
+		// Refer to Eqn 13 in Learning paper
 		return 0;
 	}
 
@@ -141,6 +148,7 @@ public class CTLR {
 	 */
 	private double gradLikelihood_authority(int u, double x, int k) {
 		// to be written
+		// Refer to Eqn 15 in Learning paper
 		return 0;
 	}
 
@@ -183,6 +191,7 @@ public class CTLR {
 	 */
 	private double getLikelihood_hub(int u, double[] x) {
 		// to be written
+		// Refer to Eqn 17 in Learning paper
 		return 0;
 	}
 
@@ -198,6 +207,7 @@ public class CTLR {
 	 */
 	private double gradLikelihood_hub(int u, double x, int k) {
 		// to be written
+		// Refer to Eqn 19 in Learning paper
 		return 0;
 	}
 
