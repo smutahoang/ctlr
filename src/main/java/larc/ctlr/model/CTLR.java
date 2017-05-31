@@ -55,9 +55,40 @@ public class CTLR {
 	 * @return
 	 */
 	private double getLikelihood_topicalInterest(int u, double[] x) {
-		// to be written
-		// Refer to Eqn 9 in Learning paper
-		return 0;
+	// Refer to Eqn 9 in Learning paper for Formula
+		
+		double authorityLikelihood = 0;
+		double hubLikelihood = 0;
+		double postLikelihood = 0;
+		double topicLikelihood = 0;
+		double finalLikelihood = 0;
+		
+		//Set the current user to be u
+		User currUser = dataset.users[u];
+	
+		for (int k =0; k<nTopics;k++){
+			authorityLikelihood += -Math.pow((Math.log(currUser.authorities[k]-x[k])), 2)/(2*Math.pow(delta, 2));
+		}
+		
+		for (int k =0; k<nTopics;k++){
+			hubLikelihood += -Math.pow((Math.log(currUser.hubs[k]-x[k])), 2)/(2*Math.pow(sigma, 2));
+		}
+		
+		for (int i=0; i<currUser.nPosts;i++){
+			//Only compute post likelihood of posts which are in training batch (i.e. batch = 1)
+			if (currUser.postBatches[i]==1){
+				int postTopic = currUser.posts[i].topic;
+				postLikelihood += x[postTopic];
+			}
+		}
+		
+		for (int k =0; k<nTopics;k++){
+			topicLikelihood += Math.pow(alpha, -1)* Math.log(x[k]);
+		}
+		
+		finalLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + topicLikelihood; 
+		
+		return finalLikelihood;
 	}
 
 	/***
@@ -67,14 +98,38 @@ public class CTLR {
 	 * theta_uk = x
 	 * 
 	 * @param u
-	 * @param x
 	 * @param k
+	 * @param x
 	 * @return
 	 */
-	private double gradLikelihood_topicalInterest(int u, double x, int k) {
-		// to be written
-		// Refer to Eqn 11 in Learning paper
-		return 0;
+	private double gradLikelihood_topicalInterest(int u,int k, double x) {
+	// Refer to Eqn 11 in Learning paper
+		
+		double authorityLikelihood = 0;
+		double hubLikelihood = 0;
+		double postLikelihood = 0;
+		double gradLikelihood = 0;		
+		
+		//Set the current user to be u
+		User currUser = dataset.users[u];
+		
+		authorityLikelihood = ((Math.log(currUser.authorities[k])-x)/Math.pow(delta,2)); 
+		
+		hubLikelihood = ((Math.log(currUser.hubs[k])-x)/Math.pow(sigma,2));
+		
+		for (int i=0; i<currUser.nPosts;i++){
+			//Only compute post likelihood of posts which are in training batch (i.e. batch = 1)
+			if (currUser.postBatches[i]==1){
+				//Only consider posts which are assigned topic k (i.e. z_{v,s} = k)
+				if (currUser.posts[i].topic==k){
+					postLikelihood += (1+(Math.pow(alpha,-1)/x));
+				}
+			}
+		}
+		
+		gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood;
+		
+		return gradLikelihood;
 	}
 
 	/***
@@ -108,7 +163,7 @@ public class CTLR {
 
 		for (int iter = 0; iter < maxIteration_topicalInterest; iter++) {
 			for (int k = 0; k < nTopics; k++) {
-				grad[k] = gradLikelihood_topicalInterest(u, currentX[k], k);
+				grad[k] = gradLikelihood_topicalInterest(u, k, currentX[k]);
 				x[k] = currentX[k] - learning_rate_topicalInterest * grad[k];
 			}
 			x = simplexProjection(x, nTopics);// this step to make sure that we have theta_uk summing up to 1
