@@ -182,13 +182,63 @@ public class CTLR {
 	 * authority is x, i.e., if L(data|parameters) = f(A_u) + const-of-A_u then
 	 * this function returns f(x)
 	 * 
-	 * @param u
+	 * @param v
+	 * @param x[]
 	 * @return
 	 */
-	private double getLikelihood_authority(int u, double[] x) {
-		// to be written
+	private double getLikelihood_authority(int v, double[] x) {
 		// Refer to Eqn 13 in Learning paper
-		return 0;
+		double followerLikelihood = 0;
+		double nonFollowerLikelihood = 0;
+		double postLikelihood = 0;
+		double gradLikelihood = 0;
+		
+		//Set the current user to be v
+		User currUser = dataset.users[v];
+				
+		//Compute non follower likelihood
+		for (int i=0; i<currUser.nonFollowers.length; i++){
+			int u = currUser.nonFollowers[i];
+			
+			User nonFollower = dataset.users[u];
+						
+			//Compute H_u * A_v
+			double HuAv = 0;
+			for (int j=0; j<nonFollower.hubs.length; j++){
+				for (int z=0; z<currUser.authorities.length; z++){
+					if (j==z){
+						HuAv += nonFollower.hubs[j] * currUser.authorities[z];
+					}
+				}
+			}
+			nonFollowerLikelihood += Math.log(2*((1/(Math.pow(Math.E, -HuAv)+1)) - 1/2));
+		} 
+		
+		//Compute follower likelihood
+		for (int i=0; i<currUser.followers.length; i++){
+			int u = currUser.followers[i];
+			User follower = dataset.users[u];
+						
+			//Compute H_u * A_v
+			double HuAv = 0;
+			for (int j=0; j<follower.hubs.length; j++){
+				for (int z=0; z<currUser.authorities.length; z++){
+					if (j==z){
+						HuAv += follower.hubs[j] * currUser.authorities[z];
+					}
+				}
+			}
+			followerLikelihood += Math.log(1-(2*((1/(Math.pow(Math.E, -HuAv)+1)) - 1/2))) ;
+		}
+		
+		//Compute post likelihood
+		for (int k=0; k<nTopics; k++){
+			postLikelihood += Math.pow(Math.log(currUser.authorities[k])-x[k], 2)/(2*Math.pow(sigma, 2));
+		}
+				
+		gradLikelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
+				
+		return gradLikelihood;
 	}
 
 	/***
@@ -196,15 +246,61 @@ public class CTLR {
 	 * topic k when the authority is x, i.e., if if L(data|parameters) = f(A_u)
 	 * + const-of-A_u then this function return df/dA_uk at A_uk = x
 	 * 
-	 * @param u
-	 * @param x
+	 * @param v
 	 * @param k
+	 * @param x
 	 * @return
 	 */
-	private double gradLikelihood_authority(int u, double x, int k) {
-		// to be written
+	private double gradLikelihood_authority(int v, int k, double x) {
 		// Refer to Eqn 15 in Learning paper
-		return 0;
+		double followerLikelihood = 0;
+		double nonFollowerLikelihood = 0;
+		double postLikelihood = 0;
+		double gradLikelihood = 0;		
+		
+		//Set the current user to be v
+		User currUser = dataset.users[v];
+
+		//Compute non follower likelihood
+		for (int i=0; i<currUser.nonFollowers.length; i++){
+				int u = currUser.nonFollowers[i];
+				User nonFollower = dataset.users[u];
+				
+				//Compute H_u * A_v
+				double HuAv = 0;
+				for (int j=0; j<nonFollower.hubs.length; j++){
+					for (int z=0; z<currUser.authorities.length; z++){
+						if (j==z){
+							HuAv += nonFollower.hubs[j] * currUser.authorities[z];
+						}
+					}
+				}
+				nonFollowerLikelihood += ((1/(1-Math.pow(Math.E,-HuAv))) * (-Math.pow(Math.E,-HuAv)) * (-nonFollower.hubs[k])) 
+						- ((1/(Math.pow(Math.E,-HuAv)+1)) * (Math.pow(Math.E,-HuAv)) * (-nonFollower.hubs[k]));
+		} 
+		
+		//Compute follower likelihood
+		for (int i=0; i<currUser.followers.length; i++){
+				int u = currUser.followers[i];
+				User follower = dataset.users[u];
+				
+				//Compute H_u * A_v
+				double HuAv = 0;
+				for (int j=0; j<follower.hubs.length; j++){
+					for (int z=0; z<currUser.authorities.length; z++){
+						if (j==z){
+							HuAv += follower.hubs[j] * currUser.authorities[z];
+						}
+					}
+				}
+				followerLikelihood += -follower.hubs[k] - ((1/(Math.pow(Math.E, -HuAv)+1)) * Math.pow(Math.E, -HuAv) * (-follower.hubs[k])) ;
+		}
+
+		postLikelihood = ((Math.log(currUser.authorities[k]) - x)/Math.pow(sigma,2)) * (1/currUser.authorities[k]);
+		
+		gradLikelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
+		
+		return gradLikelihood;
 	}
 
 	/***
@@ -223,7 +319,7 @@ public class CTLR {
 
 		for (int iter = 0; iter < maxIteration_Authorities; iter++) {
 			for (int k = 0; k < nTopics; k++) {
-				grad[k] = gradLikelihood_authority(u, currentX[k], k);
+				grad[k] = gradLikelihood_authority(u, k, currentX[k]);
 				x[k] = currentX[k] - learning_rate_authorities * grad[k];
 			}
 			double f = getLikelihood_authority(u, x);
@@ -242,12 +338,67 @@ public class CTLR {
 	 * returns f(x)
 	 * 
 	 * @param u
+	 * @param x[]
 	 * @return
 	 */
 	private double getLikelihood_hub(int u, double[] x) {
-		// to be written
 		// Refer to Eqn 17 in Learning paper
-		return 0;
+		double followingLikelihood = 0;
+		double nonFollowingLikelihood = 0;
+		double postLikelihood = 0;
+		double likelihood = 0;
+		
+		//Set the current user to be u
+		User currUser = dataset.users[u];
+
+		//Compute non following likelihood
+		for (int i=0; i<currUser.nonFollowings.length; i++){
+			//Only compute likelihood of non followings which are in training batch (i.e. batch = 1)
+			if (currUser.nonFollowingBatches[i]==1){
+				int v = currUser.nonFollowings[i];
+				User nonFollowing = dataset.users[v];
+						
+				//Compute H_u * A_v
+				double HuAv = 0;
+				for (int j=0; j<currUser.hubs.length; j++){
+					for (int z=0; z<nonFollowing.authorities.length; z++){
+						if (j==z){
+							HuAv += currUser.hubs[j] * nonFollowing.authorities[z];
+						}
+					}
+				}
+				nonFollowingLikelihood += Math.log(2*((1/(Math.pow(Math.E, -HuAv)+1)) - 1/2));;
+			}
+		} 
+				
+		//Compute following likelihood
+		for (int i=0; i<currUser.followings.length; i++){
+			//Only compute likelihood of followings which are in training batch (i.e. batch = 1)
+			if (currUser.followingBatches[i]==1){
+				int v = currUser.followings[i];
+				User following = dataset.users[v];
+						
+				//Compute H_u * A_v
+				double HuAv = 0;
+				for (int j=0; j<currUser.hubs.length; j++){
+					for (int z=0; z<following.authorities.length; z++){
+						if (j==z){
+							HuAv += currUser.hubs[j] * following.authorities[z];
+						}
+					}
+				}
+				followingLikelihood += Math.log(1-(2*((1/(Math.pow(Math.E, -HuAv)+1)) - 1/2))) ; ;
+			}
+		}
+
+		//Compute post likelihood
+		for (int k=0; k<nTopics; k++){
+			postLikelihood += Math.pow(Math.log(currUser.hubs[k])-x[k], 2)/(2*Math.pow(delta, 2));
+		}				
+		
+		likelihood = nonFollowingLikelihood + followingLikelihood - postLikelihood;
+				
+		return likelihood;
 	}
 
 	/***
@@ -256,14 +407,66 @@ public class CTLR {
 	 * const-of-H_u then this function return df/dH_uk at H_uk = x
 	 * 
 	 * @param u
-	 * @param x
 	 * @param k
+	 * @param x
 	 * @return
 	 */
-	private double gradLikelihood_hub(int u, double x, int k) {
-		// to be written
+	private double gradLikelihood_hub(int u, int k, double x) {
 		// Refer to Eqn 19 in Learning paper
-		return 0;
+		double followingLikelihood = 0;
+		double nonFollowingLikelihood = 0;
+		double postLikelihood = 0;
+		double gradLikelihood = 0;		
+		
+		//Set the current user to be u
+		User currUser = dataset.users[u];
+
+		//Compute non following likelihood
+		for (int i=0; i<currUser.nonFollowings.length; i++){
+			//Only compute likelihood of non followings which are in training batch (i.e. batch = 1)
+			if (currUser.nonFollowingBatches[i]==1){
+				int v = currUser.nonFollowings[i];
+				User nonFollowing = dataset.users[v];
+				
+				//Compute H_u * A_v
+				double HuAv = 0;
+				for (int j=0; j<currUser.hubs.length; j++){
+					for (int z=0; z<nonFollowing.authorities.length; z++){
+						if (j==z){
+							HuAv += currUser.hubs[j] * nonFollowing.authorities[z];
+						}
+					}
+				}
+				nonFollowingLikelihood += ((1/(1-Math.pow(Math.E, -HuAv))) * (-Math.pow(Math.E, -HuAv)) * (-nonFollowing.authorities[k]))
+						- ((1/(Math.pow(Math.E, -HuAv)+1)) * (-Math.pow(Math.E, -HuAv)) * (-nonFollowing.authorities[k]));
+			}
+		} 
+		
+		//Compute following likelihood
+		for (int i=0; i<currUser.followings.length; i++){
+			//Only compute likelihood of followings which are in training batch (i.e. batch = 1)
+			if (currUser.followingBatches[i]==1){
+				int v = currUser.followings[i];
+				User following = dataset.users[v];
+				
+				//Compute H_u * A_v
+				double HuAv = 0;
+				for (int j=0; j<currUser.hubs.length; j++){
+					for (int z=0; z<following.authorities.length; z++){
+						if (j==z){
+							HuAv += currUser.hubs[j] * following.authorities[z];
+						}
+					}
+				}
+				followingLikelihood += -following.authorities[k] - ((1/(Math.pow(Math.E, -HuAv)+1)) * (Math.pow(Math.E, -HuAv)) * (-following.authorities[k])) ;
+			}
+		}
+
+		postLikelihood = ((Math.log(currUser.hubs[k])-x)/Math.pow(delta, 2)) * (1/currUser.hubs[k]);
+		
+		gradLikelihood = nonFollowingLikelihood + followingLikelihood - postLikelihood;
+		
+		return gradLikelihood;
 	}
 
 	/***
@@ -282,7 +485,7 @@ public class CTLR {
 
 		for (int iter = 0; iter < maxIteration_Hubs; iter++) {
 			for (int k = 0; k < nTopics; k++) {
-				grad[k] = gradLikelihood_hub(u, currentX[k], k);
+				grad[k] = gradLikelihood_hub(u, k, currentX[k]);
 				x[k] = currentX[k] - learning_rate_hubs * grad[k];
 			}
 			double f = getLikelihood_hub(u, x);

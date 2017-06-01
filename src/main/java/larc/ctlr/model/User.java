@@ -8,10 +8,10 @@ public class User {
 	public Post[] posts;
 	public int[] postBatches;// batch index of posts, to be used for K-fold cross validation
 
-	public int[] followees;// index of followees
-	public int[] followeeBatches;// batch index of followees, to be used for K-fold cross validation
-	public int[] nonFollowees;// index of non_followees
-	public int[] nonFolloweeBatches;// batch index of non_followees, to be used for K-fold cross validation
+	public int[] followings;// index of following
+	public int[] followingBatches;// batch index of followings, to be used for K-fold cross validation
+	public int[] nonFollowings;// index of non_followings
+	public int[] nonFollowingBatches;// batch index of non_followings, to be used for K-fold cross validation
 
 	public int[] followers;// index of followers
 	public int[] nonFollowers;// index of non_followers
