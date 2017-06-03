@@ -239,10 +239,10 @@ public class Dataset {
 				int u = userId2Index.get(userId);
 				
 				// Declare the number of followees from user
-				users[u].followees = new int[nFollowee]; 
+				users[u].followings = new int[nFollowee]; 
 				
 				// Declare the number of followees batches from user
-				users[u].followeeBatches = new int[nFollowee]; 
+				users[u].followingBatches = new int[nFollowee]; 
 
 				// Read each of the followees
 				br = new BufferedReader(new FileReader(followeeFile.getAbsolutePath()));
@@ -255,9 +255,9 @@ public class Dataset {
 						String followeeId = sc.next();
 						int batch = sc.nextInt();
 						// Set followee's user index
-						users[u].followees[j] = userId2Index.get(followeeId);
+						users[u].followings[j] = userId2Index.get(followeeId);
 						// Set followee's batch
-						users[u].followeeBatches[j] = batch;
+						users[u].followingBatches[j] = batch;
 					}
 				}
 			}
@@ -333,10 +333,10 @@ public class Dataset {
 				int u = userId2Index.get(userId);
 				
 				// Declare the number of non followees from user
-				users[u].nonFollowees = new int[nNonFollowee]; 
+				users[u].nonFollowings = new int[nNonFollowee]; 
 				
 				// Declare the number of non followees batches from user
-				users[u].nonFolloweeBatches = new int[nNonFollowee]; 
+				users[u].nonFollowingBatches = new int[nNonFollowee]; 
 
 				// Read each of the non followees
 				br = new BufferedReader(new FileReader(nonFolloweeFile.getAbsolutePath()));
@@ -349,9 +349,9 @@ public class Dataset {
 						String nonFolloweeId = sc.next();
 						int batch = sc.nextInt();
 						// Set followee's user index
-						users[u].nonFollowees[j] = userId2Index.get(nonFolloweeId);
+						users[u].nonFollowings[j] = userId2Index.get(nonFolloweeId);
 						// Set followee's batch
-						users[u].nonFolloweeBatches[j] = batch;
+						users[u].nonFollowingBatches[j] = batch;
 					}
 				}
 			}
