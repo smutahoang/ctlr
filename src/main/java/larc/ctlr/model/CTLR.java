@@ -578,13 +578,8 @@ public class CTLR {
 					
 				
 			}
-			for (int i = 0; i < currUser.posts[i]..words.length; i++) {
-				// Only consider the word belong to the topic not background
-				if (users[u].posts[j].coins[i] == 1) {
-					int w = users[u].posts[j].words[i];
-					p[z] = p[z] * (n_wz[w][z] + beta) / (sum_nwz[z] + sum_beta);
-				}
-			}
+
+
 			// cumulative
 			p[z] = sump + p[z];
 			sump = p[z];
