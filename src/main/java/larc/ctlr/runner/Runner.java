@@ -8,7 +8,7 @@ import larc.ctlr.model.CTLR;
 public class Runner {
 
 	static void syntheticDataGeneration(int nUsers) {
-		larc.ctlr.data.Synthetic.genData(nUsers);
+		// larc.ctlr.data.Synthetic.genData (nUsers);
 	}
 
 	static void runCTLR(String datasetPath, int nTopics) {
@@ -17,7 +17,7 @@ public class Runner {
 	}
 
 	public static void main(String[] args) {
-		
+
 		try {
 			if (args[0].equals("gen")) {
 				int nUsers = Integer.parseInt(args[1]);

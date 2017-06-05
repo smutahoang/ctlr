@@ -237,11 +237,14 @@ public class Dataset {
 				
 				String userId = FilenameUtils.removeExtension(followingFile.getName());
 				int u = userId2Index.get(userId);
-				
+			
 				// Declare the number of followings from user
 				users[u].followings = new int[nFollowing]; 
-				
+				// Declare the number of followees from user
+				users[u].followings = new int[nFollowing]; 
 				// Declare the number of followings batches from user
+				users[u].followingBatches = new int[nFollowing]; 
+				// Declare the number of followees batches from user
 				users[u].followingBatches = new int[nFollowing]; 
 
 				// Read each of the followings
@@ -254,9 +257,11 @@ public class Dataset {
 					while (sc.hasNext()) {
 						String followingId = sc.next();
 						int batch = sc.nextInt();
-						// Set followee's user index
+						// Set following's user index
 						users[u].followings[j] = userId2Index.get(followingId);
-						// Set followee's batch
+						users[u].followings[j] = userId2Index.get(followingId);
+
+						// Set following's batch
 						users[u].followingBatches[j] = batch;
 					}
 				}
@@ -331,11 +336,16 @@ public class Dataset {
 				
 				String userId = FilenameUtils.removeExtension(nonFollowingFile.getName());
 				int u = userId2Index.get(userId);
-				
+			
 				// Declare the number of non followeing from user
 				users[u].nonFollowings = new int[nNonFollowing]; 
 			
 				// Declare the number of non followings batches from user
+				users[u].nonFollowingBatches = new int[nNonFollowing]; 
+				// Declare the number of non followees from user
+				users[u].nonFollowings = new int[nNonFollowing]; 
+				
+				// Declare the number of non followees batches from user
 				users[u].nonFollowingBatches = new int[nNonFollowing]; 
 
 				// Read each of the non followings
@@ -351,6 +361,9 @@ public class Dataset {
 						// Set following's user index
 						users[u].nonFollowings[j] = userId2Index.get(nonFollowingId);
 						// Set following's batch
+						// Set followee's user index
+						users[u].nonFollowings[j] = userId2Index.get(nonFollowingId);
+						// Set followee's batch
 						users[u].nonFollowingBatches[j] = batch;
 					}
 				}
