@@ -59,6 +59,7 @@ public class CTLR {
 		// Compute the likelihood to make sure that it is improving L(text) +
 		// L(link)
 		// value can be more than 1
+		// eqn 1 + 4
 		return 0;
 	}
 
@@ -567,7 +568,9 @@ public class CTLR {
 	 * alternating step to optimize topics' word distribution
 	 */
 	private void altOptimize_topics() {
+		//\phi_kw = (n_wz[w][k] + \beta)/ (sum_v n_wk[v][k] + W*\beta)
 
+		//recomputing topicWordDist[w][z]
 	}
 
 	/***
@@ -585,7 +588,9 @@ public class CTLR {
 		
 		double sump = 0;
 		// p: p(z_u,s = z| rest)
+		
 		double[] p = new double[nTopics];
+		double min = Double.MAX_VALUE;
 		for (int z = 0; z < nTopics; z++) {
 			// User-topic
 			p[z] = currUser.topicalInterests[z];
@@ -593,13 +598,25 @@ public class CTLR {
 			// topic-word
 			Post currPost = currUser.posts[n];
 			for (int w = 0; w < currPost.words.length; w++) {
-				p[z] = p[z] * topicWordDist[w][z];
-			}	
+				p[z] = Math.log(p[z]) + Math.log(topicWordDist[w][z]);
+			}
+			
+			// update min
+			if (min < p[z]) {
+				min = p[z];
+			}
+
+		}
+		// convert log(sump) to probability
+		for (int z = 0; z < nTopics; z++) {
+			p[z] = p[z] - min;
+			p[z] = Math.exp(p[z]);
+			
 			// cumulative
 			p[z] = sump + p[z];
 			sump = p[z];
-		}
-		
+		}		
+
 		sump = rand.nextDouble() * sump;
 		for (int z = 0; z < nTopics; z++) {
 			if (sump > p[z])
@@ -612,9 +629,20 @@ public class CTLR {
 	}
 
 	/***
+	 * initialize the data before training
+	 */
+	public void init(){
+		//randomly assign topics to posts
+		// alterOptize_topics()
+		// the user topical interest is computed base on the random assignment of the topics to the post
+		// the authority and hub will be a random regression of the topical interest of user
+	}
+
+	/***
 	 * modeling learning
 	 */
 	public void train() {
+		init();
 		for (int iter = 0; iter < max_GibbsEM_Iterations; iter++) {
 			// EM part that employs alternating optimization
 			for (int u = 0; u < dataset.nUsers; u++) {
