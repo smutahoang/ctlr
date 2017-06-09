@@ -374,4 +374,12 @@ public class Dataset {
 			System.exit(0);
 		}
 	}
+
+	public void inferFollowers(){}
+	
+	public void generateNonFollowing(){}
+	
+	public void generateNonFollower(){}
+	
+	
 }
