@@ -589,9 +589,9 @@ public class CTLR {
 				if (currUser.postBatches[n]==1){
 					int z = currPost.topic;
 					for (int w=0; w<currPost.words.length;w++){
-						wordIndex = currPost.words[w];
-						sum_nwz[k] +=1;
-						n_wz[wordIndex][k] +=1;
+						int wordIndex = currPost.words[w];
+						sum_nwz[z] +=1;
+						n_wz[wordIndex][z] +=1;
 					}
 				}
 			}	
@@ -600,7 +600,7 @@ public class CTLR {
 		// compute topic word distribution
 		for (int k=0; k<nTopics; k++){
 			for (int w=0; w<dataset.vocabulary.length; w++){
-				topicWordDist[w][z] = (n_wz[w][k] + gamma)/ (sum_nwz[k] + (gamma* dataset.vocabulary.length));
+				topicWordDist[w][k] = (n_wz[w][k] + gamma)/ (sum_nwz[k] + (gamma* dataset.vocabulary.length));
 			}
 		}	
 	}
@@ -684,19 +684,21 @@ public class CTLR {
 				// only consider posts in training batch
 				if (currUser.postBatches[n]==1){
 					int randTopic = rand.nextInt(nTopics);
-					currUser.posts[n].topic = randTopic
-					n_zu[randTopic][u] += 1;	
+					currUser.posts[n].topic = randTopic;
 					sum_nzu[u] += 1;
+					n_zu[randTopic][u] += 1;	
 				}	
 			}	
 		}
 
 		// compute user topical interests base on the random topic assigment
+		for (int u = 0; u < dataset.nUsers; u++) {
+			User currUser = dataset.users[u];
+			for (int k=0; k<nTopics; k++){
+				currUser.topicalInterests[k] = (n_zu[k][u] + alpha )/(sum_nzu[u]+(alpha * dataset.nUsers));
+			}
+		}
 		
-
-
-
-
 		// randomly regress user's topical interest to initialize authority and hub
 		for (int u = 0; u < dataset.nUsers; u++) {
 			User currUser = dataset.users[u];
@@ -711,8 +713,8 @@ public class CTLR {
 
 
 	}
-
-	/***
+	
+		/***
 	 * modeling learning
 	 */
 	public void train() {
@@ -742,12 +744,44 @@ public class CTLR {
 			System.out.printf("likelihood after %d steps: %f", iter, getLikelihood());
 		}
 	}
-
+	
 	/***
-	 * checking if the gradient computation of likelihood by A_{u,k} is properly
+	 * checking if the gradient computation of likelihood by user topical interest theta_{u,k} is properly
 	 * implemented
 	 * 
 	 * @param u
+	 * @param k
+	 */
+	public void gradCheck_TopicalInterest(int u, int k) {
+		double DELTA = 1;
+		Random rand = new Random(System.currentTimeMillis());
+		double[] x = new double[nTopics];
+		for (int z = 0; z < nTopics; z++) {
+			x[z] = rand.nextDouble();
+		}
+
+		double f = getLikelihood_topicalInterest(u, x);
+		double g = gradLikelihood_topicalInterest(u, k, x[k]);
+
+		for (int i = 1; i <= 20; i++) {
+			// reduce DELTA
+			DELTA *= 0.1;
+			x[k] += DELTA;
+			double DELTAF = getLikelihood_topicalInterest(u, x);
+			double numGrad = (DELTAF - f) / DELTA;
+			System.out.printf(String.format("DELTA = %f numGrad = %f grad = %f\n", DELTA, numGrad, g));
+			// if grad function is implemented properly, we will see numGrad
+			// gets closer to grad
+			x[k] -= DELTA;
+
+		}
+	}
+
+	/***
+	 * checking if the gradient computation of likelihood by A_{v,k} is properly
+	 * implemented
+	 * 
+	 * @param v
 	 * @param k
 	 */
 	public void gradCheck_Authority(int v, int k) {
@@ -766,6 +800,38 @@ public class CTLR {
 			DELTA *= 0.1;
 			x[k] += DELTA;
 			double DELTAF = getLikelihood_authority(v, x);
+			double numGrad = (DELTAF - f) / DELTA;
+			System.out.printf(String.format("DELTA = %f numGrad = %f grad = %f\n", DELTA, numGrad, g));
+			// if grad function is implemented properly, we will see numGrad
+			// gets closer to grad
+			x[k] -= DELTA;
+
+		}
+	}
+	
+	/***
+	 * checking if the gradient computation of likelihood by H_{u,k} is properly
+	 * implemented
+	 * 
+	 * @param u
+	 * @param k
+	 */
+	public void gradCheck_Hub(int u, int k) {
+		double DELTA = 1;
+		Random rand = new Random(System.currentTimeMillis());
+		double[] x = new double[nTopics];
+		for (int z = 0; z < nTopics; z++) {
+			x[z] = rand.nextDouble();
+		}
+
+		double f = getLikelihood_hub(u, x);
+		double g = gradLikelihood_hub(u, k, x[k]);
+
+		for (int i = 1; i <= 20; i++) {
+			// reduce DELTA
+			DELTA *= 0.1;
+			x[k] += DELTA;
+			double DELTAF = getLikelihood_hub(u, x);
 			double numGrad = (DELTAF - f) / DELTA;
 			System.out.printf(String.format("DELTA = %f numGrad = %f grad = %f\n", DELTA, numGrad, g));
 			// if grad function is implemented properly, we will see numGrad
