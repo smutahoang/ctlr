@@ -110,21 +110,21 @@ public class Synthetic {
 
 	private HashMap<Integer, HashSet<Integer>> genNetwork(int nUsers, int nTopics, double[][] userAuthorities,
 			double[][] userHubs) {
-		HashMap<Integer, HashSet<Integer>> followees = new HashMap<Integer, HashSet<Integer>>();
+		HashMap<Integer, HashSet<Integer>> followings = new HashMap<Integer, HashSet<Integer>>();
 		for (int u = 0; u < nUsers; u++) {
-			HashSet<Integer> uFollowees = new HashSet<Integer>();
+			HashSet<Integer> uFollowings = new HashSet<Integer>();
 			for (int v = 0; v < nUsers; v++) {
 				if (u == v)
 					continue;
 				int link = genLink(nTopics, userAuthorities[v], userHubs[u]);
 				if (link == 1) {
-					uFollowees.add(v);
+					uFollowings.add(v);
 				}
 			}
-			followees.put(u, uFollowees);
+			followings.put(u, uFollowings);
 		}
 
-		return followees;
+		return followings;
 	}
 
 	private void saveUsers(int nUsers, String outputPath) {
@@ -160,6 +160,7 @@ public class Synthetic {
 			if (!file.exists()) {
 				file.mkdir();
 			}
+			
 			int nPosts = 0;
 			Random rand = new Random(System.currentTimeMillis());
 			for (int u = 0; u < nUsers; u++) {
@@ -167,11 +168,11 @@ public class Synthetic {
 				int n = rand.nextInt(maxNPosts - minNPosts) + minNPosts;
 				for (int i = 0; i < n; i++) {
 					int[] post = genPost(userInterest[u], topics);
-					bw.write(String.format("%d,%d", nPosts, post[0]));
-					for (int j = 1; j < post.length; j++) {
-						bw.write(String.format(" %d", post[j]));
+					bw.write(nPosts + ",");
+					for (int j = 0; j < post.length; j++) {
+						bw.write(" "+post[j]);
 					}
-					bw.write(String.format(",%d\n", rand.nextInt(10)));
+					bw.newLine();
 					nPosts++;
 				}
 				bw.close();
@@ -186,24 +187,24 @@ public class Synthetic {
 	private void genAndsaveNetwork(String outputpath, int nUsers, int nTopics, double[][] userAuthorities,
 			double[][] userHubs) {
 		try {
-			HashMap<Integer, HashSet<Integer>> followees = genNetwork(nUsers, nTopics, userAuthorities, userHubs);
-			File file = new File(String.format("%s/followees", outputpath));
+			HashMap<Integer, HashSet<Integer>> followings = genNetwork(nUsers, nTopics, userAuthorities, userHubs);
+			File file = new File(String.format("%s/followings", outputpath));
 			if (!file.exists()) {
 				file.mkdir();
 			}
 
 			Random rand = new Random(System.currentTimeMillis());
 			for (int u = 0; u < nUsers; u++) {
-				if (!followees.containsKey(u)) {
+				if (!followings.containsKey(u)) {
 					continue;
 				}
 				BufferedWriter bw = new BufferedWriter(
-						new FileWriter(String.format("%s/followees/%d.csv", outputpath, u)));
-				Iterator<Integer> vIter = followees.get(u).iterator();
+						new FileWriter(String.format("%s/followings/%d.csv", outputpath, u)));
+				Iterator<Integer> vIter = followings.get(u).iterator();
 				while (vIter.hasNext()) {
 					int v = vIter.next();
 					int batch = rand.nextInt(10);
-					bw.write(String.format("%d,%d\n", v, batch));
+					bw.write(String.format("%d\n", v));
 				}
 				bw.close();
 			}

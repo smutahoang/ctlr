@@ -6,6 +6,7 @@ import java.util.Random;
 public class CTLR {
 	public Dataset dataset;
 	public int nTopics;
+	public int batch;
 
 	// priors
 
@@ -47,9 +48,10 @@ public class CTLR {
 	 * @param _datasetPath
 	 * @param _nTopics
 	 */
-	public CTLR(String _datasetPath, int _nTopics) {
+	public CTLR(String _datasetPath, int _nTopics, int _batch) {
 		this.dataset = new Dataset(_datasetPath);
 		this.nTopics = _nTopics;
+		this.batch =_batch;
 	}
 
 	/***
@@ -95,9 +97,8 @@ public class CTLR {
 		}
 
 		for (int i = 0; i < currUser.nPosts; i++) {
-			// Only compute post likelihood of posts which are in training batch
-			// (i.e. batch = 1)
-			if (currUser.postBatches[i] == 1) {
+			// Only compute post likelihood of posts which are in batch (i.e. training batch = 1)
+			if (currUser.postBatches[i] == batch) {
 				int postTopic = currUser.posts[i].topic;
 				postLikelihood += x[postTopic];
 			}
@@ -139,9 +140,9 @@ public class CTLR {
 		hubLikelihood = ((Math.log(currUser.hubs[k]) - x) / Math.pow(sigma, 2));
 
 		for (int i = 0; i < currUser.nPosts; i++) {
-			// Only compute post likelihood of posts which are in training batch
-			// (i.e. batch = 1)
-			if (currUser.postBatches[i] == 1) {
+			// Only compute post likelihood of posts which are in batch
+			// (i.e. training batch = 1)
+			if (currUser.postBatches[i] == batch) {
 				// Only consider posts which are assigned topic k (i.e. z_{v,s}
 				// = k)
 				if (currUser.posts[i].topic == k) {
@@ -415,7 +416,7 @@ public class CTLR {
 		for (int i = 0; i < currUser.nonFollowings.length; i++) {
 			// Only compute likelihood of non followings which are in training
 			// batch (i.e. batch = 1)
-			if (currUser.nonFollowingBatches[i] == 1) {
+			if (currUser.nonFollowingBatches[i] == batch) {
 				int v = currUser.nonFollowings[i];
 				User nonFollowing = dataset.users[v];
 
@@ -489,7 +490,7 @@ public class CTLR {
 		for (int i = 0; i < currUser.nonFollowings.length; i++) {
 			// Only compute likelihood of non followings which are in training
 			// batch (i.e. batch = 1)
-			if (currUser.nonFollowingBatches[i] == 1) {
+			if (currUser.nonFollowingBatches[i] == batch) {
 				int v = currUser.nonFollowings[i];
 				User nonFollowing = dataset.users[v];
 
@@ -585,8 +586,8 @@ public class CTLR {
 			for (int n=0; n< currUser.posts.length; n++){
 				Post currPost = currUser.posts[n];
 				
-				// only consider posts in training batch
-				if (currUser.postBatches[n]==1){
+				// only consider posts in batch
+				if (currUser.postBatches[n]==batch){
 					int z = currPost.topic;
 					for (int w=0; w<currPost.words.length;w++){
 						int wordIndex = currPost.words[w];
@@ -664,11 +665,7 @@ public class CTLR {
 	 * initialize the data before training
 	 */
 	public void init(){
-		//randomly assign topics to posts
-		// alterOptize_topics()
-		// the user topical interest is computed base on the random assignment of the topics to the post
-		// the authority and hub will be a random regression of the topical interest of user
-
+		
 		// initialize the count variables
 		for (int u = 0; u < dataset.nUsers; u++) {
 			sum_nzu[u] = 0;
@@ -681,8 +678,8 @@ public class CTLR {
 		for (int u = 0; u < dataset.nUsers; u++) {
 			User currUser = dataset.users[u];
 			for (int n=0; n< currUser.posts.length; n++){
-				// only consider posts in training batch
-				if (currUser.postBatches[n]==1){
+				// only consider posts in batch
+				if (currUser.postBatches[n]==batch){
 					int randTopic = rand.nextInt(nTopics);
 					currUser.posts[n].topic = randTopic;
 					sum_nzu[u] += 1;
@@ -734,8 +731,8 @@ public class CTLR {
 			// Gibbs part
 			for (int u = 0; u < dataset.nUsers; u++) {
 				for (int n = 0; n < dataset.users[u].nPosts; n++) {
-					// only consider posts in training batch
-					if (dataset.users[u].postBatches[n]==1){
+					// only consider posts in batch
+					if (dataset.users[u].postBatches[n]==batch){
 						sampleTopic(u, n);
 					}
 				}
