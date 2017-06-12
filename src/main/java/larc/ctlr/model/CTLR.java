@@ -94,11 +94,11 @@ public class CTLR {
 		User currUser = dataset.users[u];
 
 		for (int k = 0; k < nTopics; k++) {
-			authorityLikelihood += -Math.pow((Math.log(currUser.authorities[k] - x[k])), 2) / (2 * Math.pow(delta, 2));
+			authorityLikelihood += -Math.pow((Math.log(currUser.authorities[k]) - x[k]), 2) / (2 * Math.pow(delta, 2));
 		}
 
 		for (int k = 0; k < nTopics; k++) {
-			hubLikelihood += -Math.pow((Math.log(currUser.hubs[k] - x[k])), 2) / (2 * Math.pow(sigma, 2));
+			hubLikelihood += -Math.pow((Math.log(currUser.hubs[k]) - x[k]), 2) / (2 * Math.pow(sigma, 2));
 		}
 
 		for (int i = 0; i < currUser.nPosts; i++) {
@@ -112,7 +112,10 @@ public class CTLR {
 		for (int k = 0; k < nTopics; k++) {
 			topicLikelihood += Math.pow(alpha, -1) * Math.log(x[k]);
 		}
-
+		//System.out.println("authorityLikelihood"+authorityLikelihood);
+		//System.out.println("hubLikelihood"+hubLikelihood);
+		//System.out.println("postLikelihood"+postLikelihood);
+		//System.out.println("topicLikelihood"+topicLikelihood);
 		finalLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + topicLikelihood;
 
 		return finalLikelihood;
@@ -269,14 +272,11 @@ public class CTLR {
 
 				// Compute H_u * A_v
 				double HuAv = 0;
-				for (int j = 0; j < nonFollower.hubs.length; j++) {
-					for (int z = 0; z < currUser.authorities.length; z++) {
-						if (j == z) {
-							HuAv += nonFollower.hubs[j] * currUser.authorities[z];
-						}
-					}
+				for (int z =0; z <nTopics; z++){
+					HuAv += nonFollower.hubs[z] * currUser.authorities[z];
 				}
-				nonFollowerLikelihood += Math.log(2 * ((1 / (Math.pow(Math.E, -HuAv) + 1)) - 1 / 2));
+				
+				nonFollowerLikelihood += Math.log(2 * ((1 /(Math.exp(-HuAv) + 1)) - 0.5));
 			}
 		}
 		
@@ -289,14 +289,11 @@ public class CTLR {
 
 				// Compute H_u * A_v
 				double HuAv = 0;
-				for (int j = 0; j < follower.hubs.length; j++) {
-					for (int z = 0; z < currUser.authorities.length; z++) {
-						if (j == z) {
-							HuAv += follower.hubs[j] * currUser.authorities[z];
-						}
-					}
+				for (int z =0; z <nTopics; z++){
+					HuAv += follower.hubs[z] * currUser.authorities[z];
 				}
-				followerLikelihood += Math.log(1 - (2 * ((1 / (Math.pow(Math.E, -HuAv) + 1)) - 1 / 2)));
+				
+				followerLikelihood += Math.log(1 - (2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5)));
 			}
 		}
 		
@@ -305,6 +302,10 @@ public class CTLR {
 			postLikelihood += Math.pow(Math.log(currUser.authorities[k]) - x[k], 2) / (2 * Math.pow(sigma, 2));
 		}
 
+		//System.out.println("nonFollowerLikelihood:"+nonFollowerLikelihood);
+		//System.out.println("followerLikelihood:"+followerLikelihood);
+		//System.out.println("postLikelihood:"+postLikelihood);
+		
 		gradLikelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
 
 		return gradLikelihood;
@@ -338,18 +339,13 @@ public class CTLR {
 
 				// Compute H_u * A_v
 				double HuAv = 0;
-				for (int j = 0; j < nonFollower.hubs.length; j++) {
-					for (int z = 0; z < currUser.authorities.length; z++) {
-						if (j == z) {
-							HuAv += nonFollower.hubs[j] * currUser.authorities[z];
-						}
-					}
+				for (int z =0; z <nTopics; z++){
+					HuAv += nonFollower.hubs[z] * currUser.authorities[z];
 				}
-				System.out.println("HuAV:"+HuAv);
-				nonFollowerLikelihood += ((1 / (1 - Math.pow(Math.E, -HuAv))) * (-Math.pow(Math.E, -HuAv))
+				
+				nonFollowerLikelihood += ((1 / (1 - Math.exp(-HuAv))) * (-Math.exp(-HuAv))
 						* (-nonFollower.hubs[k]))
-						- ((1 / (Math.pow(Math.E, -HuAv) + 1)) * (Math.pow(Math.E, -HuAv)) * (-nonFollower.hubs[k]));
-				System.out.println("nonFollowerLikelihood:"+nonFollowerLikelihood);
+						- ((1 / (Math.exp(-HuAv) + 1)) * (Math.exp(-HuAv)) * (-nonFollower.hubs[k]));
 			}
 		}
 		
@@ -362,21 +358,17 @@ public class CTLR {
 
 				// Compute H_u * A_v
 				double HuAv = 0;
-				for (int j = 0; j < follower.hubs.length; j++) {
-					for (int z = 0; z < currUser.authorities.length; z++) {
-						if (j == z) {
-							HuAv += follower.hubs[j] * currUser.authorities[z];
-						}
-					}
+				for (int z =0; z <nTopics; z++){
+					HuAv += follower.hubs[z] * currUser.authorities[z];
 				}
+				
 				followerLikelihood += -follower.hubs[k]
-						- ((1 / (Math.pow(Math.E, -HuAv) + 1)) * Math.pow(Math.E, -HuAv) * (-follower.hubs[k]));
-				System.out.println("followerLikelihood:"+followerLikelihood);
+						- ((1 / (Math.exp(-HuAv) + 1)) * Math.exp(-HuAv) * (-follower.hubs[k]));
 			}
 		}
 
 		postLikelihood = ((Math.log(currUser.authorities[k]) - x) / Math.pow(sigma, 2)) * (1 / currUser.authorities[k]);
-		System.out.println("postLikelihood:"+postLikelihood);
+		//System.out.println("postLikelihood:"+postLikelihood);
 		
 		gradLikelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
 
@@ -442,14 +434,11 @@ public class CTLR {
 
 					// Compute H_u * A_v
 					double HuAv = 0;
-					for (int j = 0; j < currUser.hubs.length; j++) {
-						for (int z = 0; z < nonFollowing.authorities.length; z++) {
-							if (j == z) {
-								HuAv += currUser.hubs[j] * nonFollowing.authorities[z];
-							}
-						}
+					for (int z =0; z <nTopics; z++){
+						HuAv += currUser.hubs[z] * nonFollowing.authorities[z];
 					}
-					nonFollowingLikelihood += Math.log(2 * ((1 / (Math.pow(Math.E, -HuAv) + 1)) - 1 / 2));
+					
+					nonFollowingLikelihood += Math.log(2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5));
 					;
 				}
 			}
@@ -466,14 +455,11 @@ public class CTLR {
 
 					// Compute H_u * A_v
 					double HuAv = 0;
-					for (int j = 0; j < currUser.hubs.length; j++) {
-						for (int z = 0; z < following.authorities.length; z++) {
-							if (j == z) {
-								HuAv += currUser.hubs[j] * following.authorities[z];
-							}
-						}
+					for (int z =0; z <nTopics; z++){
+						HuAv += currUser.hubs[z] * following.authorities[z];
 					}
-					followingLikelihood += Math.log(1 - (2 * ((1 / (Math.pow(Math.E, -HuAv) + 1)) - 1 / 2)));
+					
+					followingLikelihood += Math.log(1 - (2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5)));
 					;
 				}
 			}
@@ -520,16 +506,13 @@ public class CTLR {
 
 					// Compute H_u * A_v
 					double HuAv = 0;
-					for (int j = 0; j < currUser.hubs.length; j++) {
-						for (int z = 0; z < nonFollowing.authorities.length; z++) {
-							if (j == z) {
-								HuAv += currUser.hubs[j] * nonFollowing.authorities[z];
-							}
-						}
+					for (int z =0; z <nTopics; z++){
+						HuAv += currUser.hubs[z] * nonFollowing.authorities[z];
 					}
-					nonFollowingLikelihood += ((1 / (1 - Math.pow(Math.E, -HuAv))) * (-Math.pow(Math.E, -HuAv))
+					
+					nonFollowingLikelihood += ((1 / (1 - Math.exp(-HuAv))) * (-Math.exp(-HuAv))
 							* (-nonFollowing.authorities[k]))
-							- ((1 / (Math.pow(Math.E, -HuAv) + 1)) * (-Math.pow(Math.E, -HuAv))
+							- ((1 / (Math.exp(-HuAv) + 1)) * (-Math.exp(-HuAv))
 									* (-nonFollowing.authorities[k]));
 				}
 			}
@@ -546,15 +529,12 @@ public class CTLR {
 
 					// Compute H_u * A_v
 					double HuAv = 0;
-					for (int j = 0; j < currUser.hubs.length; j++) {
-						for (int z = 0; z < following.authorities.length; z++) {
-							if (j == z) {
-								HuAv += currUser.hubs[j] * following.authorities[z];
-							}
-						}
+					for (int z =0; z <nTopics; z++){
+						HuAv += currUser.hubs[z] * following.authorities[z];
 					}
-					followingLikelihood += -following.authorities[k] - ((1 / (Math.pow(Math.E, -HuAv) + 1))
-							* (Math.pow(Math.E, -HuAv)) * (-following.authorities[k]));
+					
+					followingLikelihood += -following.authorities[k] - ((1 / (Math.exp(-HuAv) + 1))
+							* (Math.exp(-HuAv)) * (-following.authorities[k]));
 				}
 			}
 		}
@@ -737,7 +717,6 @@ public class CTLR {
 			for (int k =0; k< nTopics; k++){
 				currUser.authorities[k] = currUser.topicalInterests[k] * rand.nextDouble();
 				currUser.hubs[k] = currUser.topicalInterests[k] * rand.nextDouble();
-				System.out.println(currUser.authorities[k]);
 			}
 		}
 
@@ -836,7 +815,7 @@ public class CTLR {
 			x[k] += DELTA;
 			double DELTAF = getLikelihood_authority(v, x);
 			double numGrad = (DELTAF - f) / DELTA;
-			//System.out.printf(String.format("DELTA = %f numGrad = %f grad = %f\n", DELTA, numGrad, g));
+			System.out.printf(String.format("DELTA = %f numGrad = %f grad = %f\n", DELTA, numGrad, g));
 			// if grad function is implemented properly, we will see numGrad
 			// gets closer to grad
 			x[k] -= DELTA;
