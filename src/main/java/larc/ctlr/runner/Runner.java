@@ -17,9 +17,17 @@ public class Runner {
 		larc.ctlr.model.CTLR model = new CTLR(datasetPath, nTopics, batch);
 		model.train();
 	}
+	
+	static void gradCheck(String datasetPath, int nTopics, int batch) {
+		larc.ctlr.model.CTLR model = new CTLR(datasetPath, nTopics, batch);
+		model.init();
+		for (int v=0; v < model.dataset.nUsers; v++){
+			model.gradCheck_Authority(v, nTopics);;
+		}
+	}
 
 	public static void main(String[] args) {
-
+		
 		try {
 			if (args[0].equals("gen")) {
 				int nUsers = Integer.parseInt(args[1]);
@@ -32,7 +40,12 @@ public class Runner {
 				int nTopics = Integer.parseInt(args[2]);
 				int batch = Integer.parseInt(args[3]);
 				runCTLR(datasetPath, nTopics, batch);
-			} else {
+			} else if (args[0].equals("gradCheck")){
+				String datasetPath = args[1];
+				int nTopics = Integer.parseInt(args[2]);
+				int batch = Integer.parseInt(args[3]);
+				gradCheck(datasetPath, nTopics, batch);
+			}else {
 				System.out.printf("%s is not an option!!!");
 			}
 		} catch (Exception e) {

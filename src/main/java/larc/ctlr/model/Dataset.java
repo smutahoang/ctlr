@@ -27,8 +27,8 @@ public class Dataset {
 	 * 
 	 * @param path
 	 */
-	public Dataset(String path) {
-		loadUsers(path+"users.csv");
+	public Dataset(String path, int nTopics) {
+		loadUsers(path+"users.csv", nTopics);
 		loadPosts(path+"posts/");
 		loadVocabulary(path+"vocabulary.csv");
 		loadFollowers(path+"followers/");
@@ -37,12 +37,12 @@ public class Dataset {
 		loadNonFollowings(path+"nonfollowings/");
 	}
 	
-	public void loadUsers(String filename) {
+	public void loadUsers(String filename, int nTopics) {
 		Scanner sc = null;
 		BufferedReader br = null;
 		String line = null;
-		userId2Index = null;
-		userIndex2Id = null;
+		userId2Index = new HashMap<String, Integer>();
+		userIndex2Id = new HashMap<Integer, String>();
 
 		try {
 			File userFile = new File(filename);
@@ -71,6 +71,9 @@ public class Dataset {
 					users[u].userIndex = u;
 					userId2Index.put(userId, u);
 					userIndex2Id.put(u, userId);
+					users[u].topicalInterests = new double[nTopics];
+					users[u].authorities = new double[nTopics];
+					users[u].hubs = new double[nTopics];
 					u++;
 				}
 			}
@@ -118,14 +121,14 @@ public class Dataset {
 					sc.useDelimiter(",");
 					while (sc.hasNext()) {
 						String postId = sc.next();
-						String words = sc.next();
+						String words = sc.next().trim();
 						int batch = sc.nextInt();
 						
 						// Set batch for the post j
 						users[u].postBatches[j] = batch;
 						
 						// Read the words in each post
-						String[] tokens = sc.next().toString().split(" ");
+						String[] tokens = words.toString().split(" ");
 						users[u].posts[j].nWords = tokens.length;
 						users[u].posts[j].words = new int[tokens.length];
 						for (int i = 0; i < tokens.length; i++) {
