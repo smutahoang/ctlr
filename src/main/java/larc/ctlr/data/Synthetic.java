@@ -38,8 +38,8 @@ public class Synthetic {
 	public double alpha = 1;
 	public double beta = 1;
 	public double gamma = 2;
-	public double sigma = 1;
-	public double delta = 1;
+	public double sigma = 0.1;
+	public double delta = 0.1;
 
 	private double[][] genTopics(int nTopics, int nWords) {
 		Random rand = new Random(System.currentTimeMillis());

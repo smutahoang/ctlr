@@ -275,8 +275,8 @@ public class CTLR {
 				for (int z =0; z <nTopics; z++){
 					HuAv += nonFollower.hubs[z] * currUser.authorities[z];
 				}
-				
-				nonFollowerLikelihood += Math.log(2 * ((1 /(Math.exp(-HuAv) + 1)) - 0.5));
+				double fHuAv = 2 * ((1 /(Math.exp(-HuAv) + 1)) - 0.5);
+				nonFollowerLikelihood += Math.log(fHuAv);
 			}
 		}
 		
@@ -292,8 +292,8 @@ public class CTLR {
 				for (int z =0; z <nTopics; z++){
 					HuAv += follower.hubs[z] * currUser.authorities[z];
 				}
-				
-				followerLikelihood += Math.log(1 - (2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5)));
+				double fHuAv = 2 * ((1 /(Math.exp(-HuAv) + 1)) - 0.5);
+				followerLikelihood += Math.log(1 - fHuAv);
 			}
 		}
 		
@@ -674,11 +674,11 @@ public class CTLR {
 	 * initialize the data before training
 	 */
 	public void init(){
-		alpha = 1;
-		beta = 1;
-		gamma = 2;
-		sigma = 1;
-		delta = 1;
+		alpha = 0.5;
+		beta = 0.5;
+		gamma = 0.5;
+		sigma = 0.1;
+		delta = 0.1;
 		
 		rand = new Random();
 		// initialize the count variables
