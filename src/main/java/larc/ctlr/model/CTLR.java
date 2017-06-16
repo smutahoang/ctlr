@@ -354,7 +354,8 @@ public class CTLR {
 						HuAv += nonFollower.hubs[z] * currUser.authorities[z];
 					}
 				}
-				nonFollowerLikelihood += -nonFollower.hubs[k]
+				nonFollowerLikelihood += 
+						((1/(3*(Math.exp(-HuAv) + 1))) * (3*Math.exp(-HuAv)) * (-nonFollower.hubs[k]))
 						- ((1 / (Math.exp(-HuAv) + 1)) * Math.exp(-HuAv) * (-nonFollower.hubs[k]));
 			}
 		}
@@ -528,7 +529,11 @@ public class CTLR {
 						}
 					}
 
-					nonFollowingLikelihood += -nonFollowing.authorities[k]
+					//nonFollowingLikelihood += -nonFollowing.authorities[k]
+					//		- ((1 / (Math.exp(-HuAv) + 1)) * (Math.exp(-HuAv)) * (-nonFollowing.authorities[k]));
+					
+					nonFollowingLikelihood += ((1/(3*(Math.exp(-HuAv) + 1))) * 
+							(3*(Math.exp(-HuAv))) * (-nonFollowing.authorities[k]))
 							- ((1 / (Math.exp(-HuAv) + 1)) * (Math.exp(-HuAv)) * (-nonFollowing.authorities[k]));
 				}
 			}
