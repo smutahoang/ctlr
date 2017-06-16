@@ -310,7 +310,7 @@ public class CTLR {
 
 		// Compute post likelihood
 		for (int k = 0; k < nTopics; k++) {
-			postLikelihood += Math.pow(Math.log(x[k]) - currUser.topicalInterests[k], 2) / (2 * Math.pow(sigma, 2));
+			postLikelihood += Math.pow((Math.log(x[k]) - currUser.topicalInterests[k]), 2) / (2 * Math.pow(sigma, 2));
 
 		}
 
@@ -348,7 +348,11 @@ public class CTLR {
 				// Compute H_u * A_v
 				double HuAv = 0;
 				for (int z = 0; z < nTopics; z++) {
-					HuAv += nonFollower.hubs[z] * currUser.authorities[z];
+					if (z==k){
+						HuAv += nonFollower.hubs[z] * x;
+					} else{ 
+						HuAv += nonFollower.hubs[z] * currUser.authorities[z];
+					}
 				}
 				nonFollowerLikelihood += -nonFollower.hubs[k]
 						- ((1 / (Math.exp(-HuAv) + 1)) * Math.exp(-HuAv) * (-nonFollower.hubs[k]));
@@ -364,7 +368,11 @@ public class CTLR {
 				// Compute H_u * A_v
 				double HuAv = 0;
 				for (int z = 0; z < nTopics; z++) {
-					HuAv += follower.hubs[z] * currUser.authorities[z];
+					if (z==k){
+						HuAv += follower.hubs[z] * x;
+					} else{ 
+						HuAv += follower.hubs[z] * currUser.authorities[z];
+					}
 				}
 				followerLikelihood += ((1 / (1 - Math.exp(-HuAv))) * (-Math.exp(-HuAv)) * (-follower.hubs[k]))
 								- ((1 / (Math.exp(-HuAv) + 1)) * (Math.exp(-HuAv)) * (-follower.hubs[k]));
@@ -513,7 +521,11 @@ public class CTLR {
 					// Compute H_u * A_v
 					double HuAv = 0;
 					for (int z = 0; z < nTopics; z++) {
-						HuAv += currUser.hubs[z] * nonFollowing.authorities[z];
+						if (z==k){
+							HuAv += x * nonFollowing.authorities[z];
+						}else {
+							HuAv += currUser.hubs[z] * nonFollowing.authorities[z];
+						}
 					}
 
 					nonFollowingLikelihood += -nonFollowing.authorities[k]
@@ -535,7 +547,11 @@ public class CTLR {
 					// Compute H_u * A_v
 					double HuAv = 0;
 					for (int z = 0; z < nTopics; z++) {
-						HuAv += currUser.hubs[z] * following.authorities[z];
+						if (z==k){
+							HuAv += x * following.authorities[z];
+						}else {
+							HuAv += currUser.hubs[z] * following.authorities[z];
+						}
 					}
 
 					followingLikelihood += ((1 / (1 - Math.exp(-HuAv))) * (-Math.exp(-HuAv))
@@ -812,10 +828,8 @@ public class CTLR {
 
 		double f = getLikelihood_authority(v, x);
 		double g = gradLikelihood_authority(v, k, x[k]);
-		System.out.println("getLikelihood_authority(v, x):" + f);
-		System.out.println("gradLikelihood_authority(v, k, x[k]):" + g);
-
-		for (int i = 1; i <= 50; i++) {
+		
+		for (int i = 1; i <= 20; i++) {
 			// reduce DELTA
 			DELTA *= 0.1;
 			x[k] += DELTA;
