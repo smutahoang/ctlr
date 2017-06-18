@@ -21,11 +21,11 @@ public class Runner {
 	static void gradCheck(String datasetPath, int nTopics, int batch) {
 		larc.ctlr.model.CTLR model = new CTLR(datasetPath, nTopics, batch);
 		model.init();
-		//for (int v=0; v < model.dataset.nUsers; v++){
-			//model.gradCheck_Authority(5, 5);
-			model.gradCheck_Hub(5,5);
-			//model.gradCheck_TopicalInterest(5, 5);
-		//}
+		for (int k=0; k < nTopics; k++){
+			model.gradCheck_Authority(5, k);
+			model.gradCheck_Hub(5,k);
+			model.gradCheck_TopicalInterest(5, k);
+		}
 	}
 
 	public static void main(String[] args) {

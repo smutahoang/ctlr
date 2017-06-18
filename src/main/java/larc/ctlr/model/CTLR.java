@@ -269,7 +269,7 @@ public class CTLR {
 		double followerLikelihood = 0;
 		double nonFollowerLikelihood = 0;
 		double postLikelihood = 0;
-		double gradLikelihood = 0;
+		double likelihood = 0;
 
 		// Set the current user to be v
 		User currUser = dataset.users[v];
@@ -288,6 +288,7 @@ public class CTLR {
 				}
 				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
 				nonFollowerLikelihood += Math.log(1 - fHuAv);
+				
 			}
 		}
 
@@ -310,13 +311,12 @@ public class CTLR {
 
 		// Compute post likelihood
 		for (int k = 0; k < nTopics; k++) {
-			postLikelihood += Math.pow((Math.log(x[k]) - currUser.topicalInterests[k]), 2) / (2 * Math.pow(sigma, 2));
-
+			postLikelihood += Math.pow(Math.log(x[k]) - currUser.topicalInterests[k], 2) / (2 * Math.pow(sigma, 2));
 		}
 
-		gradLikelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
+		likelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
 
-		return gradLikelihood;
+		return likelihood;
 	}
 
 	/***
@@ -354,8 +354,8 @@ public class CTLR {
 						HuAv += nonFollower.hubs[z] * currUser.authorities[z];
 					}
 				}
-				nonFollowerLikelihood += 
-						((1/(3*(Math.exp(-HuAv) + 1))) * (3*Math.exp(-HuAv)) * (-nonFollower.hubs[k]))
+				nonFollowerLikelihood += ((1/(3*(Math.exp(-HuAv) + 1))) * 
+						(3*Math.exp(-HuAv)) * (-nonFollower.hubs[k]))
 						- ((1 / (Math.exp(-HuAv) + 1)) * Math.exp(-HuAv) * (-nonFollower.hubs[k]));
 			}
 		}
@@ -375,8 +375,10 @@ public class CTLR {
 						HuAv += follower.hubs[z] * currUser.authorities[z];
 					}
 				}
-				followerLikelihood += ((1 / (1 - Math.exp(-HuAv))) * (-Math.exp(-HuAv)) * (-follower.hubs[k]))
-								- ((1 / (Math.exp(-HuAv) + 1)) * (Math.exp(-HuAv)) * (-follower.hubs[k]));
+				followerLikelihood += ((1 / (1 - Math.exp(-HuAv))) * (-Math.exp(-HuAv)) 
+						* (-follower.hubs[k]))
+						- ((1 / (Math.exp(-HuAv) + 1)) * (-Math.exp(-HuAv)) * (-follower.hubs[k]));
+		
 			}
 		}
 
@@ -488,6 +490,7 @@ public class CTLR {
 
 		return likelihood;
 	}
+	
 
 	/***
 	 * compute gradient of likelihood of data with respect to hub of u in topic
@@ -529,9 +532,6 @@ public class CTLR {
 						}
 					}
 
-					//nonFollowingLikelihood += -nonFollowing.authorities[k]
-					//		- ((1 / (Math.exp(-HuAv) + 1)) * (Math.exp(-HuAv)) * (-nonFollowing.authorities[k]));
-					
 					nonFollowingLikelihood += ((1/(3*(Math.exp(-HuAv) + 1))) * 
 							(3*(Math.exp(-HuAv))) * (-nonFollowing.authorities[k]))
 							- ((1 / (Math.exp(-HuAv) + 1)) * (Math.exp(-HuAv)) * (-nonFollowing.authorities[k]));
@@ -545,7 +545,7 @@ public class CTLR {
 				// Only compute likelihood of followings which are in training
 				// batch
 				// (i.e. batch = 1)
-				if (currUser.followingBatches[i] == 1) {
+				if (currUser.followingBatches[i] == batch) {
 					int v = currUser.followings[i];
 					User following = dataset.users[v];
 
@@ -808,7 +808,7 @@ public class CTLR {
 			x[k] += DELTA;
 			double DELTAF = getLikelihood_topicalInterest(u, x);
 			double numGrad = (DELTAF - f) / DELTA;
-			System.out.printf(String.format("DELTA = %f numGrad = %f grad = %f\n", DELTA, numGrad, g));
+			System.out.printf(String.format("TopicInterest DELTA = %f numGrad = %f grad = %f\n", DELTA, numGrad, g));
 			// if grad function is implemented properly, we will see numGrad
 			// gets closer to grad
 			x[k] -= DELTA;
@@ -840,7 +840,7 @@ public class CTLR {
 			x[k] += DELTA;
 			double DELTAF = getLikelihood_authority(v, x);
 			double numGrad = (DELTAF - f) / DELTA;
-			System.out.printf(String.format("DELTA = %f numGrad = %f grad = %f\n", DELTA, numGrad, g));
+			System.out.printf(String.format("Authority DELTA = %f numGrad = %f grad = %f\n", DELTA, numGrad, g));
 			// if grad function is implemented properly, we will see numGrad
 			// gets closer to grad
 			x[k] -= DELTA;
@@ -872,7 +872,7 @@ public class CTLR {
 			x[k] += DELTA;
 			double DELTAF = getLikelihood_hub(u, x);
 			double numGrad = (DELTAF - f) / DELTA;
-			System.out.printf(String.format("DELTA = %f numGrad = %f grad = %f\n", DELTA, numGrad, g));
+			System.out.printf(String.format("Hub DELTA = %f numGrad = %f grad = %f\n", DELTA, numGrad, g));
 			// if grad function is implemented properly, we will see numGrad
 			// gets closer to grad
 			x[k] -= DELTA;

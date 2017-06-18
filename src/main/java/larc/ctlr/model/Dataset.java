@@ -136,6 +136,7 @@ public class Dataset {
 						}		
 					}
 				}
+				//System.out.println("Number of Post loaded:" + nPost);
 			}
 		}catch (Exception e){
 			System.out.println("Error in reading post file!");
@@ -169,7 +170,7 @@ public class Dataset {
 				}				
 			}
 			br.close();
-			
+			//System.out.println("Number of Vocabulary loaded:" + nVocabs);
 		} catch (Exception e){
 			System.out.println("Error in reading vocabulary file!");
 			e.printStackTrace();
@@ -213,6 +214,7 @@ public class Dataset {
 						users[u].followers[j] = userId2Index.get(followerId);		
 					}
 				}
+				//System.out.println("Number of Followers loaded:" + nFollower);
 			}
 		}catch (Exception e){
 			System.out.println("Error in reading follower file!");
@@ -243,11 +245,7 @@ public class Dataset {
 			
 				// Declare the number of followings from user
 				users[u].followings = new int[nFollowing]; 
-				// Declare the number of followees from user
-				users[u].followings = new int[nFollowing]; 
 				// Declare the number of followings batches from user
-				users[u].followingBatches = new int[nFollowing]; 
-				// Declare the number of followees batches from user
 				users[u].followingBatches = new int[nFollowing]; 
 
 				// Read each of the followings
@@ -262,12 +260,12 @@ public class Dataset {
 						int batch = sc.nextInt();
 						// Set following's user index
 						users[u].followings[j] = userId2Index.get(followingId);
-						users[u].followings[j] = userId2Index.get(followingId);
 
 						// Set following's batch
 						users[u].followingBatches[j] = batch;
 					}
 				}
+				//System.out.println("Number of Following loaded:" + nFollowing);
 			}
 		}catch (Exception e){
 			System.out.println("Error in reading post file!");
@@ -312,6 +310,7 @@ public class Dataset {
 						users[u].nonFollowers[j] = userId2Index.get(nonFollowerId);		
 					}
 				}
+				//System.out.println("Number of Non Follower loaded:" + nNonFollower);
 			}
 		}catch (Exception e){
 			System.out.println("Error in reading non follower file!");
@@ -345,11 +344,6 @@ public class Dataset {
 			
 				// Declare the number of non followings batches from user
 				users[u].nonFollowingBatches = new int[nNonFollowing]; 
-				// Declare the number of non followees from user
-				users[u].nonFollowings = new int[nNonFollowing]; 
-				
-				// Declare the number of non followees batches from user
-				users[u].nonFollowingBatches = new int[nNonFollowing]; 
 
 				// Read each of the non followings
 				br = new BufferedReader(new FileReader(nonFollowingFile.getAbsolutePath()));
@@ -364,12 +358,10 @@ public class Dataset {
 						// Set following's user index
 						users[u].nonFollowings[j] = userId2Index.get(nonFollowingId);
 						// Set following's batch
-						// Set followee's user index
-						users[u].nonFollowings[j] = userId2Index.get(nonFollowingId);
-						// Set followee's batch
 						users[u].nonFollowingBatches[j] = batch;
 					}
 				}
+				//System.out.println("Number of Non Following loaded:" + nNonFollowing);
 			}
 		}catch (Exception e){
 			System.out.println("Error in reading non followee file!");
