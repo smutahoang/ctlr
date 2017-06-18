@@ -288,7 +288,7 @@ public class CTLR {
 				}
 				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
 				nonFollowerLikelihood += Math.log(1 - fHuAv);
-				
+
 			}
 		}
 
@@ -305,7 +305,7 @@ public class CTLR {
 				}
 				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
 				followerLikelihood += Math.log(fHuAv);
-			
+
 			}
 		}
 
@@ -348,14 +348,16 @@ public class CTLR {
 				// Compute H_u * A_v
 				double HuAv = 0;
 				for (int z = 0; z < nTopics; z++) {
-					if (z==k){
+					if (z == k) {
 						HuAv += nonFollower.hubs[z] * x;
-					} else{ 
+					} else {
 						HuAv += nonFollower.hubs[z] * currUser.authorities[z];
 					}
 				}
-				nonFollowerLikelihood += ((1/(3*(Math.exp(-HuAv) + 1))) * 
-						(3*Math.exp(-HuAv)) * (-nonFollower.hubs[k]))
+				// TA: in the line below: 3*(Math.exp(-HuAv) + 1) should be
+				// 3*Math.exp(-HuAv) + 1
+				nonFollowerLikelihood += ((1 / (3 * (Math.exp(-HuAv) + 1))) * (3 * Math.exp(-HuAv))
+						* (-nonFollower.hubs[k]))
 						- ((1 / (Math.exp(-HuAv) + 1)) * Math.exp(-HuAv) * (-nonFollower.hubs[k]));
 			}
 		}
@@ -369,21 +371,22 @@ public class CTLR {
 				// Compute H_u * A_v
 				double HuAv = 0;
 				for (int z = 0; z < nTopics; z++) {
-					if (z==k){
+					if (z == k) {
 						HuAv += follower.hubs[z] * x;
-					} else{ 
+					} else {
 						HuAv += follower.hubs[z] * currUser.authorities[z];
 					}
 				}
-				followerLikelihood += ((1 / (1 - Math.exp(-HuAv))) * (-Math.exp(-HuAv)) 
-						* (-follower.hubs[k]))
+				followerLikelihood += ((1 / (1 - Math.exp(-HuAv))) * (-Math.exp(-HuAv)) * (-follower.hubs[k]))
 						- ((1 / (Math.exp(-HuAv) + 1)) * (-Math.exp(-HuAv)) * (-follower.hubs[k]));
-		
+				// TA: in the line above: (-Math.exp(-HuAv)) should be
+				// (Math.exp(-HuAv))
+
 			}
 		}
 
 		postLikelihood = ((Math.log(x) - currUser.topicalInterests[k]) / Math.pow(sigma, 2)) * (1 / x);
-		
+
 		gradLikelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
 
 		return gradLikelihood;
@@ -453,7 +456,7 @@ public class CTLR {
 						HuAv += x[z] * nonFollowing.authorities[z];
 					}
 					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-					nonFollowingLikelihood += Math.log(1-fHuAv);
+					nonFollowingLikelihood += Math.log(1 - fHuAv);
 					;
 				}
 			}
@@ -490,7 +493,6 @@ public class CTLR {
 
 		return likelihood;
 	}
-	
 
 	/***
 	 * compute gradient of likelihood of data with respect to hub of u in topic
@@ -525,15 +527,16 @@ public class CTLR {
 					// Compute H_u * A_v
 					double HuAv = 0;
 					for (int z = 0; z < nTopics; z++) {
-						if (z==k){
+						if (z == k) {
 							HuAv += x * nonFollowing.authorities[z];
-						}else {
+						} else {
 							HuAv += currUser.hubs[z] * nonFollowing.authorities[z];
 						}
 					}
-
-					nonFollowingLikelihood += ((1/(3*(Math.exp(-HuAv) + 1))) * 
-							(3*(Math.exp(-HuAv))) * (-nonFollowing.authorities[k]))
+					// TA: in the line below: 3 * (Math.exp(-HuAv) + 1) should
+					// be 3 * Math.exp(-HuAv) + 1
+					nonFollowingLikelihood += ((1 / (3 * (Math.exp(-HuAv) + 1))) * (3 * (Math.exp(-HuAv)))
+							* (-nonFollowing.authorities[k]))
 							- ((1 / (Math.exp(-HuAv) + 1)) * (Math.exp(-HuAv)) * (-nonFollowing.authorities[k]));
 				}
 			}
@@ -552,9 +555,9 @@ public class CTLR {
 					// Compute H_u * A_v
 					double HuAv = 0;
 					for (int z = 0; z < nTopics; z++) {
-						if (z==k){
+						if (z == k) {
 							HuAv += x * following.authorities[z];
-						}else {
+						} else {
 							HuAv += currUser.hubs[z] * following.authorities[z];
 						}
 					}
@@ -562,6 +565,8 @@ public class CTLR {
 					followingLikelihood += ((1 / (1 - Math.exp(-HuAv))) * (-Math.exp(-HuAv))
 							* (-following.authorities[k]))
 							- ((1 / (Math.exp(-HuAv) + 1)) * (-Math.exp(-HuAv)) * (-following.authorities[k]));
+					// TA: in the line above: (-Math.exp(-HuAv)) should be
+					// (Math.exp(-HuAv))
 				}
 			}
 		}
@@ -833,7 +838,7 @@ public class CTLR {
 
 		double f = getLikelihood_authority(v, x);
 		double g = gradLikelihood_authority(v, k, x[k]);
-		
+
 		for (int i = 1; i <= 20; i++) {
 			// reduce DELTA
 			DELTA *= 0.1;
