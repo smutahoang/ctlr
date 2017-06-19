@@ -23,8 +23,8 @@ public class Runner {
 		model.init();
 		for (int k=0; k < nTopics; k++){
 			//model.gradCheck_Authority(5, k);
-			model.gradCheck_Hub(5,k);
-			//model.gradCheck_TopicalInterest(5, k);
+			//model.gradCheck_Hub(65,k);
+			model.gradCheck_TopicalInterest(5, k);
 		}
 	}
 

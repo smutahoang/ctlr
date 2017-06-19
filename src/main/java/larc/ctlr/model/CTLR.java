@@ -121,6 +121,7 @@ public class CTLR {
 			topicLikelihood += Math.pow(alpha, -1) * Math.log(x[k]);
 		}
 		finalLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + topicLikelihood;
+		//finalLikelihood = authorityLikelihood;
 
 		return finalLikelihood;
 	}
@@ -164,6 +165,8 @@ public class CTLR {
 		}
 
 		gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood;
+		
+		//gradLikelihood = hubLikelihood;
 
 		return gradLikelihood;
 	}
@@ -312,7 +315,8 @@ public class CTLR {
 			postLikelihood += Math.pow(Math.log(x[k]) - currUser.topicalInterests[k], 2) / (2 * Math.pow(sigma, 2));
 		}
 
-		likelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
+		//likelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
+		likelihood = postLikelihood;
 
 		return likelihood;
 	}
@@ -355,7 +359,7 @@ public class CTLR {
 				nonFollowerLikelihood += ((1/(3*Math.exp(-HuAv) + 1)) * 
 						3*Math.exp(-HuAv) * (-nonFollower.hubs[k]))
 						- ((1 / (Math.exp(-HuAv) + 1)) * (Math.exp(-HuAv)) * (-nonFollower.hubs[k]));
-				System.out.println("nonFollowerLikelihood:" + nonFollowerLikelihood);
+				//System.out.println("nonFollowerLikelihood:" + nonFollowerLikelihood);
 			}
 		}
 
@@ -377,15 +381,16 @@ public class CTLR {
 				followerLikelihood += ((1 / (1 - Math.exp(-HuAv))) * (-Math.exp(-HuAv)) 
 						* (-follower.hubs[k]))
 						- ((1 / (Math.exp(-HuAv) + 1)) * (Math.exp(-HuAv)) * (-follower.hubs[k]));
-				System.out.println("FollowerLikelihood:" + followerLikelihood);
+				//System.out.println("FollowerLikelihood:" + followerLikelihood);
 				
 			}
 		}
 
 		postLikelihood = ((Math.log(x) - currUser.topicalInterests[k]) / Math.pow(sigma, 2)) * (1 / x);
 
-		gradLikelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
-
+		//gradLikelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
+		gradLikelihood = postLikelihood;
+		
 		return gradLikelihood;
 	}
 
@@ -486,7 +491,8 @@ public class CTLR {
 			postLikelihood += Math.pow(Math.log(x[k]) - currUser.topicalInterests[k], 2) / (2 * Math.pow(delta, 2));
 		}
 
-		likelihood = nonFollowingLikelihood + followingLikelihood - postLikelihood;
+		//likelihood = nonFollowingLikelihood + followingLikelihood - postLikelihood;
+		likelihood = followingLikelihood;
 
 		return likelihood;
 	}
@@ -534,7 +540,7 @@ public class CTLR {
 					nonFollowingLikelihood += ((1 / (3*Math.exp(-HuAv) + 1)) * (3*(Math.exp(-HuAv)))
 							* (-nonFollowing.authorities[k]))
 							- ((1 / (Math.exp(-HuAv) + 1)) * (Math.exp(-HuAv)) * (-nonFollowing.authorities[k]));
-					System.out.println("nonFollowingLikelihood:" + nonFollowingLikelihood);
+					//System.out.println("nonFollowingLikelihood:" + nonFollowingLikelihood);
 				}
 			}
 		}
@@ -562,14 +568,15 @@ public class CTLR {
 					followingLikelihood += ((1 / (1 - Math.exp(-HuAv))) * (-Math.exp(-HuAv))
 							* (-following.authorities[k]))
 							- ((1 / (Math.exp(-HuAv) + 1)) * (Math.exp(-HuAv)) * (-following.authorities[k]));
-					System.out.println("followingLikelihood:" + followingLikelihood);
+					//System.out.println("followingLikelihood:" + followingLikelihood);
 				}
 			}
 		}
 
 		postLikelihood = ((Math.log(x) - currUser.topicalInterests[k]) / Math.pow(delta, 2)) * (1 / x);
 
-		gradLikelihood = nonFollowingLikelihood + followingLikelihood - postLikelihood;
+		//gradLikelihood = nonFollowingLikelihood + followingLikelihood - postLikelihood;
+		gradLikelihood = followingLikelihood;
 
 		return gradLikelihood;
 	}
@@ -704,9 +711,9 @@ public class CTLR {
 	public void init() {
 		alpha = 0.5;
 		beta = 0.5;
-		gamma = 0.5;
-		sigma = 0.1;
-		delta = 0.1;
+		gamma = 2;
+		sigma = 0.001;
+		delta = 0.001;
 
 		rand = new Random();
 		// initialize the count variables
