@@ -211,7 +211,8 @@ public class Dataset {
 					while (sc.hasNext()) {
 						String followerId = sc.next();
 						// Set follower's user index
-						users[u].followers[j] = userId2Index.get(followerId);		
+						users[u].followers[j] = userId2Index.get(followerId);
+						//System.out.println("Followers loaded:" +  userId2Index.get(followerId));
 					}
 				}
 				//System.out.println("Number of Followers loaded:" + nFollower);
@@ -278,11 +279,11 @@ public class Dataset {
 		Scanner sc = null;
 		BufferedReader br = null;
 		String line = null;
-		File followersFolder = new File(folder);
+		File nonFollowersFolder = new File(folder);
 		
 		try {
 			// Read the non followers from each user file
-			for (File nonFollowerFile : followersFolder.listFiles()) {
+			for (File nonFollowerFile : nonFollowersFolder.listFiles()) {
 				// Read the number of non followers from user
 				int nNonFollower = 0;
 				br = new BufferedReader(new FileReader(nonFollowerFile.getAbsolutePath()));
@@ -307,7 +308,8 @@ public class Dataset {
 					while (sc.hasNext()) {
 						String nonFollowerId = sc.next();
 						// Set non follower's user index
-						users[u].nonFollowers[j] = userId2Index.get(nonFollowerId);		
+						users[u].nonFollowers[j] = userId2Index.get(nonFollowerId);
+						//System.out.println("Non Follower loaded:" + userId2Index.get(nonFollowerId));
 					}
 				}
 				//System.out.println("Number of Non Follower loaded:" + nNonFollower);
