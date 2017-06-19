@@ -278,7 +278,6 @@ public class CTLR {
 		if (currUser.nonFollowers != null) {
 			for (int i = 0; i < currUser.nonFollowers.length; i++) {
 				int u = currUser.nonFollowers[i];
-
 				User nonFollower = dataset.users[u];
 
 				// Compute H_u * A_v
@@ -356,7 +355,7 @@ public class CTLR {
 				}
 				nonFollowerLikelihood += ((1/(3*(Math.exp(-HuAv) + 1))) * 
 						(3*Math.exp(-HuAv)) * (-nonFollower.hubs[k]))
-						- ((1 / (Math.exp(-HuAv) + 1)) * Math.exp(-HuAv) * (-nonFollower.hubs[k]));
+						- ((1 / (Math.exp(-HuAv) + 1)) * (Math.exp(-HuAv)) * (-nonFollower.hubs[k]));
 			}
 		}
 
@@ -377,7 +376,7 @@ public class CTLR {
 				}
 				followerLikelihood += ((1 / (1 - Math.exp(-HuAv))) * (-Math.exp(-HuAv)) 
 						* (-follower.hubs[k]))
-						- ((1 / (Math.exp(-HuAv) + 1)) * (-Math.exp(-HuAv)) * (-follower.hubs[k]));
+						- ((1 / (Math.exp(-HuAv) + 1)) * (Math.exp(-HuAv)) * (-follower.hubs[k]));
 		
 			}
 		}
@@ -561,7 +560,7 @@ public class CTLR {
 
 					followingLikelihood += ((1 / (1 - Math.exp(-HuAv))) * (-Math.exp(-HuAv))
 							* (-following.authorities[k]))
-							- ((1 / (Math.exp(-HuAv) + 1)) * (-Math.exp(-HuAv)) * (-following.authorities[k]));
+							- ((1 / (Math.exp(-HuAv) + 1)) * (Math.exp(-HuAv)) * (-following.authorities[k]));
 				}
 			}
 		}
