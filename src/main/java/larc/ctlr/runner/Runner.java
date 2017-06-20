@@ -22,8 +22,8 @@ public class Runner {
 		larc.ctlr.model.CTLR model = new CTLR(datasetPath, nTopics, batch);
 		model.init();
 		for (int k=0; k < nTopics; k++){
-			model.gradCheck_Authority(0, k);
-			//model.gradCheck_Hub(65,k);
+			//model.gradCheck_Authority(0, k);
+			model.gradCheck_Hub(65,k);
 			//model.gradCheck_TopicalInterest(5, k);
 		}
 	}
