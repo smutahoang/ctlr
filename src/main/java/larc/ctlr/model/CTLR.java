@@ -90,7 +90,7 @@ public class CTLR {
 	 */
 	private double getLikelihood_topicalInterest(int u, double[] x) {
 		// Refer to Eqn 9 in Learning paper for Formula
-
+		
 		double authorityLikelihood = 0;
 		double hubLikelihood = 0;
 		double postLikelihood = 0;
@@ -121,8 +121,6 @@ public class CTLR {
 			topicLikelihood += Math.pow(alpha, -1) * Math.log(x[k]);
 		}
 		finalLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + topicLikelihood;
-		//finalLikelihood = authorityLikelihood;
-
 		return finalLikelihood;
 	}
 
@@ -166,8 +164,6 @@ public class CTLR {
 
 		gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood;
 		
-		//gradLikelihood = hubLikelihood;
-
 		return gradLikelihood;
 	}
 
@@ -225,9 +221,6 @@ public class CTLR {
 	 * @param u
 	 */
 	private void altOptimize_topicalInterest(int u) {
-		// the following code is just a draft, to be corrected.
-		// will need more checking, but roughly the projected gradient descent
-		// for learning theta_u consists of the following main steps
 		double[] grad = new double[nTopics];
 		double[] currentX = dataset.users[u].topicalInterests;
 		double[] x = new double[nTopics];
@@ -260,14 +253,8 @@ public class CTLR {
 	 * @return
 	 */
 	private double getLikelihood_authority(int v, double[] x) {
-		// We have written likelihood of data as function of A_v:
-		// L(data|parameters) = f(A_v) + const-of-A_v
-		// f(A_v) is the Equation 13
-		// this function should return f(A_v) when A_v = x, means this function
-		// return f(x)
-		// In the code below, "currUser.authorities" should be replaced by x
-
 		// Refer to Eqn 13 in Learning paper
+		
 		double followerLikelihood = 0;
 		double nonFollowerLikelihood = 0;
 		double postLikelihood = 0;
@@ -313,11 +300,8 @@ public class CTLR {
 			postLikelihood += Math.pow((Math.log(x[k]) - currUser.topicalInterests[k]), 2) / (2 * Math.pow(sigma, 2));
 		}
 
-		//likelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
-		//likelihood = nonFollowerLikelihood;
-		//likelihood = followerLikelihood;
-		likelihood = postLikelihood;
-
+		likelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
+		
 		return likelihood;
 	}
 
@@ -333,6 +317,7 @@ public class CTLR {
 	 */
 	private double gradLikelihood_authority(int v, int k, double x) {
 		// Refer to Eqn 15 in Learning paper
+		
 		double followerLikelihood = 0;
 		double nonFollowerLikelihood = 0;
 		double postLikelihood = 0;
@@ -357,7 +342,6 @@ public class CTLR {
 					}
 				}
 				nonFollowerLikelihood += -nonFollower.hubs[k] - 1/(Math.exp(-HuAv)+1) * Math.exp(-HuAv) * -nonFollower.hubs[k];
-		
 			}
 		}
 
@@ -378,16 +362,12 @@ public class CTLR {
 				}
 				followerLikelihood += ((1/(1-Math.exp(-HuAv))) * -Math.exp(-HuAv) * -follower.hubs[k]) - 
 						((1/(Math.exp(-HuAv)+1)) * Math.exp(-HuAv) * -follower.hubs[k]);
-				
 			}
 		}
 
 		postLikelihood = ((Math.log(x) - currUser.topicalInterests[k]) / Math.pow(sigma, 2)) * (1 / x);
 
-		//gradLikelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
-		//gradLikelihood = nonFollowerLikelihood;
-		//gradLikelihood = followerLikelihood;
-		gradLikelihood = postLikelihood;
+		gradLikelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
 		
 		return gradLikelihood;
 	}
@@ -398,9 +378,6 @@ public class CTLR {
 	 * @param u
 	 */
 	private void altOptimize_Authorities(int u) {
-		// the following code is just a draft, to be corrected.
-		// will need more checking, but roughly the gradient descent
-		// for learning A_u consists of the following main steps
 		double[] grad = new double[nTopics];
 		double[] currentX = dataset.users[u].authorities;
 		double[] x = new double[nTopics];
@@ -432,6 +409,7 @@ public class CTLR {
 	 */
 	private double getLikelihood_hub(int u, double[] x) {
 		// Refer to Eqn 17 in Learning paper
+		
 		double followingLikelihood = 0;
 		double nonFollowingLikelihood = 0;
 		double postLikelihood = 0;
@@ -489,11 +467,8 @@ public class CTLR {
 			postLikelihood += Math.pow(Math.log(x[k]) - currUser.topicalInterests[k], 2) / (2 * Math.pow(delta, 2));
 		}
 
-		//likelihood = nonFollowingLikelihood + followingLikelihood - postLikelihood;
-		//likelihood = followingLikelihood;
-		//likelihood = nonFollowingLikelihood;
-		likelihood = postLikelihood;
-
+		likelihood = nonFollowingLikelihood + followingLikelihood - postLikelihood;
+		
 		return likelihood;
 	}
 
@@ -509,6 +484,7 @@ public class CTLR {
 	 */
 	private double gradLikelihood_hub(int u, int k, double x) {
 		// Refer to Eqn 19 in Learning paper
+		
 		double followingLikelihood = 0;
 		double nonFollowingLikelihood = 0;
 		double postLikelihood = 0;
@@ -537,7 +513,6 @@ public class CTLR {
 						}
 					}
 					nonFollowingLikelihood += -nonFollowing.authorities[k] - 1/(Math.exp(-HuAv)+1) * Math.exp(-HuAv) * -nonFollowing.authorities[k];
-
 				}
 			}
 		}
@@ -564,18 +539,14 @@ public class CTLR {
 					
 					followingLikelihood += ((1/(1-Math.exp(-HuAv))) * -Math.exp(-HuAv) * -following.authorities[k]) - 
 							((1/(Math.exp(-HuAv)+1)) * Math.exp(-HuAv) * -following.authorities[k]);
-
 				}
 			}
 		}
 
 		postLikelihood = ((Math.log(x) - currUser.topicalInterests[k]) / Math.pow(delta, 2)) * (1 / x);
 
-		//gradLikelihood = nonFollowingLikelihood + followingLikelihood - postLikelihood;
-		//gradLikelihood = followingLikelihood;
-		//gradLikelihood = nonFollowingLikelihood;
-		gradLikelihood = postLikelihood;
-
+		gradLikelihood = nonFollowingLikelihood + followingLikelihood - postLikelihood;
+		
 		return gradLikelihood;
 	}
 
@@ -710,8 +681,8 @@ public class CTLR {
 		alpha = 0.5;
 		beta = 0.5;
 		gamma = 2;
-		sigma = 0.1;
-		delta = 0.1;
+		sigma = 2;
+		delta = 2;
 
 		rand = new Random();
 		// initialize the count variables
@@ -800,10 +771,6 @@ public class CTLR {
 	public void gradCheck_TopicalInterest(int u, int k) {
 		double DELTA = 1;
 		Random rand = new Random(System.currentTimeMillis());
-		//double[] x = new double[nTopics];
-		//for (int z = 0; z < nTopics; z++) {
-		//	x[z] = rand.nextDouble();
-		//}
 		
 		double[] x = dataset.users[u].topicalInterests;
 
@@ -834,10 +801,6 @@ public class CTLR {
 	public void gradCheck_Authority(int v, int k) {
 		double DELTA = 1;
 		Random rand = new Random(System.currentTimeMillis());
-		//double[] x = new double[nTopics];
-		//for (int z = 0; z < nTopics; z++) {
-		//	x[z] = rand.nextDouble();
-		//}
 		
 		double[] x = dataset.users[v].authorities;
 
@@ -868,10 +831,6 @@ public class CTLR {
 	public void gradCheck_Hub(int u, int k) {
 		double DELTA = 1;
 		Random rand = new Random(System.currentTimeMillis());
-		//double[] x = new double[nTopics];
-		//for (int z = 0; z < nTopics; z++) {
-		//	x[z] = rand.nextDouble();
-		//}
 		
 		double[] x = dataset.users[u].hubs;
 
