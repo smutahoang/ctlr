@@ -100,7 +100,7 @@ public class Synthetic {
 
 	private int genLink(int nTopics, double[] userAuthority, double[] userHub) {
 		double p = MathTool.normalizationFunction(MathTool.dotProduct(nTopics, userAuthority, userHub));
-		System.out.println("p = " + p);
+		//System.out.println("p = " + p);
 		Random rand = new Random(System.currentTimeMillis());
 		if (rand.nextDouble() < p) {
 			return 1;
@@ -129,7 +129,7 @@ public class Synthetic {
 
 	private void saveUsers(int nUsers, String outputPath) {
 		try {
-			BufferedWriter bw = new BufferedWriter(new FileWriter(String.format("%s/users.csv", outputPath)));
+			BufferedWriter bw = new BufferedWriter(new FileWriter(String.format("%s/syn_users.csv", outputPath)));
 			for (int u = 0; u < nUsers; u++) {
 				bw.write(String.format("%d,user_%d\n", u, u));
 			}
@@ -142,7 +142,7 @@ public class Synthetic {
 
 	private void saveWords(int nWords, String outputPath) {
 		try {
-			BufferedWriter bw = new BufferedWriter(new FileWriter(String.format("%s/vocabulary.csv", outputPath)));
+			BufferedWriter bw = new BufferedWriter(new FileWriter(String.format("%s/syn_vocabulary.csv", outputPath)));
 			for (int w = 0; w < nWords; w++) {
 				bw.write(String.format("%d,word_%d\n", w, w));
 			}
@@ -156,27 +156,27 @@ public class Synthetic {
 	private void genAndsaveTweet(String outputpath, int nUsers, int nTopics, double[][] userInterest,
 			double[][] topics) {
 		try {
-			File file = new File(String.format("%s/posts", outputpath));
-			if (!file.exists()) {
-				file.mkdir();
-			}
+			//File file = new File(String.format("%s/posts", outputpath));
+			//if (!file.exists()) {
+			//	file.mkdir();
+			//}
 			
 			int nPosts = 0;
 			Random rand = new Random(System.currentTimeMillis());
+			BufferedWriter bw = new BufferedWriter(new FileWriter(String.format("%s/syn_posts.csv", outputpath)));
 			for (int u = 0; u < nUsers; u++) {
-				BufferedWriter bw = new BufferedWriter(new FileWriter(String.format("%s/posts/%d.csv", outputpath, u)));
 				int n = rand.nextInt(maxNPosts - minNPosts) + minNPosts;
 				for (int i = 0; i < n; i++) {
 					int[] post = genPost(userInterest[u], topics);
-					bw.write(nPosts + ",");
+					bw.write(nPosts + "," + u + ",");
 					for (int j = 0; j < post.length; j++) {
 						bw.write(" "+post[j]);
 					}
 					bw.newLine();
 					nPosts++;
-				}
-				bw.close();
+				}	
 			}
+			bw.close();
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -188,26 +188,26 @@ public class Synthetic {
 			double[][] userHubs) {
 		try {
 			HashMap<Integer, HashSet<Integer>> followings = genNetwork(nUsers, nTopics, userAuthorities, userHubs);
-			File file = new File(String.format("%s/followings", outputpath));
-			if (!file.exists()) {
-				file.mkdir();
-			}
+			//File file = new File(String.format("%s/followings", outputpath));
+			//if (!file.exists()) {
+			//	file.mkdir();
+			//}
 
-			Random rand = new Random(System.currentTimeMillis());
+			BufferedWriter bw = new BufferedWriter(
+					new FileWriter(String.format("%s/syn_relationships.csv", outputpath)));
 			for (int u = 0; u < nUsers; u++) {
 				if (!followings.containsKey(u)) {
 					continue;
 				}
-				BufferedWriter bw = new BufferedWriter(
-						new FileWriter(String.format("%s/followings/%d.csv", outputpath, u)));
 				Iterator<Integer> vIter = followings.get(u).iterator();
 				while (vIter.hasNext()) {
 					int v = vIter.next();
-					int batch = rand.nextInt(10);
-					bw.write(String.format("%d\n", v));
+					bw.write(u+","+v);
+					bw.newLine();
+					System.out.println(u+","+v);
 				}
-				bw.close();
 			}
+			bw.close();
 
 		} catch (Exception e) {
 			e.printStackTrace();
