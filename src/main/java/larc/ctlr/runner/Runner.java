@@ -27,6 +27,14 @@ public class Runner {
 			//model.gradCheck_TopicalInterest(5, k);
 		}
 	}
+	
+	static void altOptCheck(String datasetPath, int nTopics, int batch) {
+		larc.ctlr.model.CTLR model = new CTLR(datasetPath, nTopics, batch);
+		model.init();
+		//model.altCheck_TopicalInterest(5);
+		model.altCheck_Authority(5);
+		//model.altCheck_Hub(5);
+	}
 
 	public static void main(String[] args) {
 		
@@ -47,6 +55,11 @@ public class Runner {
 				int nTopics = Integer.parseInt(args[2]);
 				int batch = Integer.parseInt(args[3]);
 				gradCheck(datasetPath, nTopics, batch);
+			} else if (args[0].equals("altCheck")){
+				String datasetPath = args[1];
+				int nTopics = Integer.parseInt(args[2]);
+				int batch = Integer.parseInt(args[3]);
+				altOptCheck(datasetPath, nTopics, batch);
 			}else {
 				System.out.printf("%s is not an option!!!");
 			}

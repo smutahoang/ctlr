@@ -39,13 +39,13 @@ public class CTLR {
 
 	// options for learning
 
-	public double learning_rate_topicalInterest = 0.01;
+	public double learning_rate_topicalInterest = 0.001;
 	public int maxIteration_topicalInterest = 10;
 
-	public double learning_rate_authorities = 0.01;
+	public double learning_rate_authorities = 0.001;
 	public int maxIteration_Authorities = 10;
 
-	public double learning_rate_hubs = 0.01;
+	public double learning_rate_hubs = 0.001;
 	public int maxIteration_Hubs = 10;
 
 	public int max_GibbsEM_Iterations = 100;
@@ -240,6 +240,8 @@ public class CTLR {
 					currentX[k] = x[k];
 				}
 			}
+			//to see if F actually reduce after every iteration
+			System.out.printf("alt_topic: u = %d iter = %d f = %f\n", u, iter, f);
 		}
 	}
 
@@ -395,6 +397,8 @@ public class CTLR {
 					currentX[k] = x[k];
 				}
 			}
+			//to see if F actually reduce after every iteration
+			System.out.printf("alt_topic: u = %d iter = %d f = %f\n", u, iter, f);
 		}
 	}
 
@@ -576,6 +580,8 @@ public class CTLR {
 					currentX[k] = x[k];
 				}
 			}
+			//to see if F actually reduce after every iteration
+			System.out.printf("alt_topic: u = %d iter = %d f = %f\n", u, iter, f);
 		}
 	}
 
@@ -756,7 +762,7 @@ public class CTLR {
 					}
 				}
 			}
-			// tracking
+			// Check that the likelihood increase 
 			System.out.printf("likelihood after %d steps: %f", iter, getLikelihood());
 		}
 	}
@@ -851,4 +857,16 @@ public class CTLR {
 		}
 	}
 
+	public void altCheck_TopicalInterest(int u) {
+		altOptimize_topicalInterest(u);
+	}
+	
+	public void altCheck_Authority(int u){
+		altOptimize_Authorities(u);
+	}
+	
+	public void altCheck_Hub(int u) {
+		altOptimize_Hubs(u);
+	}
+		
 }

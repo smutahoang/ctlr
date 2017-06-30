@@ -31,8 +31,8 @@ public class Dataset {
 		loadUsers(path+"users.csv", nTopics);
 		loadPosts(path+"posts.csv");
 		loadVocabulary(path+"vocabulary.csv");
-		loadRelationship(path+"relationship.csv");
-		loadNonRelationship(path+"nonrelationship.csv");
+		loadRelationship(path+"relationships.csv");
+		loadNonRelationship(path+"nonrelationships.csv");
 		//loadFollowers(path+"followers/");
 		//loadFollowings(path+"followings/");
 		//loadNonFollowers(path+"nonfollowers/");
@@ -98,8 +98,9 @@ public class Dataset {
 			File file = new File(filename);
 			
 			// Get total number of users' posts
+			
+			
 			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
-			while (br.readLine() != null) {
 				while ((line = br.readLine()) != null) {
 					sc = new Scanner(line.toString());
 					sc.useDelimiter(",");
@@ -111,23 +112,29 @@ public class Dataset {
 						int user_index = userId2Index.get(userId);
 						// update post count
 						if (postCounts.containsKey(user_index)){
-							int count = 1;
-							postCounts.put(user_index, count);
-						} else{
 							int count = postCounts.get(user_index)+1;
 							postCounts.put(user_index, count);
+							//if (user_index ==0){
+							//	System.out.println(postId);
+							//}
+							
+						} else{
+							if (user_index ==0){
+								System.out.println(postId);
+							}
+							postCounts.put(user_index, 1);
 						}
 					}
 				}
-			}
+			
 			br.close();
 			
 			//initalize the users'post arrays
 			for (int u=0; u<nUsers;u++){
 				if (postCounts.containsKey(u)){
 					users[u].nPosts = postCounts.get(u);
-					users[u].posts = new Post [postCounts.get(u)];
-					users[u].postBatches = new int [postCounts.get(u)];
+					users[u].posts = new Post[postCounts.get(u)];
+					users[u].postBatches = new int[postCounts.get(u)];
 				}
 			}
 			
@@ -143,12 +150,15 @@ public class Dataset {
 					String words = sc.next().trim();
 					int batch = sc.nextInt();
 					int user_index = userId2Index.get(userId);
-					users[user_index].postBatches[postCounts.get(user_index)-1] = batch;
+					
+					//System.out.println(postCounts.get(user_index));
+					users[user_index].postBatches[users[user_index].postBatches.length - postCounts.get(user_index)] = batch;
 					String[] tokens = words.toString().split(" ");
-					users[user_index].posts[postCounts.get(user_index)-1].nWords = tokens.length;
-					users[user_index].posts[postCounts.get(user_index)-1].words = new int[tokens.length];
+					users[user_index].posts[users[user_index].nPosts  - postCounts.get(user_index)] = new Post();
+					users[user_index].posts[users[user_index].nPosts  - postCounts.get(user_index)].nWords = tokens.length;
+					users[user_index].posts[users[user_index].nPosts  - postCounts.get(user_index)].words = new int[tokens.length];
 					for (int i = 0; i < tokens.length; i++) {
-						users[user_index].posts[postCounts.get(user_index)-1].words[i] = Integer.parseInt(tokens[i]);
+						users[user_index].posts[users[user_index].nPosts  - postCounts.get(user_index)].words[i] = Integer.parseInt(tokens[i]);
 					}
 					
 					int updatePostCount = postCounts.get(user_index)-1;
@@ -209,7 +219,6 @@ public class Dataset {
 			
 			// Get total number of users' followers and following
 			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
-			while (br.readLine() != null) {
 				while ((line = br.readLine()) != null) {
 					sc = new Scanner(line.toString());
 					sc.useDelimiter(",");
@@ -221,23 +230,22 @@ public class Dataset {
 						int des_user_index = userId2Index.get(des_user);
 						// update follower count
 						if (followerCounts.containsKey(des_user_index)){
-							int count = 1;
+							int count = followerCounts.get(des_user_index)+1;
 							followerCounts.put(des_user_index, count);
 						} else{
-							int count = followerCounts.get(des_user_index)+1;
+							int count = 1;
 							followerCounts.put(des_user_index, count);
 						}
 						// update following count
 						if (followingCounts.containsKey(src_user_index)){
-							int count = 1;
+							int count = followingCounts.get(src_user_index)+1;
 							followingCounts.put(src_user_index, count);
 						} else{
-							int count = followingCounts.get(src_user_index)+1;
+							int count = 1;
 							followingCounts.put(src_user_index, count);
 						}
 					}
 				}
-			}
 			br.close();
 			
 			//initalize the users' follower and following arrays
@@ -263,9 +271,9 @@ public class Dataset {
 					int batch = sc.nextInt();
 					int src_user_index = userId2Index.get(src_user);
 					int des_user_index = userId2Index.get(des_user);
-					users[des_user_index].followers[followerCounts.get(des_user_index)-1] = src_user_index;
-					users[src_user_index].followings[followingCounts.get(src_user_index)-1] = des_user_index;
-					users[src_user_index].followingBatches[followingCounts.get(src_user_index)-1] = batch;
+					users[des_user_index].followers[users[des_user_index].followers.length - followerCounts.get(des_user_index)] = src_user_index;
+					users[src_user_index].followings[users[src_user_index].followings.length - followingCounts.get(src_user_index)] = des_user_index;
+					users[src_user_index].followingBatches[users[src_user_index].followingBatches.length - followingCounts.get(src_user_index)] = batch;
 					int updateFollowerCount = followerCounts.get(des_user_index)-1;
 					int updateFollowingCount = followingCounts.get(src_user_index)-1;
 					followerCounts.put(des_user_index, updateFollowerCount);
@@ -293,7 +301,6 @@ public class Dataset {
 			
 			// Get total number of users' followers and following
 			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
-			while (br.readLine() != null) {
 				while ((line = br.readLine()) != null) {
 					sc = new Scanner(line.toString());
 					sc.useDelimiter(",");
@@ -305,23 +312,23 @@ public class Dataset {
 						int des_user_index = userId2Index.get(des_user);
 						// update follower count
 						if (followerNonCounts.containsKey(des_user_index)){
-							int count = 1;
+							int count = followerNonCounts.get(des_user_index)+1;
 							followerNonCounts.put(des_user_index, count);
 						} else{
-							int count = followerNonCounts.get(des_user_index)+1;
+							int count = 1;
 							followerNonCounts.put(des_user_index, count);
 						}
 						// update following count
 						if (followingNonCounts.containsKey(src_user_index)){
-							int count = 1;
+							int count = followingNonCounts.get(src_user_index)+1;
 							followingNonCounts.put(src_user_index, count);
 						} else{
-							int count = followingNonCounts.get(src_user_index)+1;
+							int count = 1;
 							followingNonCounts.put(src_user_index, count);
 						}
 					}
 				}
-			}
+			
 			br.close();
 			
 			//initalize the users' follower and following arrays
@@ -347,9 +354,9 @@ public class Dataset {
 					int batch = sc.nextInt();
 					int src_user_index = userId2Index.get(src_user);
 					int des_user_index = userId2Index.get(des_user);
-					users[des_user_index].nonFollowers[followerNonCounts.get(des_user_index)-1] = src_user_index;
-					users[src_user_index].nonFollowings[followingNonCounts.get(src_user_index)-1] = des_user_index;
-					users[src_user_index].nonFollowingBatches[followingNonCounts.get(src_user_index)-1] = batch;
+					users[des_user_index].nonFollowers[users[des_user_index].nonFollowers.length - followerNonCounts.get(des_user_index)] = src_user_index;
+					users[src_user_index].nonFollowings[users[src_user_index].nonFollowings.length - followingNonCounts.get(src_user_index)] = des_user_index;
+					users[src_user_index].nonFollowingBatches[users[src_user_index].nonFollowingBatches.length-followingNonCounts.get(src_user_index)] = batch;
 					int updateNonFollowerCount = followerNonCounts.get(des_user_index)-1;
 					int updateNonFollowingCount = followingNonCounts.get(src_user_index)-1;
 					followerNonCounts.put(des_user_index, updateNonFollowerCount);
