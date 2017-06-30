@@ -398,7 +398,7 @@ public class CTLR {
 				}
 			}
 			//to see if F actually reduce after every iteration
-			System.out.printf("alt_topic: u = %d iter = %d f = %f\n", u, iter, f);
+			System.out.printf("alt_authority: u = %d iter = %d f = %f\n", u, iter, f);
 		}
 	}
 
@@ -581,7 +581,7 @@ public class CTLR {
 				}
 			}
 			//to see if F actually reduce after every iteration
-			System.out.printf("alt_topic: u = %d iter = %d f = %f\n", u, iter, f);
+			System.out.printf("alt_hub: u = %d iter = %d f = %f\n", u, iter, f);
 		}
 	}
 
