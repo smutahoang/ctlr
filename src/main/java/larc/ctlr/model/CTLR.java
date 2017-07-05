@@ -2,6 +2,8 @@ package larc.ctlr.model;
 
 import java.util.Arrays;
 import java.util.Random;
+import org.apache.commons.math3.*;
+import org.apache.commons.math3.distribution.NormalDistribution;
 
 public class CTLR {
 	public Dataset dataset;
@@ -15,6 +17,7 @@ public class CTLR {
 	public double sigma;// variance of users' authorities
 	public double delta;// variance of users' hubs
 	public double gamma; // variance of topic word distribution
+	public double epsilon = 0.000001;
 
 	public Random rand;
 
@@ -42,7 +45,7 @@ public class CTLR {
 	public double learning_rate_topicalInterest = 0.001;
 	public int maxIteration_topicalInterest = 10;
 
-	public double learning_rate_authorities = 0.001;
+	public double learning_rate_authorities = 0.1;
 	public int maxIteration_Authorities = 10;
 
 	public double learning_rate_hubs = 0.001;
@@ -384,13 +387,20 @@ public class CTLR {
 		double[] currentX = dataset.users[u].authorities;
 		double[] x = new double[nTopics];
 		double currentF = getLikelihood_authority(u, currentX);
-
+		//System.out.println(currentF); //This is a very big negative number
 		for (int iter = 0; iter < maxIteration_Authorities; iter++) {
 			for (int k = 0; k < nTopics; k++) {
+				System.out.println(currentX[k]); //This number is very small (less than 1)
 				grad[k] = gradLikelihood_authority(u, k, currentX[k]);
-				x[k] = currentX[k] - learning_rate_authorities * grad[k];
+				x[k] = currentX[k] - (learning_rate_authorities * grad[k]);
+				//x[k] is non negative
+				if (x[k]<epsilon){
+					x[k] = epsilon;
+				}
+				System.out.println(grad[k]); //After gradLikehood, not the number become a very big negative number
 			}
 			double f = getLikelihood_authority(u, x);
+			//System.out.println(f); // This figure is NaN
 			if (f < currentF) {
 				currentF = f;
 				for (int k = 0; k < nTopics; k++) {
@@ -571,7 +581,7 @@ public class CTLR {
 		for (int iter = 0; iter < maxIteration_Hubs; iter++) {
 			for (int k = 0; k < nTopics; k++) {
 				grad[k] = gradLikelihood_hub(u, k, currentX[k]);
-				x[k] = currentX[k] - learning_rate_hubs * grad[k];
+				x[k] = currentX[k] - (learning_rate_hubs * grad[k]);
 			}
 			double f = getLikelihood_hub(u, x);
 			if (f < currentF) {
@@ -726,8 +736,10 @@ public class CTLR {
 		for (int u = 0; u < dataset.nUsers; u++) {
 			User currUser = dataset.users[u];
 			for (int k = 0; k < nTopics; k++) {
-				currUser.authorities[k] = currUser.topicalInterests[k] * rand.nextDouble();
-				currUser.hubs[k] = currUser.topicalInterests[k] * rand.nextDouble();
+				NormalDistribution g = new NormalDistribution(currUser.topicalInterests[k], sigma);
+				currUser.authorities[k] = Math.exp(g.sample());
+				currUser.hubs[k] = Math.exp(g.sample());
+				
 			}
 		}
 
