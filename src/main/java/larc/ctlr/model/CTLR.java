@@ -45,7 +45,7 @@ public class CTLR {
 	public double learning_rate_topicalInterest = 0.001;
 	public int maxIteration_topicalInterest = 10;
 
-	public double learning_rate_authorities = 0.1;
+	public double learning_rate_authorities = 0.001;
 	public int maxIteration_Authorities = 10;
 
 	public double learning_rate_hubs = 0.001;
@@ -279,7 +279,9 @@ public class CTLR {
 				for (int z = 0; z < nTopics; z++) {
 					HuAv += nonFollower.hubs[z] * x[z];// now A_v is x
 				}
+				System.out.println("HuAv:"+HuAv);
 				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
+				System.out.println("fHuAv:"+fHuAv);
 				nonFollowerLikelihood += Math.log(1 - fHuAv);
 			}
 		}
@@ -306,6 +308,11 @@ public class CTLR {
 		}
 
 		likelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
+		System.out.println("Num of Non Followers:" + currUser.nonFollowers.length);
+		System.out.println("NonFollowersLikelihood:" + nonFollowerLikelihood);
+		System.out.println("Num of Followers:" + currUser.followers.length);
+		System.out.println("FollowerLikelihood:" + followerLikelihood);
+		System.out.println("PostLikelihood:" + postLikelihood);
 		
 		return likelihood;
 	}
@@ -390,14 +397,14 @@ public class CTLR {
 		//System.out.println(currentF); //This is a very big negative number
 		for (int iter = 0; iter < maxIteration_Authorities; iter++) {
 			for (int k = 0; k < nTopics; k++) {
-				System.out.println(currentX[k]); //This number is very small (less than 1)
+				//System.out.println(currentX[k]); //This number is very small (less than 1)
 				grad[k] = gradLikelihood_authority(u, k, currentX[k]);
 				x[k] = currentX[k] - (learning_rate_authorities * grad[k]);
 				//x[k] is non negative
 				if (x[k]<epsilon){
 					x[k] = epsilon;
 				}
-				System.out.println(grad[k]); //After gradLikehood, not the number become a very big negative number
+				//System.out.println(x[k]); //After gradLikehood, not the number become a very big negative number
 			}
 			double f = getLikelihood_authority(u, x);
 			//System.out.println(f); // This figure is NaN
