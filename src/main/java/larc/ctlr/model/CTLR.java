@@ -18,6 +18,7 @@ public class CTLR {
 	public double delta;// variance of users' hubs
 	public double gamma; // variance of topic word distribution
 	public double epsilon = 0.000001;
+	public double lamda = 0.001;
 
 	public Random rand;
 
@@ -104,11 +105,11 @@ public class CTLR {
 		User currUser = dataset.users[u];
 
 		for (int k = 0; k < nTopics; k++) {
-			authorityLikelihood += -Math.pow((Math.log(currUser.authorities[k]) - x[k]), 2) / (2 * Math.pow(delta, 2));
+			authorityLikelihood += -Math.pow((Math.log(lamda*currUser.authorities[k]) - x[k]), 2) / (2 * Math.pow(delta, 2));
 		}
 
 		for (int k = 0; k < nTopics; k++) {
-			hubLikelihood += -Math.pow((Math.log(currUser.hubs[k]) - x[k]), 2) / (2 * Math.pow(sigma, 2));
+			hubLikelihood += -Math.pow((Math.log(lamda*currUser.hubs[k]) - x[k]), 2) / (2 * Math.pow(sigma, 2));
 		}
 
 		for (int i = 0; i < currUser.nPosts; i++) {
@@ -149,9 +150,9 @@ public class CTLR {
 		// Set the current user to be u
 		User currUser = dataset.users[u];
 
-		authorityLikelihood = ((Math.log(currUser.authorities[k]) - x) / Math.pow(delta, 2));
+		authorityLikelihood = ((Math.log(lamda*currUser.authorities[k]) - x) / Math.pow(delta, 2));
 
-		hubLikelihood = ((Math.log(currUser.hubs[k]) - x) / Math.pow(sigma, 2));
+		hubLikelihood = ((Math.log(lamda*currUser.hubs[k]) - x) / Math.pow(sigma, 2));
 
 		for (int i = 0; i < currUser.nPosts; i++) {
 			// Only compute post likelihood of posts which are in batch
@@ -160,7 +161,7 @@ public class CTLR {
 				// Only consider posts which are assigned topic k (i.e. z_{v,s}
 				// = k)
 				if (currUser.posts[i].topic == k) {
-					postLikelihood += (1 + (Math.pow(alpha, -1) / x));
+					postLikelihood += (1 + ((alpha -1) / x));
 				}
 			}
 		}
@@ -279,9 +280,10 @@ public class CTLR {
 				for (int z = 0; z < nTopics; z++) {
 					HuAv += nonFollower.hubs[z] * x[z];// now A_v is x
 				}
-				System.out.println("HuAv:"+HuAv);
+				HuAv = HuAv*lamda;
+				//System.out.println("HuAv:"+HuAv);
 				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-				System.out.println("fHuAv:"+fHuAv);
+				//System.out.println("fHuAv:"+fHuAv);
 				nonFollowerLikelihood += Math.log(1 - fHuAv);
 			}
 		}
@@ -297,6 +299,7 @@ public class CTLR {
 				for (int z = 0; z < nTopics; z++) {
 					HuAv += follower.hubs[z] * x[z];// now A_v is x
 				}
+				HuAv = HuAv*lamda;
 				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
 				followerLikelihood += Math.log(fHuAv);
 			}
@@ -308,11 +311,11 @@ public class CTLR {
 		}
 
 		likelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
-		System.out.println("Num of Non Followers:" + currUser.nonFollowers.length);
-		System.out.println("NonFollowersLikelihood:" + nonFollowerLikelihood);
-		System.out.println("Num of Followers:" + currUser.followers.length);
-		System.out.println("FollowerLikelihood:" + followerLikelihood);
-		System.out.println("PostLikelihood:" + postLikelihood);
+		//System.out.println("Num of Non Followers:" + currUser.nonFollowers.length);
+		//System.out.println("NonFollowersLikelihood:" + nonFollowerLikelihood);
+		//System.out.println("Num of Followers:" + currUser.followers.length);
+		//System.out.println("FollowerLikelihood:" + followerLikelihood);
+		//System.out.println("PostLikelihood:" + postLikelihood);
 		
 		return likelihood;
 	}
@@ -353,7 +356,8 @@ public class CTLR {
 						HuAv += nonFollower.hubs[z] * currUser.authorities[z];
 					}
 				}
-				nonFollowerLikelihood += -nonFollower.hubs[k] - 1/(Math.exp(-HuAv)+1) * Math.exp(-HuAv) * -nonFollower.hubs[k];
+				HuAv = HuAv*lamda;
+				nonFollowerLikelihood += -(lamda*nonFollower.hubs[k]) - 1/(Math.exp(-HuAv)+1) * Math.exp(-HuAv) * -(lamda*nonFollower.hubs[k]);
 			}
 		}
 
@@ -372,8 +376,9 @@ public class CTLR {
 						HuAv += follower.hubs[z] * currUser.authorities[z];
 					}
 				}
-				followerLikelihood += ((1/(1-Math.exp(-HuAv))) * -Math.exp(-HuAv) * -follower.hubs[k]) - 
-						((1/(Math.exp(-HuAv)+1)) * Math.exp(-HuAv) * -follower.hubs[k]);
+				HuAv = HuAv*lamda;
+				followerLikelihood += ((1/(1-Math.exp(-HuAv))) * -Math.exp(-HuAv) * -(lamda*follower.hubs[k])) - 
+						((1/(Math.exp(-HuAv)+1)) * Math.exp(-HuAv) * -(lamda*follower.hubs[k]));
 			}
 		}
 
@@ -454,6 +459,7 @@ public class CTLR {
 					for (int z = 0; z < nTopics; z++) {
 						HuAv += x[z] * nonFollowing.authorities[z];
 					}
+					HuAv = HuAv * lamda;
 					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
 					nonFollowingLikelihood += Math.log(1.0 - fHuAv);
 					;
@@ -476,6 +482,7 @@ public class CTLR {
 					for (int z = 0; z < nTopics; z++) {
 						HuAv += x[z] * following.authorities[z];
 					}
+					HuAv = HuAv * lamda;
 					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
 					followingLikelihood += Math.log(fHuAv);
 					;
@@ -533,7 +540,9 @@ public class CTLR {
 							HuAv += currUser.hubs[z] * nonFollowing.authorities[z];
 						}
 					}
-					nonFollowingLikelihood += -nonFollowing.authorities[k] - 1/(Math.exp(-HuAv)+1) * Math.exp(-HuAv) * -nonFollowing.authorities[k];
+					HuAv = HuAv * lamda;
+					nonFollowingLikelihood += -(lamda*nonFollowing.authorities[k]) - 1/(Math.exp(-HuAv)+1) * Math.exp(-HuAv) 
+							* -(lamda*nonFollowing.authorities[k]);
 				}
 			}
 		}
@@ -557,9 +566,9 @@ public class CTLR {
 							HuAv += currUser.hubs[z] * following.authorities[z];
 						}
 					}
-					
-					followingLikelihood += ((1/(1-Math.exp(-HuAv))) * -Math.exp(-HuAv) * -following.authorities[k]) - 
-							((1/(Math.exp(-HuAv)+1)) * Math.exp(-HuAv) * -following.authorities[k]);
+					HuAv = HuAv * lamda;
+					followingLikelihood += ((1/(1-Math.exp(-HuAv))) * -Math.exp(-HuAv) * -(lamda*following.authorities[k])) - 
+							((1/(Math.exp(-HuAv)+1)) * Math.exp(-HuAv) * -(lamda*following.authorities[k]));
 				}
 			}
 		}
