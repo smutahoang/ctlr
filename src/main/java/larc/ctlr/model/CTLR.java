@@ -713,8 +713,8 @@ public class CTLR {
 		alpha = 0.5;
 		beta = 0.5;
 		gamma = 2;
-		sigma = 2;
-		delta = 2;
+		sigma = 0.2;
+		delta = 0.2;
 
 		rand = new Random();
 		// initialize the count variables
