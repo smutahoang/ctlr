@@ -81,6 +81,104 @@ public class CTLR {
 		// L(link)
 		// value can be more than 1
 		// eqn 1 + 4
+		
+		double linkLikelihood = 0;
+		double linkRelationshipLikelihood = 0;
+		double linkAuthorityLikelihood = 0;
+		double linkHubLikelihood = 0;
+		double postLikelihood = 0;
+		double postWordLikelihood = 0;
+		double postTopicLikelihood = 0;
+		double postThetaLikelihood = 0;
+		double postTauLikelihood = 0;
+		
+		for (int u=0;u<dataset.nUsers;u++){
+			User currUser = dataset.users[u];
+			
+			if (currUser.nonFollowers != null) {
+				for (int i = 0; i < currUser.nonFollowers.length; i++) {
+					int v = currUser.nonFollowers[i];
+					User nonFollower = dataset.users[v];
+					
+					// Compute H_u * A_v
+					double HuAv = 0;
+					for (int z = 0; z < nTopics; z++) {
+						HuAv += nonFollower.hubs[z] * currUser.authorities[z];
+					}
+					HuAv = HuAv*lamda;
+					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
+					linkRelationshipLikelihood += Math.log(1 - fHuAv);
+				}
+			}
+
+			if (currUser.followers != null) {
+				for (int i = 0; i < currUser.followers.length; i++) {
+					int v = currUser.followers[i];
+					User follower = dataset.users[v];
+
+					// Compute H_u * A_v
+					double HuAv = 0;
+					for (int z = 0; z < nTopics; z++) {
+						HuAv += follower.hubs[z] * currUser.authorities[z];
+					}
+					HuAv = HuAv*lamda;
+					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
+					linkRelationshipLikelihood += Math.log(fHuAv);
+				}
+			}
+			
+			if (currUser.nonFollowings != null) {
+				for (int i = 0; i < currUser.nonFollowings.length; i++) {
+					// Only compute likelihood of non followings which are in
+					// training
+					// batch (i.e. batch = 1)
+					if (currUser.nonFollowingBatches[i] == batch) {
+						int v = currUser.nonFollowings[i];
+						User nonFollowing = dataset.users[v];
+
+						// Compute H_u * A_v
+						double HuAv = 0;
+						for (int z = 0; z < nTopics; z++) {
+							HuAv += currUser.hubs[z] * nonFollowing.authorities[z];
+						}
+						HuAv = HuAv * lamda;
+						double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
+						linkRelationshipLikelihood += Math.log(1.0 - fHuAv);
+						;
+					}
+				}
+			}
+
+			// Compute following likelihood
+			if (currUser.followings != null) {
+				for (int i = 0; i < currUser.followings.length; i++) {
+					// Only compute likelihood of followings which are in training
+					// batch
+					// (i.e. batch = 1)
+					if (currUser.followingBatches[i] == 1) {
+						int v = currUser.followings[i];
+						User following = dataset.users[v];
+
+						// Compute H_u * A_v
+						double HuAv = 0;
+						for (int z = 0; z < nTopics; z++) {
+							HuAv += currUser.hubs[z] * following.authorities[z];
+						}
+						HuAv = HuAv * lamda;
+						double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
+						linkRelationshipLikelihood += Math.log(fHuAv);
+						;
+					}
+				}
+			}
+			
+			for (int k =0; k<nTopics;k++){
+				linkAuthorityLikelihood = (-Math.log(sigma) - (Math.pow(Math.log(currUser.authorities[k])-currUser.topicalInterests[k],2)/(2*Math.pow(sigma, 2))));
+				linkHubLikelihood = (-Math.log(delta) - (Math.pow(Math.log(currUser.hubs[k])-currUser.topicalInterests[k],2)/(2*Math.pow(delta, 2))));
+			}
+			
+		}
+		
 		return 0;
 	}
 
@@ -122,7 +220,7 @@ public class CTLR {
 		}
 
 		for (int k = 0; k < nTopics; k++) {
-			topicLikelihood += Math.pow(alpha, -1) * Math.log(x[k]);
+			topicLikelihood += (alpha -1) * Math.log(x[k]);
 		}
 		finalLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + topicLikelihood;
 		return finalLikelihood;
@@ -161,7 +259,7 @@ public class CTLR {
 				// Only consider posts which are assigned topic k (i.e. z_{v,s}
 				// = k)
 				if (currUser.posts[i].topic == k) {
-					postLikelihood += (1 + ((alpha -1) / x));
+					postLikelihood += 1 + ((alpha -1) / x);
 				}
 			}
 		}
@@ -710,9 +808,9 @@ public class CTLR {
 	 * initialize the data before training
 	 */
 	public void init() {
-		alpha = 0.5;
-		beta = 0.5;
-		gamma = 2;
+		alpha = 0.2;
+		beta = 0.2;
+		gamma = 0.2;
 		sigma = 0.2;
 		delta = 0.2;
 

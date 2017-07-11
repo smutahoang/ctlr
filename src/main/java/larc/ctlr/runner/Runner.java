@@ -23,16 +23,16 @@ public class Runner {
 		model.init();
 		for (int k=0; k < nTopics; k++){
 			//model.gradCheck_Authority(0, k);
-			model.gradCheck_Hub(65,k);
-			//model.gradCheck_TopicalInterest(5, k);
+			//model.gradCheck_Hub(5,k);
+			model.gradCheck_TopicalInterest(5, k);
 		}
 	}
 	
 	static void altOptCheck(String datasetPath, int nTopics, int batch) {
 		larc.ctlr.model.CTLR model = new CTLR(datasetPath, nTopics, batch);
 		model.init();
-		//model.altCheck_TopicalInterest(5);
-		model.altCheck_Authority(5);
+		model.altCheck_TopicalInterest(5);
+		//model.altCheck_Authority(5);
 		//model.altCheck_Hub(5);
 	}
 
