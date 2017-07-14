@@ -31,9 +31,15 @@ public class Runner {
 	static void altOptCheck(String datasetPath, int nTopics, int batch) {
 		larc.ctlr.model.CTLR model = new CTLR(datasetPath, nTopics, batch);
 		model.init();
-		model.altCheck_TopicalInterest(5);
-		//model.altCheck_Authority(5);
-		//model.altCheck_Hub(5);
+		model.altCheck_TopicalInterest(15);
+		model.altCheck_Authority(15);
+		model.altCheck_Hub(15);
+	}
+	
+	static void train(String datasetPath, int nTopics, int batch) {
+		larc.ctlr.model.CTLR model = new CTLR(datasetPath, nTopics, batch);
+		model.init();
+		model.train();
 	}
 
 	public static void main(String[] args) {
@@ -60,6 +66,11 @@ public class Runner {
 				int nTopics = Integer.parseInt(args[2]);
 				int batch = Integer.parseInt(args[3]);
 				altOptCheck(datasetPath, nTopics, batch);
+			} else if (args[0].equals("train")){
+				String datasetPath = args[1];
+				int nTopics = Integer.parseInt(args[2]);
+				int batch = Integer.parseInt(args[3]);
+				train(datasetPath, nTopics, batch);
 			}else {
 				System.out.printf("%s is not an option!!!");
 			}

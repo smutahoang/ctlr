@@ -155,7 +155,7 @@ public class CTLR {
 					// Only compute likelihood of followings which are in training
 					// batch
 					// (i.e. batch = 1)
-					if (currUser.followingBatches[i] == 1) {
+					if (currUser.followingBatches[i] == batch) {
 						int v = currUser.followings[i];
 						User following = dataset.users[v];
 
@@ -173,13 +173,38 @@ public class CTLR {
 			}
 			
 			for (int k =0; k<nTopics;k++){
-				linkAuthorityLikelihood = (-Math.log(sigma) - (Math.pow(Math.log(currUser.authorities[k])-currUser.topicalInterests[k],2)/(2*Math.pow(sigma, 2))));
-				linkHubLikelihood = (-Math.log(delta) - (Math.pow(Math.log(currUser.hubs[k])-currUser.topicalInterests[k],2)/(2*Math.pow(delta, 2))));
+				linkAuthorityLikelihood += (-Math.log(sigma) - (Math.pow(Math.log(currUser.authorities[k])-currUser.topicalInterests[k],2)/(2*Math.pow(sigma, 2))));
+				linkHubLikelihood += (-Math.log(delta) - (Math.pow(Math.log(currUser.hubs[k])-currUser.topicalInterests[k],2)/(2*Math.pow(delta, 2))));
 			}
 			
+			linkLikelihood += linkRelationshipLikelihood + linkAuthorityLikelihood + linkHubLikelihood;
+			
+			for (int s=0; s<currUser.nPosts;s++){
+				if (currUser.postBatches[s] == batch){
+					Post currPost = currUser.posts[s];
+					for (int w = 0; w < currPost.words.length; w++) {
+						int word = currPost.words[w];
+						postWordLikelihood += topicWordDist[word][currPost.topic];
+					}
+					postTopicLikelihood += currUser.topicalInterests[currPost.topic];
+				}
+			}
+			
+			for (int k =0; k<nTopics;k++){
+				postThetaLikelihood += (alpha - 1) * Math.log(currUser.topicalInterests[k]);
+			}
 		}
 		
-		return 0;
+		for (int k =0; k<nTopics;k++){
+			for (int w =0; w<dataset.vocabulary.length; w++){
+				postTauLikelihood += (gamma-1) * Math.log(topicWordDist[w][k]);
+			}
+		}
+		
+		postLikelihood = postWordLikelihood + postTopicLikelihood + postThetaLikelihood + postTauLikelihood;
+		
+		
+		return (linkLikelihood+ postLikelihood);
 	}
 
 	/***
@@ -203,11 +228,11 @@ public class CTLR {
 		User currUser = dataset.users[u];
 
 		for (int k = 0; k < nTopics; k++) {
-			authorityLikelihood += -Math.pow((Math.log(lamda*currUser.authorities[k]) - x[k]), 2) / (2 * Math.pow(delta, 2));
+			authorityLikelihood += -Math.pow((Math.log(currUser.authorities[k]) - x[k]), 2) / (2 * Math.pow(delta, 2));
 		}
 
 		for (int k = 0; k < nTopics; k++) {
-			hubLikelihood += -Math.pow((Math.log(lamda*currUser.hubs[k]) - x[k]), 2) / (2 * Math.pow(sigma, 2));
+			hubLikelihood += -Math.pow((Math.log(currUser.hubs[k]) - x[k]), 2) / (2 * Math.pow(sigma, 2));
 		}
 
 		for (int i = 0; i < currUser.nPosts; i++) {
@@ -248,9 +273,9 @@ public class CTLR {
 		// Set the current user to be u
 		User currUser = dataset.users[u];
 
-		authorityLikelihood = ((Math.log(lamda*currUser.authorities[k]) - x) / Math.pow(delta, 2));
+		authorityLikelihood = ((Math.log(currUser.authorities[k]) - x) / Math.pow(delta, 2));
 
-		hubLikelihood = ((Math.log(lamda*currUser.hubs[k]) - x) / Math.pow(sigma, 2));
+		hubLikelihood = ((Math.log(currUser.hubs[k]) - x) / Math.pow(sigma, 2));
 
 		for (int i = 0; i < currUser.nPosts; i++) {
 			// Only compute post likelihood of posts which are in batch
@@ -259,12 +284,12 @@ public class CTLR {
 				// Only consider posts which are assigned topic k (i.e. z_{v,s}
 				// = k)
 				if (currUser.posts[i].topic == k) {
-					postLikelihood += 1 + ((alpha -1) / x);
+					postLikelihood += 1;
 				}
 			}
 		}
 
-		gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood;
+		gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + (alpha -1) / x;
 		
 		return gradLikelihood;
 	}
@@ -571,7 +596,7 @@ public class CTLR {
 				// Only compute likelihood of followings which are in training
 				// batch
 				// (i.e. batch = 1)
-				if (currUser.followingBatches[i] == 1) {
+				if (currUser.followingBatches[i] == batch) {
 					int v = currUser.followings[i];
 					User following = dataset.users[v];
 
@@ -774,7 +799,8 @@ public class CTLR {
 			// topic-word
 			Post currPost = currUser.posts[n];
 			for (int w = 0; w < currPost.words.length; w++) {
-				p[z] = Math.log(p[z]) + Math.log(topicWordDist[w][z]);
+				int word = currPost.words[w];
+				p[z] = Math.log(p[z]) + Math.log(topicWordDist[word][z]);
 			}
 
 			// update min
@@ -808,9 +834,9 @@ public class CTLR {
 	 * initialize the data before training
 	 */
 	public void init() {
-		alpha = 0.2;
+		alpha = nTopics/50;
 		beta = 0.2;
-		gamma = 0.2;
+		gamma = 0.001;
 		sigma = 0.2;
 		delta = 0.2;
 
