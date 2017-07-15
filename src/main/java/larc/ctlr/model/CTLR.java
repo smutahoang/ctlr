@@ -18,7 +18,7 @@ public class CTLR {
 	public double delta;// variance of users' hubs
 	public double gamma; // variance of topic word distribution
 	public double epsilon = 0.000001;
-	public double lamda = 0.001;
+	public double lamda = 0.01;
 
 	public Random rand;
 
@@ -366,18 +366,22 @@ public class CTLR {
 		double[] x = new double[nTopics];
 		double currentF = 0-getLikelihood_topicalInterest(u, currentX);
 		System.out.println("currF:"+currentF);
+		//for (int k = 0; k < nTopics; k++) {
+		//	System.out.println("x:" + x[k]);
+		//}
+		
 		for (int iter = 0; iter < maxIteration_topicalInterest; iter++) {
 			for (int k = 0; k < nTopics; k++) {
 				
 				grad[k] = 0-gradLikelihood_topicalInterest(u, k, currentX[k]);
 				x[k] = currentX[k] - learning_rate_topicalInterest * grad[k];
-				System.out.println(x[k]);
+				//System.out.println(x[k]);
 			}
 			
 			x = simplexProjection(x,1);// this step to make sure that we
-			for (int k = 0; k < nTopics; k++) {
-				System.out.println("new x:" + x[k]);
-			}									// have theta_uk summing up to 1
+			//for (int k = 0; k < nTopics; k++) {
+			//	System.out.println("new x:" + x[k]);
+			//}									// have theta_uk summing up to 1
 			
 			double f = 0-getLikelihood_topicalInterest(u, x);
 			if (f < currentF) {
@@ -387,7 +391,7 @@ public class CTLR {
 				}
 			}
 			//to see if F actually reduce after every iteration
-			System.out.printf("alt_topic: u = %d iter = %d f = %f\n", u, iter, f);
+			//System.out.printf("alt_topic: u = %d iter = %d f = %f\n", u, iter, f);
 		}
 	}
 
@@ -562,7 +566,7 @@ public class CTLR {
 				}
 			}
 			//to see if F actually reduce after every iteration
-			//System.out.printf("alt_authority: u = %d iter = %d f = %f\n", u, iter, f);
+			System.out.printf("alt_authority: u = %d iter = %d f = %f\n", u, iter, f);
 		}
 	}
 
@@ -749,7 +753,7 @@ public class CTLR {
 				}
 			}
 			//to see if F actually reduce after every iteration
-			//System.out.printf("alt_hub: u = %d iter = %d f = %f\n", u, iter, f);
+			System.out.printf("alt_hub: u = %d iter = %d f = %f\n", u, iter, f);
 		}
 	}
 
@@ -854,7 +858,6 @@ public class CTLR {
 	 */
 	public void init() {
 		alpha = nTopics/50;
-		beta = 0.2;
 		gamma = 0.001;
 		sigma = 0.2;
 		delta = 0.2;
