@@ -374,6 +374,7 @@ public class CTLR {
 			for (int k = 0; k < nTopics; k++) {
 				
 				grad[k] = 0-gradLikelihood_topicalInterest(u, k, currentX[k]);
+				
 				x[k] = currentX[k] - learning_rate_topicalInterest * grad[k];
 				//System.out.println(x[k]);
 			}
