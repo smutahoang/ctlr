@@ -32,8 +32,8 @@ public class Runner {
 		larc.ctlr.model.CTLR model = new CTLR(datasetPath, nTopics, batch);
 		model.init();
 		model.altCheck_TopicalInterest(15);
-		model.altCheck_Authority(15);
-		model.altCheck_Hub(15);
+		//model.altCheck_Authority(15);
+		//model.altCheck_Hub(15);
 	}
 	
 	static void train(String datasetPath, int nTopics, int batch) {

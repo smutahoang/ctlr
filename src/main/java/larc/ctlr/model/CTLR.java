@@ -43,13 +43,13 @@ public class CTLR {
 
 	// options for learning
 
-	public double learning_rate_topicalInterest = 0.001;
+	public double learning_rate_topicalInterest = 0.01;
 	public int maxIteration_topicalInterest = 10;
 
-	public double learning_rate_authorities = 0.001;
+	public double learning_rate_authorities = 0.0001;
 	public int maxIteration_Authorities = 10;
 
-	public double learning_rate_hubs = 0.001;
+	public double learning_rate_hubs = 0.0001;
 	public int maxIteration_Hubs = 10;
 
 	public int max_GibbsEM_Iterations = 100;
@@ -247,7 +247,8 @@ public class CTLR {
 		for (int k = 0; k < nTopics; k++) {
 			topicLikelihood += (alpha -1) * Math.log(x[k]);
 		}
-		finalLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + topicLikelihood;
+		//finalLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + topicLikelihood;
+		finalLikelihood = authorityLikelihood + hubLikelihood + postLikelihood;
 		return finalLikelihood;
 	}
 
@@ -289,7 +290,9 @@ public class CTLR {
 			}
 		}
 
-		gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + (alpha -1) / x;
+		//gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + (alpha -1) / x;
+		
+		gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood;
 		
 		return gradLikelihood;
 	}
@@ -302,10 +305,10 @@ public class CTLR {
 	 * @param n
 	 * @return
 	 */
-	private double[] simplexProjection(double[] x, int n) {
+	private double[] simplexProjection(double[] x, double z) {
 		// given all the k that u have, it adds up to 1
 		// Refer to https://github.com/blei-lab/ctr/blob/master/opt.cpp
-		double[] projX = new double[n];
+		double[] projX = new double[x.length];
 
 		// copy the content of x into projX
 		for (int i = 0; i < x.length; i++) {
@@ -316,7 +319,7 @@ public class CTLR {
 		Arrays.sort(projX);
 
 		// Compute the sum of the offset
-		double cumsum = -n;
+		double cumsum = -z;
 		double p = 0;
 		int j = 0;
 		for (int i = x.length - 1; i >= 0; i--) {
@@ -334,9 +337,19 @@ public class CTLR {
 		for (int i = 0; i < x.length; i++) {
 			p = x[i] - theta;
 			if (p <= 0) {
-				p = 0.0;
+				p=0.0;
+				//p = epsilon;
 			}
 			projX[i] = p;
+		}
+		
+		double sum_x =0;
+		for (int i =0; i<projX.length; i++){
+			sum_x += projX[i];
+		}
+		
+		for (int i =0; i<projX.length; i++){
+			projX[i] = projX[i]/sum_x;
 		}
 
 		return projX;
@@ -351,16 +364,22 @@ public class CTLR {
 		double[] grad = new double[nTopics];
 		double[] currentX = dataset.users[u].topicalInterests;
 		double[] x = new double[nTopics];
-		double currentF = getLikelihood_topicalInterest(u, currentX);
-
+		double currentF = 0-getLikelihood_topicalInterest(u, currentX);
+		System.out.println("currF:"+currentF);
 		for (int iter = 0; iter < maxIteration_topicalInterest; iter++) {
 			for (int k = 0; k < nTopics; k++) {
-				grad[k] = gradLikelihood_topicalInterest(u, k, currentX[k]);
+				
+				grad[k] = 0-gradLikelihood_topicalInterest(u, k, currentX[k]);
 				x[k] = currentX[k] - learning_rate_topicalInterest * grad[k];
+				System.out.println(x[k]);
 			}
-			x = simplexProjection(x, nTopics);// this step to make sure that we
-												// have theta_uk summing up to 1
-			double f = getLikelihood_topicalInterest(u, x);
+			
+			x = simplexProjection(x,1);// this step to make sure that we
+			for (int k = 0; k < nTopics; k++) {
+				System.out.println("new x:" + x[k]);
+			}									// have theta_uk summing up to 1
+			
+			double f = 0-getLikelihood_topicalInterest(u, x);
 			if (f < currentF) {
 				currentF = f;
 				for (int k = 0; k < nTopics; k++) {
@@ -521,12 +540,12 @@ public class CTLR {
 		double[] grad = new double[nTopics];
 		double[] currentX = dataset.users[u].authorities;
 		double[] x = new double[nTopics];
-		double currentF = getLikelihood_authority(u, currentX);
+		double currentF = 0-getLikelihood_authority(u, currentX);
 		//System.out.println(currentF); //This is a very big negative number
 		for (int iter = 0; iter < maxIteration_Authorities; iter++) {
 			for (int k = 0; k < nTopics; k++) {
 				//System.out.println(currentX[k]); //This number is very small (less than 1)
-				grad[k] = gradLikelihood_authority(u, k, currentX[k]);
+				grad[k] = 0-gradLikelihood_authority(u, k, currentX[k]);
 				x[k] = currentX[k] - (learning_rate_authorities * grad[k]);
 				//x[k] is non negative
 				if (x[k]<epsilon){
@@ -534,7 +553,7 @@ public class CTLR {
 				}
 				//System.out.println(x[k]); //After gradLikehood, not the number become a very big negative number
 			}
-			double f = getLikelihood_authority(u, x);
+			double f = 0-getLikelihood_authority(u, x);
 			//System.out.println(f); // This figure is NaN
 			if (f < currentF) {
 				currentF = f;
@@ -543,7 +562,7 @@ public class CTLR {
 				}
 			}
 			//to see if F actually reduce after every iteration
-			System.out.printf("alt_authority: u = %d iter = %d f = %f\n", u, iter, f);
+			//System.out.printf("alt_authority: u = %d iter = %d f = %f\n", u, iter, f);
 		}
 	}
 
@@ -715,14 +734,14 @@ public class CTLR {
 		double[] grad = new double[nTopics];
 		double[] currentX = dataset.users[u].hubs;
 		double[] x = new double[nTopics];
-		double currentF = getLikelihood_hub(u, currentX);
+		double currentF = 0-getLikelihood_hub(u, currentX);
 
 		for (int iter = 0; iter < maxIteration_Hubs; iter++) {
 			for (int k = 0; k < nTopics; k++) {
-				grad[k] = gradLikelihood_hub(u, k, currentX[k]);
+				grad[k] = 0-gradLikelihood_hub(u, k, currentX[k]);
 				x[k] = currentX[k] - (learning_rate_hubs * grad[k]);
 			}
-			double f = getLikelihood_hub(u, x);
+			double f = 0-getLikelihood_hub(u, x);
 			if (f < currentF) {
 				currentF = f;
 				for (int k = 0; k < nTopics; k++) {
@@ -730,7 +749,7 @@ public class CTLR {
 				}
 			}
 			//to see if F actually reduce after every iteration
-			System.out.printf("alt_hub: u = %d iter = %d f = %f\n", u, iter, f);
+			//System.out.printf("alt_hub: u = %d iter = %d f = %f\n", u, iter, f);
 		}
 	}
 
