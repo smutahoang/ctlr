@@ -22,6 +22,11 @@ public class CTLR {
 
 	public Random rand;
 
+	public double lineSearch_alpha;
+	public double lineSearch_beta;
+	public double lineSearch_lambda;
+	public int lineSearch_MaxIterations;
+
 	// Gibbs sampling variables
 	// user-topic counts
 	public int[][] n_zu = null; // n_zu[z][u]: number of times topic z is
@@ -60,14 +65,14 @@ public class CTLR {
 	 * @param _nTopics
 	 */
 	public CTLR(String _datasetPath, int _nTopics, int _batch) {
-		this.dataset = new Dataset(_datasetPath, _nTopics);
-		this.nTopics = _nTopics;
-		this.batch = _batch;
-		n_zu = new int[nTopics][dataset.nUsers];
-		sum_nzu = new int[dataset.nUsers];
-		n_wz = new int[dataset.vocabulary.length][nTopics];
-		sum_nwz = new int[nTopics];
-		topicWordDist = new double[dataset.vocabulary.length][nTopics];
+		/*
+		 * this.dataset = new Dataset(_datasetPath, _nTopics); this.nTopics =
+		 * _nTopics; this.batch = _batch; n_zu = new
+		 * int[nTopics][dataset.nUsers]; sum_nzu = new int[dataset.nUsers]; n_wz
+		 * = new int[dataset.vocabulary.length][nTopics]; sum_nwz = new
+		 * int[nTopics]; topicWordDist = new
+		 * double[dataset.vocabulary.length][nTopics];
+		 */
 	}
 
 	/***
@@ -81,7 +86,7 @@ public class CTLR {
 		// L(link)
 		// value can be more than 1
 		// eqn 1 + 4
-		
+
 		double linkLikelihood = 0;
 		double linkRelationshipLikelihood = 0;
 		double linkAuthorityLikelihood = 0;
@@ -91,21 +96,21 @@ public class CTLR {
 		double postTopicLikelihood = 0;
 		double postThetaLikelihood = 0;
 		double postTauLikelihood = 0;
-		
-		for (int u=0;u<dataset.nUsers;u++){
+
+		for (int u = 0; u < dataset.nUsers; u++) {
 			User currUser = dataset.users[u];
-			
+
 			if (currUser.nonFollowers != null) {
 				for (int i = 0; i < currUser.nonFollowers.length; i++) {
 					int v = currUser.nonFollowers[i];
 					User nonFollower = dataset.users[v];
-					
+
 					// Compute H_u * A_v
 					double HuAv = 0;
 					for (int z = 0; z < nTopics; z++) {
 						HuAv += nonFollower.hubs[z] * currUser.authorities[z];
 					}
-					HuAv = HuAv*lamda;
+					HuAv = HuAv * lamda;
 					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
 					linkRelationshipLikelihood += Math.log(1 - fHuAv);
 				}
@@ -121,12 +126,12 @@ public class CTLR {
 					for (int z = 0; z < nTopics; z++) {
 						HuAv += follower.hubs[z] * currUser.authorities[z];
 					}
-					HuAv = HuAv*lamda;
+					HuAv = HuAv * lamda;
 					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
 					linkRelationshipLikelihood += Math.log(fHuAv);
 				}
 			}
-			
+
 			if (currUser.nonFollowings != null) {
 				for (int i = 0; i < currUser.nonFollowings.length; i++) {
 					// Only compute likelihood of non followings which are in
@@ -152,7 +157,8 @@ public class CTLR {
 			// Compute following likelihood
 			if (currUser.followings != null) {
 				for (int i = 0; i < currUser.followings.length; i++) {
-					// Only compute likelihood of followings which are in training
+					// Only compute likelihood of followings which are in
+					// training
 					// batch
 					// (i.e. batch = 1)
 					if (currUser.followingBatches[i] == batch) {
@@ -171,16 +177,20 @@ public class CTLR {
 					}
 				}
 			}
-			
-			for (int k =0; k<nTopics;k++){
-				linkAuthorityLikelihood += (-Math.log(sigma) - (Math.pow(Math.log(currUser.authorities[k])-currUser.topicalInterests[k],2)/(2*Math.pow(sigma, 2))));
-				linkHubLikelihood += (-Math.log(delta) - (Math.pow(Math.log(currUser.hubs[k])-currUser.topicalInterests[k],2)/(2*Math.pow(delta, 2))));
+
+			for (int k = 0; k < nTopics; k++) {
+				linkAuthorityLikelihood += (-Math.log(sigma)
+						- (Math.pow(Math.log(currUser.authorities[k]) - currUser.topicalInterests[k], 2)
+								/ (2 * Math.pow(sigma, 2))));
+				linkHubLikelihood += (-Math.log(delta)
+						- (Math.pow(Math.log(currUser.hubs[k]) - currUser.topicalInterests[k], 2)
+								/ (2 * Math.pow(delta, 2))));
 			}
-			
+
 			linkLikelihood += linkRelationshipLikelihood + linkAuthorityLikelihood + linkHubLikelihood;
-			
-			for (int s=0; s<currUser.nPosts;s++){
-				if (currUser.postBatches[s] == batch){
+
+			for (int s = 0; s < currUser.nPosts; s++) {
+				if (currUser.postBatches[s] == batch) {
 					Post currPost = currUser.posts[s];
 					for (int w = 0; w < currPost.words.length; w++) {
 						int word = currPost.words[w];
@@ -189,22 +199,21 @@ public class CTLR {
 					postTopicLikelihood += currUser.topicalInterests[currPost.topic];
 				}
 			}
-			
-			for (int k =0; k<nTopics;k++){
+
+			for (int k = 0; k < nTopics; k++) {
 				postThetaLikelihood += (alpha - 1) * Math.log(currUser.topicalInterests[k]);
 			}
 		}
-		
-		for (int k =0; k<nTopics;k++){
-			for (int w =0; w<dataset.vocabulary.length; w++){
-				postTauLikelihood += (gamma-1) * Math.log(topicWordDist[w][k]);
+
+		for (int k = 0; k < nTopics; k++) {
+			for (int w = 0; w < dataset.vocabulary.length; w++) {
+				postTauLikelihood += (gamma - 1) * Math.log(topicWordDist[w][k]);
 			}
 		}
-		
+
 		postLikelihood = postWordLikelihood + postTopicLikelihood + postThetaLikelihood + postTauLikelihood;
-		
-		
-		return (linkLikelihood+ postLikelihood);
+
+		return (linkLikelihood + postLikelihood);
 	}
 
 	/***
@@ -217,7 +226,7 @@ public class CTLR {
 	 */
 	private double getLikelihood_topicalInterest(int u, double[] x) {
 		// Refer to Eqn 9 in Learning paper for Formula
-		
+
 		double authorityLikelihood = 0;
 		double hubLikelihood = 0;
 		double postLikelihood = 0;
@@ -245,9 +254,10 @@ public class CTLR {
 		}
 
 		for (int k = 0; k < nTopics; k++) {
-			topicLikelihood += (alpha -1) * Math.log(x[k]);
+			topicLikelihood += (alpha - 1) * Math.log(x[k]);
 		}
-		//finalLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + topicLikelihood;
+		// finalLikelihood = authorityLikelihood + hubLikelihood +
+		// postLikelihood + topicLikelihood;
 		finalLikelihood = authorityLikelihood + hubLikelihood + postLikelihood;
 		return finalLikelihood;
 	}
@@ -290,10 +300,11 @@ public class CTLR {
 			}
 		}
 
-		//gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + (alpha -1) / x;
-		
+		// gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood
+		// + (alpha -1) / x;
+
 		gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood;
-		
+
 		return gradLikelihood;
 	}
 
@@ -337,19 +348,19 @@ public class CTLR {
 		for (int i = 0; i < x.length; i++) {
 			p = x[i] - theta;
 			if (p <= 0) {
-				p=0.0;
-				//p = epsilon;
+				p = 0.0;
+				// p = epsilon;
 			}
 			projX[i] = p;
 		}
-		
-		double sum_x =0;
-		for (int i =0; i<projX.length; i++){
+
+		double sum_x = 0;
+		for (int i = 0; i < projX.length; i++) {
 			sum_x += projX[i];
 		}
-		
-		for (int i =0; i<projX.length; i++){
-			projX[i] = projX[i]/sum_x;
+
+		for (int i = 0; i < projX.length; i++) {
+			projX[i] = projX[i] / sum_x;
 		}
 
 		return projX;
@@ -364,30 +375,97 @@ public class CTLR {
 		double[] grad = new double[nTopics];
 		double[] currentX = dataset.users[u].topicalInterests;
 		double[] x = new double[nTopics];
-		double currentF = 0-getLikelihood_topicalInterest(u, currentX);
-		System.out.println("currF:"+currentF);
+		double currentF = 0 - getLikelihood_topicalInterest(u, currentX);
+		System.out.println("currF:" + currentF);
 		for (int iter = 0; iter < maxIteration_topicalInterest; iter++) {
 			for (int k = 0; k < nTopics; k++) {
-				
-				grad[k] = 0-gradLikelihood_topicalInterest(u, k, currentX[k]);
+
+				grad[k] = 0 - gradLikelihood_topicalInterest(u, k, currentX[k]);
 				x[k] = currentX[k] - learning_rate_topicalInterest * grad[k];
 				System.out.println(x[k]);
 			}
-			
-			x = simplexProjection(x,1);// this step to make sure that we
+
+			x = simplexProjection(x, 1);// this step to make sure that we
 			for (int k = 0; k < nTopics; k++) {
 				System.out.println("new x:" + x[k]);
-			}									// have theta_uk summing up to 1
-			
-			double f = 0-getLikelihood_topicalInterest(u, x);
+			} // have theta_uk summing up to 1
+
+			double f = 0 - getLikelihood_topicalInterest(u, x);
 			if (f < currentF) {
 				currentF = f;
 				for (int k = 0; k < nTopics; k++) {
 					currentX[k] = x[k];
 				}
 			}
-			//to see if F actually reduce after every iteration
+			// to see if F actually reduce after every iteration
 			System.out.printf("alt_topic: u = %d iter = %d f = %f\n", u, iter, f);
+		}
+	}
+
+	/***
+	 * alternating step to optimize topical interest of u
+	 * 
+	 * @param u
+	 */
+	private void altOptimize_LineSearch_topicalInterest(int u) {
+		double[] grad = new double[nTopics];
+		double[] currentX = dataset.users[u].topicalInterests;
+		double[] x = new double[nTopics];
+
+		double currentF = 0 - getLikelihood_topicalInterest(u, currentX);
+		boolean flag = true;
+		double delta = 0;
+		double f = Double.MAX_VALUE;
+
+		// parameters for line search
+		lineSearch_alpha = 0.0001;
+		lineSearch_beta = 0.1;
+		lineSearch_MaxIterations = 5;
+
+		for (int iter = 0; iter < maxIteration_topicalInterest; iter++) {
+			// compute gradient
+			for (int k = 0; k < nTopics; k++) {
+				grad[k] = 0 - gradLikelihood_topicalInterest(u, k, currentX[k]);
+			}
+			// start line search
+			lineSearch_lambda = 1;
+			flag = false;
+
+			for (int lineSearchIter = 0; lineSearchIter < lineSearch_MaxIterations; lineSearchIter++) {
+				// find new x
+				for (int k = 0; k < nTopics; k++) {
+					x[k] = currentX[k] - learning_rate_topicalInterest * grad[k];
+				}
+				x = simplexProjection(x, 1);// this step to make sure that we
+
+				// compute f at the new x
+				f = 0 - getLikelihood_topicalInterest(u, x);
+
+				// compute ||currentX - x||^2
+				delta = 0;
+				for (int k = 0; k < nTopics; k++) {
+					delta += Math.pow(currentX[k] - x[k], 2);
+				}
+				// check the condition to stop line search
+				if (f - currentF <= (-lineSearch_alpha / lineSearch_lambda) * delta) {
+					flag = true;
+					break;
+				} else {
+					lineSearch_lambda *= lineSearch_beta;
+				}
+			}
+			if (flag) {// line search successful
+				currentF = f;
+				for (int k = 0; k < nTopics; k++) {
+					currentX[k] = x[k];
+				}
+				// to see if F actually reduce after every iteration
+				System.out.printf("alt_topic: u = %d iter = %d f = %f\n", u, iter, f);
+			} else {
+				// to see if F actually reduce after every iteration
+				System.out.printf("alt_topic: u = %d iter = %d f = %f\n", u, iter, f);
+				break;// cannot improve further
+			}
 		}
 	}
 
@@ -402,7 +480,7 @@ public class CTLR {
 	 */
 	private double getLikelihood_authority(int v, double[] x) {
 		// Refer to Eqn 13 in Learning paper
-		
+
 		double followerLikelihood = 0;
 		double nonFollowerLikelihood = 0;
 		double postLikelihood = 0;
@@ -416,16 +494,16 @@ public class CTLR {
 			for (int i = 0; i < currUser.nonFollowers.length; i++) {
 				int u = currUser.nonFollowers[i];
 				User nonFollower = dataset.users[u];
-				
+
 				// Compute H_u * A_v
 				double HuAv = 0;
 				for (int z = 0; z < nTopics; z++) {
 					HuAv += nonFollower.hubs[z] * x[z];// now A_v is x
 				}
-				HuAv = HuAv*lamda;
-				//System.out.println("HuAv:"+HuAv);
+				HuAv = HuAv * lamda;
+				// System.out.println("HuAv:"+HuAv);
 				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-				//System.out.println("fHuAv:"+fHuAv);
+				// System.out.println("fHuAv:"+fHuAv);
 				nonFollowerLikelihood += Math.log(1 - fHuAv);
 			}
 		}
@@ -441,7 +519,7 @@ public class CTLR {
 				for (int z = 0; z < nTopics; z++) {
 					HuAv += follower.hubs[z] * x[z];// now A_v is x
 				}
-				HuAv = HuAv*lamda;
+				HuAv = HuAv * lamda;
 				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
 				followerLikelihood += Math.log(fHuAv);
 			}
@@ -453,12 +531,14 @@ public class CTLR {
 		}
 
 		likelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
-		//System.out.println("Num of Non Followers:" + currUser.nonFollowers.length);
-		//System.out.println("NonFollowersLikelihood:" + nonFollowerLikelihood);
-		//System.out.println("Num of Followers:" + currUser.followers.length);
-		//System.out.println("FollowerLikelihood:" + followerLikelihood);
-		//System.out.println("PostLikelihood:" + postLikelihood);
-		
+		// System.out.println("Num of Non Followers:" +
+		// currUser.nonFollowers.length);
+		// System.out.println("NonFollowersLikelihood:" +
+		// nonFollowerLikelihood);
+		// System.out.println("Num of Followers:" + currUser.followers.length);
+		// System.out.println("FollowerLikelihood:" + followerLikelihood);
+		// System.out.println("PostLikelihood:" + postLikelihood);
+
 		return likelihood;
 	}
 
@@ -474,7 +554,7 @@ public class CTLR {
 	 */
 	private double gradLikelihood_authority(int v, int k, double x) {
 		// Refer to Eqn 15 in Learning paper
-		
+
 		double followerLikelihood = 0;
 		double nonFollowerLikelihood = 0;
 		double postLikelihood = 0;
@@ -498,8 +578,9 @@ public class CTLR {
 						HuAv += nonFollower.hubs[z] * currUser.authorities[z];
 					}
 				}
-				HuAv = HuAv*lamda;
-				nonFollowerLikelihood += -(lamda*nonFollower.hubs[k]) - 1/(Math.exp(-HuAv)+1) * Math.exp(-HuAv) * -(lamda*nonFollower.hubs[k]);
+				HuAv = HuAv * lamda;
+				nonFollowerLikelihood += -(lamda * nonFollower.hubs[k])
+						- 1 / (Math.exp(-HuAv) + 1) * Math.exp(-HuAv) * -(lamda * nonFollower.hubs[k]);
 			}
 		}
 
@@ -518,16 +599,16 @@ public class CTLR {
 						HuAv += follower.hubs[z] * currUser.authorities[z];
 					}
 				}
-				HuAv = HuAv*lamda;
-				followerLikelihood += ((1/(1-Math.exp(-HuAv))) * -Math.exp(-HuAv) * -(lamda*follower.hubs[k])) - 
-						((1/(Math.exp(-HuAv)+1)) * Math.exp(-HuAv) * -(lamda*follower.hubs[k]));
+				HuAv = HuAv * lamda;
+				followerLikelihood += ((1 / (1 - Math.exp(-HuAv))) * -Math.exp(-HuAv) * -(lamda * follower.hubs[k]))
+						- ((1 / (Math.exp(-HuAv) + 1)) * Math.exp(-HuAv) * -(lamda * follower.hubs[k]));
 			}
 		}
 
 		postLikelihood = ((Math.log(x) - currUser.topicalInterests[k]) / Math.pow(sigma, 2)) * (1 / x);
 
 		gradLikelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
-		
+
 		return gradLikelihood;
 	}
 
@@ -540,29 +621,32 @@ public class CTLR {
 		double[] grad = new double[nTopics];
 		double[] currentX = dataset.users[u].authorities;
 		double[] x = new double[nTopics];
-		double currentF = 0-getLikelihood_authority(u, currentX);
-		//System.out.println(currentF); //This is a very big negative number
+		double currentF = 0 - getLikelihood_authority(u, currentX);
+		// System.out.println(currentF); //This is a very big negative number
 		for (int iter = 0; iter < maxIteration_Authorities; iter++) {
 			for (int k = 0; k < nTopics; k++) {
-				//System.out.println(currentX[k]); //This number is very small (less than 1)
-				grad[k] = 0-gradLikelihood_authority(u, k, currentX[k]);
+				// System.out.println(currentX[k]); //This number is very small
+				// (less than 1)
+				grad[k] = 0 - gradLikelihood_authority(u, k, currentX[k]);
 				x[k] = currentX[k] - (learning_rate_authorities * grad[k]);
-				//x[k] is non negative
-				if (x[k]<epsilon){
+				// x[k] is non negative
+				if (x[k] < epsilon) {
 					x[k] = epsilon;
 				}
-				//System.out.println(x[k]); //After gradLikehood, not the number become a very big negative number
+				// System.out.println(x[k]); //After gradLikehood, not the
+				// number become a very big negative number
 			}
-			double f = 0-getLikelihood_authority(u, x);
-			//System.out.println(f); // This figure is NaN
+			double f = 0 - getLikelihood_authority(u, x);
+			// System.out.println(f); // This figure is NaN
 			if (f < currentF) {
 				currentF = f;
 				for (int k = 0; k < nTopics; k++) {
 					currentX[k] = x[k];
 				}
 			}
-			//to see if F actually reduce after every iteration
-			//System.out.printf("alt_authority: u = %d iter = %d f = %f\n", u, iter, f);
+			// to see if F actually reduce after every iteration
+			// System.out.printf("alt_authority: u = %d iter = %d f = %f\n", u,
+			// iter, f);
 		}
 	}
 
@@ -577,7 +661,7 @@ public class CTLR {
 	 */
 	private double getLikelihood_hub(int u, double[] x) {
 		// Refer to Eqn 17 in Learning paper
-		
+
 		double followingLikelihood = 0;
 		double nonFollowingLikelihood = 0;
 		double postLikelihood = 0;
@@ -638,7 +722,7 @@ public class CTLR {
 		}
 
 		likelihood = nonFollowingLikelihood + followingLikelihood - postLikelihood;
-		
+
 		return likelihood;
 	}
 
@@ -654,7 +738,7 @@ public class CTLR {
 	 */
 	private double gradLikelihood_hub(int u, int k, double x) {
 		// Refer to Eqn 19 in Learning paper
-		
+
 		double followingLikelihood = 0;
 		double nonFollowingLikelihood = 0;
 		double postLikelihood = 0;
@@ -683,8 +767,8 @@ public class CTLR {
 						}
 					}
 					HuAv = HuAv * lamda;
-					nonFollowingLikelihood += -(lamda*nonFollowing.authorities[k]) - 1/(Math.exp(-HuAv)+1) * Math.exp(-HuAv) 
-							* -(lamda*nonFollowing.authorities[k]);
+					nonFollowingLikelihood += -(lamda * nonFollowing.authorities[k])
+							- 1 / (Math.exp(-HuAv) + 1) * Math.exp(-HuAv) * -(lamda * nonFollowing.authorities[k]);
 				}
 			}
 		}
@@ -709,8 +793,9 @@ public class CTLR {
 						}
 					}
 					HuAv = HuAv * lamda;
-					followingLikelihood += ((1/(1-Math.exp(-HuAv))) * -Math.exp(-HuAv) * -(lamda*following.authorities[k])) - 
-							((1/(Math.exp(-HuAv)+1)) * Math.exp(-HuAv) * -(lamda*following.authorities[k]));
+					followingLikelihood += ((1 / (1 - Math.exp(-HuAv))) * -Math.exp(-HuAv)
+							* -(lamda * following.authorities[k]))
+							- ((1 / (Math.exp(-HuAv) + 1)) * Math.exp(-HuAv) * -(lamda * following.authorities[k]));
 				}
 			}
 		}
@@ -718,7 +803,7 @@ public class CTLR {
 		postLikelihood = ((Math.log(x) - currUser.topicalInterests[k]) / Math.pow(delta, 2)) * (1 / x);
 
 		gradLikelihood = nonFollowingLikelihood + followingLikelihood - postLikelihood;
-		
+
 		return gradLikelihood;
 	}
 
@@ -734,22 +819,23 @@ public class CTLR {
 		double[] grad = new double[nTopics];
 		double[] currentX = dataset.users[u].hubs;
 		double[] x = new double[nTopics];
-		double currentF = 0-getLikelihood_hub(u, currentX);
+		double currentF = 0 - getLikelihood_hub(u, currentX);
 
 		for (int iter = 0; iter < maxIteration_Hubs; iter++) {
 			for (int k = 0; k < nTopics; k++) {
-				grad[k] = 0-gradLikelihood_hub(u, k, currentX[k]);
+				grad[k] = 0 - gradLikelihood_hub(u, k, currentX[k]);
 				x[k] = currentX[k] - (learning_rate_hubs * grad[k]);
 			}
-			double f = 0-getLikelihood_hub(u, x);
+			double f = 0 - getLikelihood_hub(u, x);
 			if (f < currentF) {
 				currentF = f;
 				for (int k = 0; k < nTopics; k++) {
 					currentX[k] = x[k];
 				}
 			}
-			//to see if F actually reduce after every iteration
-			//System.out.printf("alt_hub: u = %d iter = %d f = %f\n", u, iter, f);
+			// to see if F actually reduce after every iteration
+			// System.out.printf("alt_hub: u = %d iter = %d f = %f\n", u, iter,
+			// f);
 		}
 	}
 
@@ -853,7 +939,7 @@ public class CTLR {
 	 * initialize the data before training
 	 */
 	public void init() {
-		alpha = nTopics/50;
+		alpha = nTopics / 50;
 		beta = 0.2;
 		gamma = 0.001;
 		sigma = 0.2;
@@ -898,7 +984,7 @@ public class CTLR {
 				NormalDistribution g = new NormalDistribution(currUser.topicalInterests[k], sigma);
 				currUser.authorities[k] = Math.exp(g.sample());
 				currUser.hubs[k] = Math.exp(g.sample());
-				
+
 			}
 		}
 
@@ -933,7 +1019,7 @@ public class CTLR {
 					}
 				}
 			}
-			// Check that the likelihood increase 
+			// Check that the likelihood increase
 			System.out.printf("likelihood after %d steps: %f", iter, getLikelihood());
 		}
 	}
@@ -948,7 +1034,7 @@ public class CTLR {
 	public void gradCheck_TopicalInterest(int u, int k) {
 		double DELTA = 1;
 		Random rand = new Random(System.currentTimeMillis());
-		
+
 		double[] x = dataset.users[u].topicalInterests;
 
 		double f = getLikelihood_topicalInterest(u, x);
@@ -978,7 +1064,7 @@ public class CTLR {
 	public void gradCheck_Authority(int v, int k) {
 		double DELTA = 1;
 		Random rand = new Random(System.currentTimeMillis());
-		
+
 		double[] x = dataset.users[v].authorities;
 
 		double f = getLikelihood_authority(v, x);
@@ -1008,7 +1094,7 @@ public class CTLR {
 	public void gradCheck_Hub(int u, int k) {
 		double DELTA = 1;
 		Random rand = new Random(System.currentTimeMillis());
-		
+
 		double[] x = dataset.users[u].hubs;
 
 		double f = getLikelihood_hub(u, x);
@@ -1031,13 +1117,23 @@ public class CTLR {
 	public void altCheck_TopicalInterest(int u) {
 		altOptimize_topicalInterest(u);
 	}
-	
-	public void altCheck_Authority(int u){
+
+	public void altCheck_Authority(int u) {
 		altOptimize_Authorities(u);
 	}
-	
+
 	public void altCheck_Hub(int u) {
 		altOptimize_Hubs(u);
 	}
-		
+
+	public static void main(String[] args) {
+		double[] x = new double[] { 0, 0.6, 0.4, 0.1 };
+		CTLR ctlr = new CTLR("", 0, 0);
+		double[] y = ctlr.simplexProjection(x, 1);
+
+		for (int i = 0; i < x.length; i++) {
+			System.out.printf("x[%d] = %f, y[%d] = %f\n", i, x[i], i, y[i]);
+		}
+	}
+
 }
