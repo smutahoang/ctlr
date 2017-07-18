@@ -100,7 +100,7 @@ public class Synthetic {
 
 	private int genLink(int nTopics, double[] userAuthority, double[] userHub) {
 		double p = MathTool.normalizationFunction(MathTool.dotProduct(nTopics, userAuthority, userHub));
-		//System.out.println("p = " + p);
+		// System.out.println("p = " + p);
 		Random rand = new Random(System.currentTimeMillis());
 		if (rand.nextDouble() < p) {
 			return 1;
@@ -156,11 +156,11 @@ public class Synthetic {
 	private void genAndsaveTweet(String outputpath, int nUsers, int nTopics, double[][] userInterest,
 			double[][] topics) {
 		try {
-			//File file = new File(String.format("%s/posts", outputpath));
-			//if (!file.exists()) {
-			//	file.mkdir();
-			//}
-			
+			// File file = new File(String.format("%s/posts", outputpath));
+			// if (!file.exists()) {
+			// file.mkdir();
+			// }
+
 			int nPosts = 0;
 			Random rand = new Random(System.currentTimeMillis());
 			BufferedWriter bw = new BufferedWriter(new FileWriter(String.format("%s/syn_posts.csv", outputpath)));
@@ -170,11 +170,11 @@ public class Synthetic {
 					int[] post = genPost(userInterest[u], topics);
 					bw.write(nPosts + "," + u + ",");
 					for (int j = 0; j < post.length; j++) {
-						bw.write(" "+post[j]);
+						bw.write(" " + post[j]);
 					}
 					bw.newLine();
 					nPosts++;
-				}	
+				}
 			}
 			bw.close();
 
@@ -188,10 +188,10 @@ public class Synthetic {
 			double[][] userHubs) {
 		try {
 			HashMap<Integer, HashSet<Integer>> followings = genNetwork(nUsers, nTopics, userAuthorities, userHubs);
-			//File file = new File(String.format("%s/followings", outputpath));
-			//if (!file.exists()) {
-			//	file.mkdir();
-			//}
+			// File file = new File(String.format("%s/followings", outputpath));
+			// if (!file.exists()) {
+			// file.mkdir();
+			// }
 
 			BufferedWriter bw = new BufferedWriter(
 					new FileWriter(String.format("%s/syn_relationships.csv", outputpath)));
@@ -202,10 +202,70 @@ public class Synthetic {
 				Iterator<Integer> vIter = followings.get(u).iterator();
 				while (vIter.hasNext()) {
 					int v = vIter.next();
-					bw.write(u+","+v);
+					bw.write(u + "," + v);
 					bw.newLine();
-					System.out.println(u+","+v);
+					System.out.println(u + "," + v);
 				}
+			}
+			bw.close();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
+	}
+
+	private void saveGroundTruth(double[][] topics, double[][] userInterest, double[][] userAuthorities,
+			double[][] userHubs, String outputPath) {
+		try {
+			BufferedWriter bw;
+			String filename = null;
+
+			// topics
+			filename = String.format("%s/topics.csv", outputPath);
+			bw = new BufferedWriter(new FileWriter(filename));
+			for (int z = 0; z < topics.length; z++) {
+				bw.write(String.format("%f", topics[z][0]));
+				for (int w = 1; w < topics[z].length; z++) {
+					bw.write(String.format(",%f", topics[z][w]));
+				}
+				bw.write("\n");
+			}
+			bw.close();
+
+			// user interest
+			filename = String.format("%s/userInterest.csv", outputPath);
+			bw = new BufferedWriter(new FileWriter(filename));
+			for (int u = 0; u < userInterest.length; u++) {
+				bw.write(String.format("%f", userInterest[u][0]));
+				for (int z = 1; z < userInterest[u].length; u++) {
+					bw.write(String.format(",%f", userInterest[u][z]));
+				}
+				bw.write("\n");
+			}
+			bw.close();
+
+			// user authorities
+			filename = String.format("%s/userAuthorities.csv", outputPath);
+			bw = new BufferedWriter(new FileWriter(filename));
+			for (int u = 0; u < userAuthorities.length; u++) {
+				bw.write(String.format("%f", userAuthorities[u][0]));
+				for (int z = 1; z < userAuthorities[u].length; u++) {
+					bw.write(String.format(",%f", userAuthorities[u][z]));
+				}
+				bw.write("\n");
+			}
+			bw.close();
+
+			// user authorities
+			filename = String.format("%s/userHubs.csv", outputPath);
+			bw = new BufferedWriter(new FileWriter(filename));
+			for (int u = 0; u < userHubs.length; u++) {
+				bw.write(String.format("%f", userHubs[u][0]));
+				for (int z = 1; z < userHubs[u].length; u++) {
+					bw.write(String.format(",%f", userHubs[u][z]));
+				}
+				bw.write("\n");
 			}
 			bw.close();
 
@@ -224,6 +284,8 @@ public class Synthetic {
 		saveWords(nWords, outputPath);
 		genAndsaveTweet(outputPath, nUsers, nTopics, userInterest, topics);
 		genAndsaveNetwork(outputPath, nUsers, nTopics, userAuthorities, userHubs);
+
+		saveGroundTruth(topics, userInterest, userAuthorities, userHubs, outputPath);
 	}
 
 	public static void main(String[] args) {
