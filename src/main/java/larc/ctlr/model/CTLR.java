@@ -1,9 +1,15 @@
 package larc.ctlr.model;
 
+import java.io.BufferedWriter;
 import java.util.Arrays;
 import java.util.Random;
 import org.apache.commons.math3.*;
 import org.apache.commons.math3.distribution.NormalDistribution;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 
 public class CTLR {
 	public Dataset dataset;
@@ -48,13 +54,13 @@ public class CTLR {
 
 	// options for learning
 
-	public double learning_rate_topicalInterest = 0.01;
+	public double learning_rate_topicalInterest = 0.001;
 	public int maxIteration_topicalInterest = 10;
 
-	public double learning_rate_authorities = 0.01;
+	public double learning_rate_authorities = 0.001;
 	public int maxIteration_Authorities = 10;
 
-	public double learning_rate_hubs = 0.01;
+	public double learning_rate_hubs = 0.001;
 	public int maxIteration_Hubs = 10;
 
 	public int max_GibbsEM_Iterations = 100;
@@ -349,7 +355,7 @@ public class CTLR {
 			p = x[i] - theta;
 			if (p <= 0) {
 				p = 0.0;
-				// p = epsilon;
+				//p = epsilon;
 			}
 			projX[i] = p;
 		}
@@ -372,40 +378,6 @@ public class CTLR {
 	 * @param u
 	 */
 	private void altOptimize_topicalInterest(int u) {
-		double[] grad = new double[nTopics];
-		double[] currentX = dataset.users[u].topicalInterests;
-		double[] x = new double[nTopics];
-		double currentF = 0 - getLikelihood_topicalInterest(u, currentX);
-		System.out.println("currF:" + currentF);
-		for (int iter = 0; iter < maxIteration_topicalInterest; iter++) {
-			for (int k = 0; k < nTopics; k++) {				
-				grad[k] = 0-gradLikelihood_topicalInterest(u, k, currentX[k]);				
-				grad[k] = 0 - gradLikelihood_topicalInterest(u, k, currentX[k]);
-				x[k] = currentX[k] - learning_rate_topicalInterest * grad[k];
-			}
-			
-			x = simplexProjection(x, 1);// this step to make sure that we
-
-			double f = 0 - getLikelihood_topicalInterest(u, x);
-			if (f < currentF) {
-				currentF = f;
-				for (int k = 0; k < nTopics; k++) {
-					currentX[k] = x[k];
-				}
-			}
-			//to see if F actually reduce after every iteration
-			//System.out.printf("alt_topic: u = %d iter = %d f = %f\n", u, iter, f);
-			// to see if F actually reduce after every iteration
-			System.out.printf("alt_topic: u = %d iter = %d f = %f\n", u, iter, f);
-		}
-	}
-
-	/***
-	 * alternating step to optimize topical interest of u
-	 * 
-	 * @param u
-	 */
-	private void altOptimize_LineSearch_topicalInterest(int u) {
 		double[] grad = new double[nTopics];
 		double[] currentX = dataset.users[u].topicalInterests;
 		double[] x = new double[nTopics];
@@ -435,6 +407,7 @@ public class CTLR {
 				for (int k = 0; k < nTopics; k++) {
 					x[k] = currentX[k] - learning_rate_topicalInterest * grad[k];
 				}
+				
 				x = simplexProjection(x, 1);// this step to make sure that we
 
 				// compute f at the new x
@@ -459,10 +432,10 @@ public class CTLR {
 					currentX[k] = x[k];
 				}
 				// to see if F actually reduce after every iteration
-				System.out.printf("alt_topic: u = %d iter = %d f = %f\n", u, iter, f);
+				//System.out.printf("alt_topic: u = %d iter = %d f = %f\n", u, iter, f);
 			} else {
 				// to see if F actually reduce after every iteration
-				System.out.printf("alt_topic: u = %d iter = %d f = %f\n", u, iter, f);
+				//System.out.printf("alt_topic: u = %d iter = %d f = %f\n", u, iter, f);
 				break;// cannot improve further
 			}
 		}
@@ -672,10 +645,10 @@ public class CTLR {
 					currentX[k] = x[k];
 				}
 				// to see if F actually reduce after every iteration
-				System.out.printf("alt_authority: u = %d iter = %d f = %f\n", u, iter, f);
+				//System.out.printf("alt_authority: u = %d iter = %d f = %f\n", u, iter, f);
 			} else {
 				// to see if F actually reduce after every iteration
-				System.out.printf("alt_authority: u = %d iter = %d f = %f\n", u, iter, f);
+				//System.out.printf("alt_authority: u = %d iter = %d f = %f\n", u, iter, f);
 				break;// cannot improve further
 			}
 		}
@@ -902,10 +875,10 @@ public class CTLR {
 					currentX[k] = x[k];
 				}
 				// to see if F actually reduce after every iteration
-				System.out.printf("alt_hub: u = %d iter = %d f = %f\n", u, iter, f);
+				//System.out.printf("alt_hub: u = %d iter = %d f = %f\n", u, iter, f);
 			} else {
 				// to see if F actually reduce after every iteration
-				System.out.printf("alt_hub: u = %d iter = %d f = %f\n", u, iter, f);
+				//System.out.printf("alt_hub: u = %d iter = %d f = %f\n", u, iter, f);
 				break;// cannot improve further
 			}
 		}
@@ -1012,8 +985,6 @@ public class CTLR {
 	 */
 	public void init() {
 		alpha = nTopics/50;
-		alpha = nTopics / 50;
-		beta = 0.2;
 		gamma = 0.001;
 		sigma = 0.2;
 		delta = 0.2;
@@ -1094,9 +1065,94 @@ public class CTLR {
 			}
 			// Check that the likelihood increase
 			System.out.printf("likelihood after %d steps: %f", iter, getLikelihood());
+			System.out.println();
+		}
+		//print out the learned parameters
+		output_topicWord();
+		output_topicInterest();
+		output_authority();
+		output_hub();
+	}
+	
+	public void output_topicWord(){
+		try {
+			File f = new File(dataset.path + "/syn_topicalWordDistributions.csv");
+			FileWriter fo = new FileWriter(f);
+			for (int k=0; k<nTopics; k++){
+				String text = Integer.toString(k);
+				for (int w=0; w < dataset.vocabulary.length; w++){
+					text = text + "," + Double.toString(topicWordDist[w][k]);
+				}
+				fo.write(text + "\n");
+			}
+			fo.close();
+		} catch (Exception e) {
+			System.out.println("Error in writing to topical word file!");
+			e.printStackTrace();
+			System.exit(0);
 		}
 	}
-
+	
+	public void output_topicInterest(){
+		try {
+			File f = new File(dataset.path + "/syn_userTopicalInterestDistributions.csv");
+			FileWriter fo = new FileWriter(f);
+			for (int u=0; u<dataset.nUsers; u++){
+				User currUser = dataset.users[u];
+				String text = currUser.userId;
+				for (int k=0; k < nTopics; k++){
+					text = text + "," + Double.toString(currUser.topicalInterests[k]);
+				}
+				fo.write(text + "\n");
+			}
+			fo.close();
+		} catch (Exception e) {
+			System.out.println("Error in writing to topical interest file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	
+	public void output_authority(){
+		try {
+			File f = new File(dataset.path + "/syn_userAuthorityDistributions.csv");
+			FileWriter fo = new FileWriter(f);
+			for (int u=0; u<dataset.nUsers; u++){
+				User currUser = dataset.users[u];
+				String text = currUser.userId;
+				for (int k=0; k < nTopics; k++){
+					text = text + "," + Double.toString(currUser.authorities[k]);
+				}
+				fo.write(text + "\n");
+			}
+			fo.close();
+		} catch (Exception e) {
+			System.out.println("Error in writing to authority file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	
+	public void output_hub(){
+		try {
+			File f = new File(dataset.path + "/syn_userHubDistributions.csv");
+			FileWriter fo = new FileWriter(f);
+			for (int u=0; u<dataset.nUsers; u++){
+				User currUser = dataset.users[u];
+				String text = currUser.userId;
+				for (int k=0; k < nTopics; k++){
+					text = text + "," + Double.toString(currUser.hubs[k]);
+				}
+				fo.write(text + "\n");
+			}
+			fo.close();
+		} catch (Exception e) {
+			System.out.println("Error in writing to topical interest file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	
 	/***
 	 * checking if the gradient computation of likelihood by user topical
 	 * interest theta_{u,k} is properly implemented

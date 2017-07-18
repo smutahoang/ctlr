@@ -16,7 +16,7 @@ public class Dataset {
 	public String path;
 	public int nUsers;
 	public User[] users;
-	public int nWords; // number of words in vocabulary
+	//public int nWords; // number of words in vocabulary
 	public String[] vocabulary;
 	
 	public HashMap<String, Integer> userId2Index;
@@ -28,6 +28,7 @@ public class Dataset {
 	 * @param path
 	 */
 	public Dataset(String path, int nTopics) {
+		this.path = path;
 		loadUsers(path+"users.csv", nTopics);
 		loadPosts(path+"posts.csv");
 		loadVocabulary(path+"vocabulary.csv");
