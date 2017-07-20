@@ -299,16 +299,33 @@ public class CompareWithGroundTruth {
 			filename = String.format("%s/userAuthorityDistance.csv", outputPath);
 			bw = new BufferedWriter(new FileWriter(filename));
 			iter = userId2Index.entrySet().iterator();
+			int l_topic_max = 0;
+			int g_topic_max = 0;
+			double l_authority_max = 0.0;
+			double g_authority_max = 0.0;
 			while (iter.hasNext()) {
 				Map.Entry<String, Integer> pair = iter.next();
 				int u = pair.getValue();
-				if (distance.equals("euclidean")) {
-					bw.write(String.format("%s,%f\n", pair.getKey(),
-							vector.weightedEuclideanDistance(g_userAuthorityDistributions[u], l_userAuthorityDistributions[u],
-									glMatch, g_userAuthorityDistributions[u])));
-				} else {
-					bw.write(String.format("%s,%f\n", pair.getKey(), vector.jensenShallonDistance(
-							g_userAuthorityDistributions[u], l_userAuthorityDistributions[u], glMatch, lgMatch)));
+				l_authority_max = 0.0;
+				g_authority_max = 0.0;
+				for (int k=0;k<nTopics;k++){
+					if (g_userAuthorityDistributions[u][k] > g_authority_max){
+						g_authority_max = g_userAuthorityDistributions[u][k];
+						g_topic_max = k;
+					}
+				}
+				for (int k=0;k<nTopics;k++){
+					if (l_userAuthorityDistributions[u][k] > l_authority_max){
+						l_authority_max = l_userAuthorityDistributions[u][k];
+						l_topic_max = k;
+					}
+				}
+				if (g_topic_max == lgMatch[l_topic_max]){
+					bw.write(pair.getKey() +","+ 1+"\n");
+					//bw.write(String.format("%s,%f\n", pair.getKey(), 1));
+				} else{
+					bw.write(pair.getKey() +","+ 0+"\n");
+					//bw.write(String.format("%s,%f\n", pair.getKey(), 0));
 				}
 			}
 			bw.close();
@@ -318,16 +335,31 @@ public class CompareWithGroundTruth {
 			filename = String.format("%s/userHubDistance.csv", outputPath);
 			bw = new BufferedWriter(new FileWriter(filename));
 			iter = userId2Index.entrySet().iterator();
+			l_topic_max = 0;
+			g_topic_max = 0;
 			while (iter.hasNext()) {
 				Map.Entry<String, Integer> pair = iter.next();
 				int u = pair.getValue();
-				if (distance.equals("euclidean")) {
-					bw.write(String.format("%s,%f\n", pair.getKey(),
-							vector.weightedEuclideanDistance(g_userHubDistributions[u], l_userHubDistributions[u],
-									glMatch, g_userHubDistributions[u])));
-				} else {
-					bw.write(String.format("%s,%f\n", pair.getKey(), vector.jensenShallonDistance(
-							g_userHubDistributions[u], l_userHubDistributions[u], glMatch, lgMatch)));
+				l_authority_max = 0.0;
+				g_authority_max = 0.0;
+				for (int k=0;k<nTopics;k++){
+					if (g_userHubDistributions[u][k] > g_authority_max){
+						g_authority_max = g_userHubDistributions[u][k];
+						g_topic_max = k;
+					}
+				}
+				for (int k=0;k<nTopics;k++){
+					if (l_userHubDistributions[u][k] > l_authority_max){
+						l_authority_max = l_userAuthorityDistributions[u][k];
+						l_topic_max = k;
+					}
+				}
+				if (g_topic_max == lgMatch[l_topic_max]){
+					bw.write(pair.getKey() +","+ 1+"\n");
+					//bw.write(String.format("%s,%f\n", pair.getKey(), 1));
+				} else{
+					bw.write(pair.getKey() +","+ 0+"\n");
+					//bw.write(String.format("%s,%f\n", pair.getKey(), 0));
 				}
 			}
 			bw.close();
@@ -340,9 +372,9 @@ public class CompareWithGroundTruth {
 	}
 	
 	public static void main(String[] args) {
-		//CompareWithGroundTruth comparator = new CompareWithGroundTruth("F:/Users/roylee/MultiPlatformLDAv1/MultiPlatformLDA/data/synthetic",
-		//		"F:/Users/roylee/MultiPlatformLDAv1/MultiPlatformLDA/data/synthetic/output/10", 1, "euclidean", "F:/Users/roylee/MultiPlatformLDAv1/MultiPlatformLDA/data/synthetic/evaluation");
-		//comparator.measureGoodness();
+		CompareWithGroundTruth comparator = new CompareWithGroundTruth("F:/Users/roylee/CTLR/data/synthetic/groundtruth",
+				"F:/Users/roylee/CTLR/data/synthetic/learnt", 1, "euclidean", "F:/Users/roylee/CTLR/data/synthetic/evaluation");
+		comparator.measureGoodness();
 	}
 	
 }
