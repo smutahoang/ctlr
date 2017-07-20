@@ -331,7 +331,6 @@ public class CTLR {
 		for (int i = 0; i < x.length; i++) {
 			projX[i] = x[i];
 		}
-
 		// Sort projX in asc order
 		Arrays.sort(projX);
 
@@ -353,13 +352,14 @@ public class CTLR {
 		double theta = cumsum / j;
 		for (int i = 0; i < x.length; i++) {
 			p = x[i] - theta;
-			if (p <= 0) {
+			if (p < 0) {
 				p = 0.0;
 				//p = epsilon;
 			}
 			projX[i] = p;
 		}
-
+		
+		
 		double sum_x = 0;
 		for (int i = 0; i < projX.length; i++) {
 			sum_x += projX[i];
@@ -941,27 +941,27 @@ public class CTLR {
 		// p: p(z_u,s = z| rest)
 
 		double[] p = new double[nTopics];
-		double min = Double.MAX_VALUE;
+		double max = -Double.MAX_VALUE;
 		for (int z = 0; z < nTopics; z++) {
 			// User-topic
-			p[z] = currUser.topicalInterests[z];
+			p[z] = Math.log(currUser.topicalInterests[z]);
 
 			// topic-word
 			Post currPost = currUser.posts[n];
 			for (int w = 0; w < currPost.words.length; w++) {
 				int word = currPost.words[w];
-				p[z] = Math.log(p[z]) + Math.log(topicWordDist[word][z]);
+				p[z] += Math.log(topicWordDist[word][z]);
 			}
 
 			// update min
-			if (min < p[z]) {
-				min = p[z];
+			if (max < p[z]) {
+				max = p[z];
 			}
 
 		}
 		// convert log(sump) to probability
 		for (int z = 0; z < nTopics; z++) {
-			p[z] = p[z] - min;
+			p[z] = p[z] - max;
 			p[z] = Math.exp(p[z]);
 
 			// cumulative
@@ -1043,6 +1043,15 @@ public class CTLR {
 	public void train() {
 		init();
 		for (int iter = 0; iter < max_GibbsEM_Iterations; iter++) {
+			/*for (int k=0;k<nTopics;k++){
+				System.out.printf("%f \t", dataset.users[0].topicalInterests[k]);
+			}
+			System.out.println();
+			for (int k=0;k<nTopics;k++){
+				System.out.printf("%f \t", dataset.users[1].topicalInterests[k]);
+			}
+			System.out.println();
+			*/
 			// EM part that employs alternating optimization
 			for (int u = 0; u < dataset.nUsers; u++) {
 				altOptimize_topicalInterest(u);
@@ -1076,7 +1085,7 @@ public class CTLR {
 	
 	public void output_topicWord(){
 		try {
-			File f = new File(dataset.path + "/syn_topicalWordDistributions.csv");
+			File f = new File(dataset.path + "/l_topicalWordDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int k=0; k<nTopics; k++){
 				String text = Integer.toString(k);
@@ -1095,7 +1104,7 @@ public class CTLR {
 	
 	public void output_topicInterest(){
 		try {
-			File f = new File(dataset.path + "/syn_userTopicalInterestDistributions.csv");
+			File f = new File(dataset.path + "/l_userTopicalInterestDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u=0; u<dataset.nUsers; u++){
 				User currUser = dataset.users[u];
@@ -1115,7 +1124,7 @@ public class CTLR {
 	
 	public void output_authority(){
 		try {
-			File f = new File(dataset.path + "/syn_userAuthorityDistributions.csv");
+			File f = new File(dataset.path + "/l_userAuthorityDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u=0; u<dataset.nUsers; u++){
 				User currUser = dataset.users[u];
@@ -1135,7 +1144,7 @@ public class CTLR {
 	
 	public void output_hub(){
 		try {
-			File f = new File(dataset.path + "/syn_userHubDistributions.csv");
+			File f = new File(dataset.path + "/l_userHubDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u=0; u<dataset.nUsers; u++){
 				User currUser = dataset.users[u];

@@ -222,11 +222,11 @@ public class Synthetic {
 			String filename = null;
 
 			// topics
-			filename = String.format("%s/topics.csv", outputPath);
+			filename = String.format("%s/topicWordDistributions.csv", outputPath);
 			bw = new BufferedWriter(new FileWriter(filename));
 			for (int z = 0; z < topics.length; z++) {
-				bw.write(String.format("%f", topics[z][0]));
-				for (int w = 1; w < topics[z].length; z++) {
+				bw.write(String.format("%f", z));
+				for (int w = 0; w < topics[z].length; w++) {
 					bw.write(String.format(",%f", topics[z][w]));
 				}
 				bw.write("\n");
@@ -234,11 +234,11 @@ public class Synthetic {
 			bw.close();
 
 			// user interest
-			filename = String.format("%s/userInterest.csv", outputPath);
+			filename = String.format("%s/userTopicInterestDistribution.csv", outputPath);
 			bw = new BufferedWriter(new FileWriter(filename));
 			for (int u = 0; u < userInterest.length; u++) {
-				bw.write(String.format("%f", userInterest[u][0]));
-				for (int z = 1; z < userInterest[u].length; u++) {
+				bw.write(String.format("%f", u));
+				for (int z = 0; z < userInterest[u].length; z++) {
 					bw.write(String.format(",%f", userInterest[u][z]));
 				}
 				bw.write("\n");
@@ -246,11 +246,11 @@ public class Synthetic {
 			bw.close();
 
 			// user authorities
-			filename = String.format("%s/userAuthorities.csv", outputPath);
+			filename = String.format("%s/userAuthorityDistribution.csv", outputPath);
 			bw = new BufferedWriter(new FileWriter(filename));
 			for (int u = 0; u < userAuthorities.length; u++) {
-				bw.write(String.format("%f", userAuthorities[u][0]));
-				for (int z = 1; z < userAuthorities[u].length; u++) {
+				bw.write(String.format("%f", u));
+				for (int z = 0; z < userAuthorities[u].length; z++) {
 					bw.write(String.format(",%f", userAuthorities[u][z]));
 				}
 				bw.write("\n");
@@ -258,11 +258,11 @@ public class Synthetic {
 			bw.close();
 
 			// user authorities
-			filename = String.format("%s/userHubs.csv", outputPath);
+			filename = String.format("%s/userHubDistributions.csv", outputPath);
 			bw = new BufferedWriter(new FileWriter(filename));
 			for (int u = 0; u < userHubs.length; u++) {
-				bw.write(String.format("%f", userHubs[u][0]));
-				for (int z = 1; z < userHubs[u].length; u++) {
+				bw.write(String.format("%f", u));
+				for (int z = 0; z < userHubs[u].length; z++) {
 					bw.write(String.format(",%f", userHubs[u][z]));
 				}
 				bw.write("\n");
