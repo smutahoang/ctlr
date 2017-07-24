@@ -104,14 +104,13 @@ public class CompareWithGroundTruth {
 			filename = String.format("%s/userAuthorityDistributions.csv", groundtruthPath);
 			g_userAuthorityDistributions = new double[nUsers][nTopics];
 			br = new BufferedReader(new FileReader(filename));
-			u = 0;
 			line = null;
 			while ((line = br.readLine()) != null) {
 				String[] tokens = line.split(",");
+				u = userId2Index.get(tokens[0]);
 				for (int t = 1; t < tokens.length; t++) {
 					g_userAuthorityDistributions[u][t - 1] = Double.parseDouble(tokens[t]);
 				}
-				u++;
 			}
 			br.close();
 			
@@ -119,14 +118,13 @@ public class CompareWithGroundTruth {
 			filename = String.format("%s/userHubDistributions.csv", groundtruthPath);
 			g_userHubDistributions = new double[nUsers][nTopics];
 			br = new BufferedReader(new FileReader(filename));
-			u = 0;
 			line = null;
 			while ((line = br.readLine()) != null) {
 				String[] tokens = line.split(",");
+				u = userId2Index.get(tokens[0]);
 				for (int t = 1; t < tokens.length; t++) {
 					g_userHubDistributions[u][t - 1] = Double.parseDouble(tokens[t]);
 				}
-				u++;
 			}
 			br.close();			
 
@@ -164,24 +162,16 @@ public class CompareWithGroundTruth {
 			// User Topic Interest Distributions
 			filename = String.format("%s/userTopicInterestDistributions.csv", learntPath);
 			br = new BufferedReader(new FileReader(filename));
-			nUsers = 0;
-			line = null;
-			while ((line = br.readLine()) != null) {
-				nUsers++;
-			}
-			br.close();
-			userId2Index = new HashMap<String, Integer>();
 			l_userTopicInterestDistributions = new double[nUsers][nTopics];
 			br = new BufferedReader(new FileReader(filename));
-			int u = 0;
 			line = null;
+			int u=0;
 			while ((line = br.readLine()) != null) {
 				String[] tokens = line.split(",");
-				userId2Index.put(tokens[0], u);
+				u = userId2Index.get(tokens[0]);
 				for (int t = 1; t < tokens.length; t++) {
 					l_userTopicInterestDistributions[u][t - 1] = Double.parseDouble(tokens[t]);
 				}
-				u++;
 			}
 			br.close();
 			
@@ -189,14 +179,13 @@ public class CompareWithGroundTruth {
 			filename = String.format("%s/userAuthorityDistributions.csv", learntPath);
 			l_userAuthorityDistributions = new double[nUsers][nTopics];
 			br = new BufferedReader(new FileReader(filename));
-			u = 0;
 			line = null;
 			while ((line = br.readLine()) != null) {
 				String[] tokens = line.split(",");
+				u = userId2Index.get(tokens[0]);
 				for (int t = 1; t < tokens.length; t++) {
 					l_userAuthorityDistributions[u][t - 1] = Double.parseDouble(tokens[t]);
 				}
-				u++;
 			}
 			br.close();
 			
@@ -204,14 +193,13 @@ public class CompareWithGroundTruth {
 			filename = String.format("%s/userHubDistributions.csv", learntPath);
 			l_userHubDistributions = new double[nUsers][nTopics];
 			br = new BufferedReader(new FileReader(filename));
-			u = 0;
 			line = null;
 			while ((line = br.readLine()) != null) {
 				String[] tokens = line.split(",");
+				u = userId2Index.get(tokens[0]);
 				for (int t = 1; t < tokens.length; t++) {
 					l_userHubDistributions[u][t - 1] = Double.parseDouble(tokens[t]);
 				}
-				u++;
 			}
 			br.close();			
 

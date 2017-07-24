@@ -225,7 +225,7 @@ public class Synthetic {
 			filename = String.format("%s/topicWordDistributions.csv", outputPath);
 			bw = new BufferedWriter(new FileWriter(filename));
 			for (int z = 0; z < topics.length; z++) {
-				bw.write(String.format("%f", z));
+				bw.write(String.format("%d", z));
 				for (int w = 0; w < topics[z].length; w++) {
 					bw.write(String.format(",%f", topics[z][w]));
 				}
@@ -237,7 +237,7 @@ public class Synthetic {
 			filename = String.format("%s/userTopicInterestDistribution.csv", outputPath);
 			bw = new BufferedWriter(new FileWriter(filename));
 			for (int u = 0; u < userInterest.length; u++) {
-				bw.write(String.format("%f", u));
+				bw.write(String.format("%d", u));
 				for (int z = 0; z < userInterest[u].length; z++) {
 					bw.write(String.format(",%f", userInterest[u][z]));
 				}
@@ -249,7 +249,7 @@ public class Synthetic {
 			filename = String.format("%s/userAuthorityDistribution.csv", outputPath);
 			bw = new BufferedWriter(new FileWriter(filename));
 			for (int u = 0; u < userAuthorities.length; u++) {
-				bw.write(String.format("%f", u));
+				bw.write(String.format("%d", u));
 				for (int z = 0; z < userAuthorities[u].length; z++) {
 					bw.write(String.format(",%f", userAuthorities[u][z]));
 				}
@@ -261,7 +261,7 @@ public class Synthetic {
 			filename = String.format("%s/userHubDistributions.csv", outputPath);
 			bw = new BufferedWriter(new FileWriter(filename));
 			for (int u = 0; u < userHubs.length; u++) {
-				bw.write(String.format("%f", u));
+				bw.write(String.format("%d", u));
 				for (int z = 0; z < userHubs[u].length; z++) {
 					bw.write(String.format(",%f", userHubs[u][z]));
 				}
