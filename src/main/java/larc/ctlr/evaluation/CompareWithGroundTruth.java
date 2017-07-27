@@ -243,6 +243,18 @@ public class CompareWithGroundTruth {
 			int j = glMatch[i];
 			lgMatch[j] = i;
 		}
+		
+		System.out.print("glMatch[]: ");
+		for (int i=0; i<glMatch.length; i++){
+			System.out.print(glMatch[i]+" ");
+		}
+		System.out.println("");
+		System.out.print("lgMatch[]: ");
+		for (int i=0; i<lgMatch.length; i++){
+			System.out.print(lgMatch[i]+" ");
+		}
+		System.out.println("");
+		
 	}
 	
 	public void measureGoodness() {

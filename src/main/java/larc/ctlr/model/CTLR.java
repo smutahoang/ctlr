@@ -67,7 +67,7 @@ public class CTLR {
 	public double learning_rate_hubs = 0.001;
 	public int maxIteration_Hubs = 10;
 
-	public int max_GibbsEM_Iterations = 100;
+	public int max_GibbsEM_Iterations = 200;
 
 	/***
 	 * 
