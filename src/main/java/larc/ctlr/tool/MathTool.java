@@ -5,9 +5,9 @@ public class MathTool {
 		double d = 0;
 		for (int i = 0; i < nDim; i++) {
 			d += x[i] * y[i];
-			System.out.println(String.format("%f - %f", x[i], y[i]));
+			//System.out.println(String.format("%f - %f", x[i], y[i]));
 		}
-		System.out.println("d = " + d);
+		//System.out.println("d = " + d);
 		return d;
 	}
 
@@ -20,13 +20,13 @@ public class MathTool {
 	}
 
 	public static double normalizationFunction(double x) {
-		if (x < 0) {
+		if (x <= 0) {
 			System.out.println("in normalization function: variable is negative");
 			System.exit(-1);
 		}
 		// double s = sigmoid(x);
 		double s = sigmoid(0.01, x);
-		System.out.println("s = " + s);
+		//System.out.println("s = " + s);
 		return 2 * (s - 0.5);
 	}
 }

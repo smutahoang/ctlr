@@ -4,12 +4,10 @@
 package larc.ctlr.data;
 
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileWriter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Random;
 
 import org.apache.commons.math3.distribution.NormalDistribution;
@@ -41,8 +39,9 @@ public class Synthetic {
 	public double sigma = 0.1;
 	public double delta = 0.1;
 
+	private Random rand = new Random();
+
 	private double[][] genTopics(int nTopics, int nWords) {
-		Random rand = new Random(System.currentTimeMillis());
 		System.out.println("nTopics = " + nTopics);
 		double[][] topics = new double[nTopics][];
 		for (int z = 0; z < nTopics; z++) {
@@ -52,7 +51,6 @@ public class Synthetic {
 	}
 
 	private double[][] genUserInterest(int nUsers, int nTopics) {
-		Random rand = new Random(System.currentTimeMillis());
 		double[][] userInterest = new double[nUsers][];
 		for (int u = 0; u < nUsers; u++) {
 			userInterest[u] = statTool.sampleDirichletSkew(alpha, nTopics, userSkewness, mass, rand);
@@ -61,7 +59,6 @@ public class Synthetic {
 	}
 
 	private int[] genPost(double[] interest, double[][] topics) {
-		Random rand = new Random(System.currentTimeMillis());
 		// topic
 		int z = statTool.sampleMult(interest, false, rand);
 		// #words in the post
@@ -101,7 +98,6 @@ public class Synthetic {
 	private int genLink(int nTopics, double[] userAuthority, double[] userHub) {
 		double p = MathTool.normalizationFunction(MathTool.dotProduct(nTopics, userAuthority, userHub));
 		// System.out.println("p = " + p);
-		Random rand = new Random(System.currentTimeMillis());
 		if (rand.nextDouble() < p) {
 			return 1;
 		}
@@ -162,7 +158,6 @@ public class Synthetic {
 			// }
 
 			int nPosts = 0;
-			Random rand = new Random(System.currentTimeMillis());
 			BufferedWriter bw = new BufferedWriter(new FileWriter(String.format("%s/syn_posts.csv", outputpath)));
 			for (int u = 0; u < nUsers; u++) {
 				int n = rand.nextInt(maxNPosts - minNPosts) + minNPosts;
@@ -170,8 +165,10 @@ public class Synthetic {
 					int[] post = genPost(userInterest[u], topics);
 					bw.write(nPosts + "," + u + ",");
 					for (int j = 0; j < post.length; j++) {
-						bw.write(" " + post[j]);
+						bw.write(" " + post[j]);						
 					}
+					// batch
+					bw.write(",1");
 					bw.newLine();
 					nPosts++;
 				}
@@ -197,14 +194,40 @@ public class Synthetic {
 					new FileWriter(String.format("%s/syn_relationships.csv", outputpath)));
 			for (int u = 0; u < nUsers; u++) {
 				if (!followings.containsKey(u)) {
+					System.out.printf("no-followings u %d\n", u);
 					continue;
 				}
 				Iterator<Integer> vIter = followings.get(u).iterator();
 				while (vIter.hasNext()) {
 					int v = vIter.next();
 					bw.write(u + "," + v);
+					// batch
+					bw.write(",1");
 					bw.newLine();
 					System.out.println(u + "," + v);
+				}
+			}
+			bw.close();
+
+			bw = new BufferedWriter(new FileWriter(String.format("%s/syn_nonrelationships.csv", outputpath)));
+			for (int u = 0; u < nUsers; u++) {
+				for (int v = 0; v < nUsers; v++) {
+					if (v == u) {
+						continue;
+					}
+					HashSet<Integer> followees = followings.get(u);
+					// sample 10% of the non-followees
+					if (followees != null) {
+						if (followees.contains(v))
+							continue;
+					}
+					if (rand.nextDouble() > 0.1) {
+						continue;
+					}
+					bw.write(u + "," + v);
+					//batch
+					bw.write(",1");
+					bw.newLine();
 				}
 			}
 			bw.close();
@@ -290,6 +313,6 @@ public class Synthetic {
 
 	public static void main(String[] args) {
 		Synthetic generator = new Synthetic();
-		generator.genData(100, 10, 1000, "E:/code/java/ctlr/output");
+		generator.genData(1000, 10, 1000, "E:/code/java/ctlr/output");
 	}
 }

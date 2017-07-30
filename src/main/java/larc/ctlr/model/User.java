@@ -3,6 +3,7 @@ package larc.ctlr.model;
 public class User {
 	public int userIndex;
 	public String userId;
+	public String username;
 
 	public int nPosts;
 	public Post[] posts;
