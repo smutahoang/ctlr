@@ -61,7 +61,7 @@ public class CTLR {
 	public double learning_rate_hubs = 0.001;
 	public int maxIteration_Hubs = 10;
 
-	public int max_GibbsEM_Iterations = 100;
+	public int max_GibbsEM_Iterations = 200;
 
 	/***
 	 * 
@@ -304,7 +304,8 @@ public class CTLR {
 		 * , u, authorityLikelihood, hubLikelihood, postLikelihood);
 		 */
 
-		finalLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + topicLikelihood;
+		//finalLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + topicLikelihood;
+		finalLikelihood = authorityLikelihood + hubLikelihood + postLikelihood;
 		return finalLikelihood;
 	}
 
@@ -347,16 +348,14 @@ public class CTLR {
 			}
 		}
 
-		// gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood
-		// + (alpha -1) / x;
+		//gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + ((alpha -1) / x);
+		gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood;
 
 		/*
 		 * System.out.printf(
 		 * "[Grad-TopicLikelihood] u = %d authorityLikelihood = %f hubLikelihood = %f postLikelihood = %f\n"
 		 * , u, authorityLikelihood, hubLikelihood, postLikelihood);
 		 */
-
-		gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood;
 
 		return gradLikelihood;
 	}
