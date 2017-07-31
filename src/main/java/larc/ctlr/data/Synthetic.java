@@ -41,6 +41,8 @@ public class Synthetic {
 
 	private Random rand = new Random();
 
+	int[] nTopicCounts;
+
 	private double[][] genTopics(int nTopics, int nWords) {
 		System.out.println("nTopics = " + nTopics);
 		double[][] topics = new double[nTopics][];
@@ -58,9 +60,10 @@ public class Synthetic {
 		return userInterest;
 	}
 
-	private int[] genPost(double[] interest, double[][] topics) {
+	private int[] genPost(int u, double[] interest, double[][] topics) {
 		// topic
 		int z = statTool.sampleMult(interest, false, rand);
+		nTopicCounts[z]++;
 		// #words in the post
 		int nTweetWords = rand.nextInt(maxNWords - minNWords) + minNWords;
 		int[] post = new int[nTweetWords];
@@ -157,23 +160,39 @@ public class Synthetic {
 			// file.mkdir();
 			// }
 
+			nTopicCounts = new int[nTopics];
+
 			int nPosts = 0;
 			BufferedWriter bw = new BufferedWriter(new FileWriter(String.format("%s/syn_posts.csv", outputpath)));
+			BufferedWriter bw_empirical = new BufferedWriter(
+					new FileWriter(String.format("%s/syn_userEmpiricalTopicDistribution.csv", outputpath)));
 			for (int u = 0; u < nUsers; u++) {
 				int n = rand.nextInt(maxNPosts - minNPosts) + minNPosts;
+
+				for (int z = 0; z < nTopics; z++) {
+					nTopicCounts[z] = 0;
+				}
+
 				for (int i = 0; i < n; i++) {
-					int[] post = genPost(userInterest[u], topics);
+					int[] post = genPost(u, userInterest[u], topics);
 					bw.write(nPosts + "," + u + ",");
 					for (int j = 0; j < post.length; j++) {
-						bw.write(" " + post[j]);						
+						bw.write(" " + post[j]);
 					}
 					// batch
 					bw.write(",1");
 					bw.newLine();
 					nPosts++;
 				}
+
+				bw_empirical.write(String.format("%f", ((double) nTopicCounts[0]) / n));
+				for (int z = 1; z < nTopics; z++) {
+					bw_empirical.write(String.format(",%f", ((double) nTopicCounts[z]) / n));
+				}
+				bw_empirical.write("\n");
 			}
 			bw.close();
+			bw_empirical.close();
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -225,7 +244,7 @@ public class Synthetic {
 						continue;
 					}
 					bw.write(u + "," + v);
-					//batch
+					// batch
 					bw.write(",1");
 					bw.newLine();
 				}
