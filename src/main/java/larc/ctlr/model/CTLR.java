@@ -304,7 +304,7 @@ public class CTLR {
 		 * , u, authorityLikelihood, hubLikelihood, postLikelihood);
 		 */
 
-		finalLikelihood = authorityLikelihood + hubLikelihood + postLikelihood;
+		finalLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + topicLikelihood;
 		return finalLikelihood;
 	}
 

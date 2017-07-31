@@ -307,7 +307,6 @@ public class Synthetic {
 		saveWords(nWords, outputPath);
 		genAndsaveTweet(outputPath, nUsers, nTopics, userInterest, topics);
 		genAndsaveNetwork(outputPath, nUsers, nTopics, userAuthorities, userHubs);
-
 		saveGroundTruth(topics, userInterest, userAuthorities, userHubs, outputPath);
 	}
 
