@@ -49,19 +49,22 @@ public class CTLR {
 											// distribution of word w for topic
 											// k. Sum of each words distribution
 											// for each k = 1
+	
+	public double[][] optTopicWordDist = null; // optimized topicWordDist[k][w]
+					
 
 	// options for learning
 
-	public double learning_rate_topicalInterest = 0.001;
+	public double learning_rate_topicalInterest = 0.0001;
 	public int maxIteration_topicalInterest = 10;
 
-	public double learning_rate_authorities = 0.001;
+	public double learning_rate_authorities = 0.0001;
 	public int maxIteration_Authorities = 10;
 
-	public double learning_rate_hubs = 0.001;
+	public double learning_rate_hubs = 0.0001;
 	public int maxIteration_Hubs = 10;
 
-	public int max_GibbsEM_Iterations = 200;
+	public int max_GibbsEM_Iterations = 500;
 
 	/***
 	 * 
@@ -1100,6 +1103,8 @@ public class CTLR {
 	 */
 	public void train() {
 		init();
+		double maxLikelihood = 0;
+		double currentLikelihood = 0;
 		for (int iter = 0; iter < max_GibbsEM_Iterations; iter++) {
 			/*
 			 * for (int k=0;k<nTopics;k++){ System.out.printf("%f \t",
@@ -1129,8 +1134,26 @@ public class CTLR {
 					}
 				}
 			}
-			// Check that the likelihood increase
-			System.out.printf("likelihood after %d steps: %f", iter, getLikelihood());
+			//set first Likelihood as the maxLikelihood
+			currentLikelihood = getLikelihood();
+			if (iter==0){
+				maxLikelihood = currentLikelihood;
+			} else{
+				if (maxLikelihood<currentLikelihood){
+					maxLikelihood = currentLikelihood;
+					//set optimized topicWordDist to be the current TopicWordsDist
+					optTopicWordDist = topicWordDist;
+					//set optimized user topical interest, authority and hub
+					for (int u = 0; u < dataset.nUsers; u++) {
+						User currUser = dataset.users[u];
+						currUser.optTopicalInterests = currUser.topicalInterests;
+						currUser.optAuthorities = currUser.authorities;
+						currUser.optHubs = currUser.hubs;
+					}
+				}
+			}
+			
+			System.out.printf("likelihood after %d steps: %f, max %f ", iter, currentLikelihood, maxLikelihood);
 			System.out.println();
 		}
 		// print out the learned parameters
@@ -1148,7 +1171,7 @@ public class CTLR {
 			for (int k = 0; k < nTopics; k++) {
 				String text = Integer.toString(k);
 				for (int w = 0; w < dataset.vocabulary.length; w++) {
-					text = text + "," + Double.toString(topicWordDist[k][w]);
+					text = text + "," + Double.toString(optTopicWordDist[k][w]);
 				}
 				fo.write(text + "\n");
 			}
@@ -1168,7 +1191,7 @@ public class CTLR {
 			WeightedElement[] topWords = null;
 			for (int z = 0; z < nTopics; z++) {
 				bw.write(z + "\n");
-				topWords = rankTool.getTopKbyWeight(dataset.vocabulary, topicWordDist[z], k);
+				topWords = rankTool.getTopKbyWeight(dataset.vocabulary, optTopicWordDist[z], k);
 				for (int j = 0; j < k; j++)
 					bw.write("," + topWords[j].name + "," + topWords[j].weight + "\n");
 			}
@@ -1188,7 +1211,7 @@ public class CTLR {
 				User currUser = dataset.users[u];
 				String text = currUser.userId;
 				for (int k = 0; k < nTopics; k++) {
-					text = text + "," + Double.toString(currUser.topicalInterests[k]);
+					text = text + "," + Double.toString(currUser.optTopicalInterests[k]);
 				}
 				fo.write(text + "\n");
 			}
@@ -1208,7 +1231,7 @@ public class CTLR {
 				User currUser = dataset.users[u];
 				String text = currUser.userId;
 				for (int k = 0; k < nTopics; k++) {
-					text = text + "," + Double.toString(currUser.authorities[k]);
+					text = text + "," + Double.toString(currUser.optAuthorities[k]);
 				}
 				fo.write(text + "\n");
 			}
@@ -1228,7 +1251,7 @@ public class CTLR {
 				User currUser = dataset.users[u];
 				String text = currUser.userId;
 				for (int k = 0; k < nTopics; k++) {
-					text = text + "," + Double.toString(currUser.hubs[k]);
+					text = text + "," + Double.toString(currUser.optHubs[k]);
 				}
 				fo.write(text + "\n");
 			}

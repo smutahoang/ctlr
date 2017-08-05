@@ -25,8 +25,8 @@ public class Synthetic {
 										// of words whose probabilities summing
 										// up to 90%
 
-	private int minNPosts = 20;
-	private int maxNPosts = 100;
+	private int minNPosts = 100;
+	private int maxNPosts = 200;
 
 	private int minNWords = 10;
 	private int maxNWords = 20;

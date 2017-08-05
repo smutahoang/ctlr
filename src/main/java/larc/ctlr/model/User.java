@@ -20,4 +20,10 @@ public class User {
 	public double[] topicalInterests;// theta, K-topics dimension
 	public double[] authorities;// A, K-topics dimension
 	public double[] hubs;// H, K-topics dimension
+	
+	
+	public double[] optTopicalInterests;// optimized theta, K-topics dimension
+	public double[] optAuthorities;// optimized A,  K-topics dimension
+	public double[] optHubs;// optimized H, K-topics dimension
+	
 }
