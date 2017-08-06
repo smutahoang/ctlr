@@ -8,8 +8,11 @@ import java.util.Random;
 import org.apache.commons.math3.distribution.NormalDistribution;
 import java.io.File;
 import java.io.FileWriter;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-public class CTLR {
+
+public class MultithreadCTLR {
 	public String datapath;
 	public Dataset dataset;
 	public int nTopics;
@@ -52,7 +55,7 @@ public class CTLR {
 	// options for learning
 	public double lineSearch_alpha = 0.0001;
 	public double lineSearch_beta = 0.1;
-	public int lineSearch_MaxIterations = 10;;
+	public int lineSearch_MaxIterations = 5;;
 	public double lineSearch_lambda;
 	
 	public int maxIteration_topicalInterest = 10;
@@ -66,7 +69,7 @@ public class CTLR {
 	 * @param _datasetPath
 	 * @param _nTopics
 	 */
-	public CTLR(String _datasetPath, int _nTopics, int _batch) {
+	public MultithreadCTLR(String _datasetPath, int _nTopics, int _batch) {
 		this.datapath = _datasetPath;
 		this.dataset = new Dataset(_datasetPath, _nTopics);
 		this.nTopics = _nTopics;
