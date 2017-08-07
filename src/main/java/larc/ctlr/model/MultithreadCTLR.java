@@ -14,19 +14,19 @@ import java.util.concurrent.Executors;
 
 public class MultithreadCTLR {
 	public String datapath;
-	public Dataset dataset;
-	public int nTopics;
-	public int batch;
+	public static Dataset dataset;
+	public static int nTopics;
+	public static int batch;
 
 	// priors
 
-	public double alpha;// prior for users' interest
-	public double beta; // prior for topics
-	public double sigma;// variance of users' authorities
-	public double delta;// variance of users' hubs
-	public double gamma; // variance of topic word distribution
-	public double epsilon = 0.000001;
-	public double lamda = 0.01;
+	public static double alpha;// prior for users' interest
+	public static double beta; // prior for topics
+	public static double sigma;// variance of users' authorities
+	public static double delta;// variance of users' hubs
+	public static double gamma; // variance of topic word distribution
+	public static double epsilon = 0.000001;
+	public static double lamda = 0.01;
 
 	public Random rand;
 
@@ -53,17 +53,71 @@ public class MultithreadCTLR {
 					
 
 	// options for learning
-	public double lineSearch_alpha = 0.0001;
-	public double lineSearch_beta = 0.1;
-	public int lineSearch_MaxIterations = 5;;
-	public double lineSearch_lambda;
+	public static double lineSearch_alpha = 0.0001;
+	public static double lineSearch_beta = 0.1;
+	public static int lineSearch_MaxIterations = 5;;
+	public static double lineSearch_lambda;
 	
-	public int maxIteration_topicalInterest = 10;
-	public int maxIteration_Authorities = 10;
-	public int maxIteration_Hubs = 10;
+	public static int maxIteration_topicalInterest = 10;
+	public static int maxIteration_Authorities = 10;
+	public static int maxIteration_Hubs = 10;
+	public static int max_GibbsEM_Iterations = 500;
+	
+	public int nParallelThreads = 10;
+	public int[] threadStartIndexes = null;
+	public int[] threadEndIndexes = null;
 
-	public int max_GibbsEM_Iterations = 500;
+	static class ChildThread implements Runnable {
 
+		private int threadStartIndex;
+		private int threadEndIndex;
+		private String runOption;
+
+		public ChildThread(int start, int end, String run) {
+			this.threadStartIndex = start;
+			this.threadEndIndex = end;
+			runOption = run;
+		}	
+
+		@Override
+		public void run() {
+			if (runOption.equals("optTopicInterests")) {
+				optTopicalInterests(threadStartIndex, threadEndIndex);
+			} else if (runOption.equals("optAuthorities")) {
+				optAuthorities(threadStartIndex, threadEndIndex);
+			} else if (runOption.equals("optHubs")) {
+				optHubs(threadStartIndex, threadEndIndex);
+			} 
+		}
+
+		private void optTopicalInterests(int startIndex, int endIndex) {
+			for (int u = startIndex; u<endIndex; u++)
+				altOptimize_topicalInterest(u);
+		}
+		
+		private void optAuthorities(int startIndex, int endIndex) {
+			for (int u = startIndex; u<endIndex; u++)
+				altOptimize_Authorities(u);
+		}
+		
+		private void optHubs(int startIndex, int endIndex) {
+			for (int u = startIndex; u<endIndex; u++)
+				altOptimize_Hubs(u);
+		}
+		
+	}
+	
+	private void getThreadIndexes() {
+		threadStartIndexes = new int[nParallelThreads];
+		threadEndIndexes = new int[nParallelThreads];
+		int chunkLength = Math.floorDiv(dataset.nUsers, nParallelThreads);
+		for (int i = 0; i < nParallelThreads; i++) {
+			threadStartIndexes[i] = i * chunkLength;
+			threadEndIndexes[i] = threadStartIndexes[i] + chunkLength;
+		}
+		threadEndIndexes[nParallelThreads - 1] = dataset.nUsers;
+	}
+	
 	/***
 	 * 
 	 * @param _datasetPath
@@ -264,7 +318,7 @@ public class MultithreadCTLR {
 	 * @param u
 	 * @return
 	 */
-	private double getLikelihood_topicalInterest(int u, double[] x) {
+	private static double getLikelihood_topicalInterest(int u, double[] x) {
 		// Refer to Eqn 9 in Learning paper for Formula
 
 		double authorityLikelihood = 0;
@@ -322,7 +376,7 @@ public class MultithreadCTLR {
 	 * @param x
 	 * @return
 	 */
-	private double gradLikelihood_topicalInterest(int u, int k, double x) {
+	private static double gradLikelihood_topicalInterest(int u, int k, double x) {
 		// Refer to Eqn 11 in Learning paper
 
 		double authorityLikelihood = 0;
@@ -370,7 +424,7 @@ public class MultithreadCTLR {
 	 * @param n
 	 * @return
 	 */
-	private double[] simplexProjection(double[] x, double z) {
+	private static double[] simplexProjection(double[] x, double z) {
 		// given all the k that u have, it adds up to 1
 		// Refer to https://github.com/blei-lab/ctr/blob/master/opt.cpp
 		double[] projX = new double[x.length];
@@ -424,7 +478,7 @@ public class MultithreadCTLR {
 	 * 
 	 * @param u
 	 */
-	private void altOptimize_topicalInterest(int u) {
+	static void altOptimize_topicalInterest(int u) {
 		double[] grad = new double[nTopics];
 		double[] currentX = dataset.users[u].topicalInterests;
 		double[] x = new double[nTopics];
@@ -499,7 +553,7 @@ public class MultithreadCTLR {
 	 * @param x[]
 	 * @return
 	 */
-	private double getLikelihood_authority(int v, double[] x) {
+	private static double getLikelihood_authority(int v, double[] x) {
 		// Refer to Eqn 13 in Learning paper
 
 		double followerLikelihood = 0;
@@ -573,7 +627,7 @@ public class MultithreadCTLR {
 	 * @param x
 	 * @return
 	 */
-	private double gradLikelihood_authority(int v, int k, double x) {
+	private static double gradLikelihood_authority(int v, int k, double x) {
 		// Refer to Eqn 15 in Learning paper
 
 		double followerLikelihood = 0;
@@ -638,7 +692,7 @@ public class MultithreadCTLR {
 	 * 
 	 * @param u
 	 */
-	private void altOptimize_Authorities(int u) {
+	static void altOptimize_Authorities(int u) {
 		double[] grad = new double[nTopics];
 		double[] currentX = dataset.users[u].authorities;
 		double[] x = new double[nTopics];
@@ -714,7 +768,7 @@ public class MultithreadCTLR {
 	 * @param x[]
 	 * @return
 	 */
-	private double getLikelihood_hub(int u, double[] x) {
+	private static double getLikelihood_hub(int u, double[] x) {
 		// Refer to Eqn 17 in Learning paper
 
 		double followingLikelihood = 0;
@@ -791,7 +845,7 @@ public class MultithreadCTLR {
 	 * @param x
 	 * @return
 	 */
-	private double gradLikelihood_hub(int u, int k, double x) {
+	private static double gradLikelihood_hub(int u, int k, double x) {
 		// Refer to Eqn 19 in Learning paper
 
 		double followingLikelihood = 0;
@@ -867,7 +921,7 @@ public class MultithreadCTLR {
 	 * 
 	 * @param u
 	 */
-	private void altOptimize_Hubs(int u) {
+	static void altOptimize_Hubs(int u) {
 		// the following code is just a draft, to be corrected.
 		// will need more checking, but roughly the gradient descent
 		// for learning A_u consists of the following main steps
@@ -1023,15 +1077,15 @@ public class MultithreadCTLR {
 				continue;
 			// Sample topic
 			currUser.posts[n].topic = z;
-			if (currUser.topicalInterests[z] <= 10E-12) {
-				System.err.println("Something wrong!!! ");
-				for (int k = 0; k < nTopics; k++) {
-					System.out.printf("p[%d] = %.12f sump = %.12f\n", k, p[k], sump);
-					System.out.printf("z = %d");
-					System.exit(-1);
-				}
+			//if (currUser.topicalInterests[z] <= 10E-12) {
+			//	System.err.println("Something wrong!!! ");
+			//	for (int k = 0; k < nTopics; k++) {
+			//		System.out.printf("p[%d] = %.12f sump = %.12f\n", k, p[k], sump);
+			//		System.out.printf("z = %d");
+			//		System.exit(-1);
+			//	}
 
-			}
+			//}
 			return;
 		}
 
@@ -1102,6 +1156,8 @@ public class MultithreadCTLR {
 	 */
 	public void train() {
 		init();
+		getThreadIndexes();
+		ExecutorService executor = null;
 		double maxLikelihood = 0;
 		double currentLikelihood = 0;
 		System.out.println("Datapath:"+this.datapath);
@@ -1109,24 +1165,31 @@ public class MultithreadCTLR {
 		System.out.println("Line Search Beta:"+this.lineSearch_beta);
 		System.out.println("#Topics:"+this.nTopics);
 		for (int iter = 0; iter < max_GibbsEM_Iterations; iter++) {
-			/*
-			 * for (int k=0;k<nTopics;k++){ System.out.printf("%f \t",
-			 * dataset.users[0].topicalInterests[k]); } System.out.println();
-			 * for (int k=0;k<nTopics;k++){ System.out.printf("%f \t",
-			 * dataset.users[0].authorities[k]); } System.out.println(); for
-			 * (int k=0;k<nTopics;k++){ System.out.printf("%f \t",
-			 * dataset.users[0].hubs[k]); } System.out.println();
-			 */
 			// EM part that employs alternating optimization
-			for (int u = 0; u < dataset.nUsers; u++) {
-				altOptimize_topicalInterest(u);
+			executor = Executors.newFixedThreadPool(nParallelThreads);
+			for (int i = 0; i < threadStartIndexes.length; i++) {
+				Runnable worker = new ChildThread(threadStartIndexes[i], threadEndIndexes[i], 
+						"optTopicInterests");
+				executor.execute(worker);
 			}
-			for (int u = 0; u < dataset.nUsers; u++) {
-				altOptimize_Authorities(u);
+			executor.shutdown();
+			
+			executor = Executors.newFixedThreadPool(nParallelThreads);
+			for (int i = 0; i < threadStartIndexes.length; i++) {
+				Runnable worker = new ChildThread(threadStartIndexes[i], threadEndIndexes[i], 
+						"optAuthorities");
+				executor.execute(worker);
 			}
-			for (int u = 0; u < dataset.nUsers; u++) {
-				altOptimize_Hubs(u);
+			executor.shutdown();
+			
+			executor = Executors.newFixedThreadPool(nParallelThreads);
+			for (int i = 0; i < threadStartIndexes.length; i++) {
+				Runnable worker = new ChildThread(threadStartIndexes[i], threadEndIndexes[i], 
+						"optHubs");
+				executor.execute(worker);
 			}
+			executor.shutdown();
+			
 			altOptimize_topics();
 			// Gibbs part
 			for (int u = 0; u < dataset.nUsers; u++) {

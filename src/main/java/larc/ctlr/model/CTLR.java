@@ -52,7 +52,7 @@ public class CTLR {
 	// options for learning
 	public double lineSearch_alpha = 0.0001;
 	public double lineSearch_beta = 0.1;
-	public int lineSearch_MaxIterations = 10;;
+	public int lineSearch_MaxIterations = 20;;
 	public double lineSearch_lambda;
 	
 	public int maxIteration_topicalInterest = 10;

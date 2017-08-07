@@ -5,6 +5,7 @@ package larc.ctlr.runner;
 
 import larc.ctlr.data.Synthetic;
 import larc.ctlr.model.CTLR;
+import larc.ctlr.model.MultithreadCTLR;
 
 public class Runner {
 
@@ -38,7 +39,13 @@ public class Runner {
 	
 	static void train(String datasetPath, int nTopics, int batch) {
 		larc.ctlr.model.CTLR model = new CTLR(datasetPath, nTopics, batch);
-		model.init();
+		//model.init();
+		model.train();
+	}
+	
+	static void multiTrain(String datasetPath, int nTopics, int batch) {
+		larc.ctlr.model.MultithreadCTLR model = new MultithreadCTLR(datasetPath, nTopics, batch);
+		//model.init();
 		model.train();
 	}
 
@@ -71,7 +78,12 @@ public class Runner {
 				int nTopics = Integer.parseInt(args[2]);
 				int batch = Integer.parseInt(args[3]);
 				train(datasetPath, nTopics, batch);
-			}else {
+			} else if (args[0].equals("multiTrain")){
+				String datasetPath = args[1];
+				int nTopics = Integer.parseInt(args[2]);
+				int batch = Integer.parseInt(args[3]);
+				multiTrain(datasetPath, nTopics, batch);
+			} else {
 				System.out.printf("%s is not an option!!!");
 			}
 		} catch (Exception e) {
