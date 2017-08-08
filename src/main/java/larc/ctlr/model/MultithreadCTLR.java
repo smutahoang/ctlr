@@ -51,7 +51,7 @@ public class MultithreadCTLR {
 					
 
 	// options for learning
-	public static double lineSearch_alpha = 0.000001;
+	public static double lineSearch_alpha = 0.0001;
 	public static double lineSearch_beta = 0.1;
 	public static int lineSearch_MaxIterations = 10;;
 	public static double lineSearch_lambda;
