@@ -52,7 +52,7 @@ public class CTLR {
 	// options for learning
 	public double lineSearch_alpha = 0.0001;
 	public double lineSearch_beta = 0.1;
-	public int lineSearch_MaxIterations = 20;;
+	public int lineSearch_MaxIterations = 50;;
 	public double lineSearch_lambda;
 	
 	public int maxIteration_topicalInterest = 10;
@@ -695,8 +695,8 @@ public class CTLR {
 				// u, iter, f);
 			} else {
 				// to see if F actually reduce after every iteration
-				// System.out.printf("alt_authority: u = %d iter = %d f = %f\n",
-				// u, iter, f);
+				 System.out.printf("alt_authority: u = %d iter = %d f = %f\n",
+				 u, iter, f);
 				break;// cannot improve further
 			}
 		}
@@ -1038,7 +1038,7 @@ public class CTLR {
 	 * initialize the data before training
 	 */
 	public void init() {
-		alpha = nTopics / 50;
+		alpha = nTopics / 100;
 		gamma = 0.001;
 		sigma = 0.2;
 		delta = 0.2;

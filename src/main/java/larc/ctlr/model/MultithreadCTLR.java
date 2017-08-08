@@ -15,15 +15,13 @@ import java.util.concurrent.Executors;
 public class MultithreadCTLR {
 	public String datapath;
 	public static Dataset dataset;
-	public static int nTopics;
+	public static int nTopics = 1;
 	public static int batch;
 
-	// priors
-
-	public static double alpha;// prior for users' interest
-	public static double beta; // prior for topics
-	public static double sigma;// variance of users' authorities
-	public static double delta;// variance of users' hubs
+	public static double alpha = 50/nTopics;// prior for users' interest
+	public static double beta = 0.001; // prior for topics
+	public static double sigma = 0.2;// variance of users' authorities
+	public static double delta= 0.2;// variance of users' hubs
 	public static double gamma; // variance of topic word distribution
 	public static double epsilon = 0.000001;
 	public static double lamda = 0.01;
@@ -53,15 +51,15 @@ public class MultithreadCTLR {
 					
 
 	// options for learning
-	public static double lineSearch_alpha = 0.0001;
+	public static double lineSearch_alpha = 0.000001;
 	public static double lineSearch_beta = 0.1;
-	public static int lineSearch_MaxIterations = 5;;
+	public static int lineSearch_MaxIterations = 10;;
 	public static double lineSearch_lambda;
 	
 	public static int maxIteration_topicalInterest = 10;
 	public static int maxIteration_Authorities = 10;
 	public static int maxIteration_Hubs = 10;
-	public static int max_GibbsEM_Iterations = 500;
+	public static int max_GibbsEM_Iterations =100;
 	
 	public int nParallelThreads = 10;
 	public int[] threadStartIndexes = null;
@@ -537,8 +535,10 @@ public class MultithreadCTLR {
 				// iter, f);
 			} else {
 				// to see if F actually reduce after every iteration
-				// System.out.printf("alt_topic: u = %d iter = %d f = %f\n", u,
-				// iter, f);
+				if (u == 4812){
+				 System.out.printf("alt_topic: u = %d iter = %d f = %f\n", u,
+				 iter, f);
+				}
 				break;// cannot improve further
 			}
 		}
@@ -1095,10 +1095,6 @@ public class MultithreadCTLR {
 	 * initialize the data before training
 	 */
 	public void init() {
-		alpha = nTopics / 50;
-		gamma = 0.001;
-		sigma = 0.2;
-		delta = 0.2;
 
 		rand = new Random();
 		// initialize the count variables
@@ -1163,6 +1159,7 @@ public class MultithreadCTLR {
 		System.out.println("Datapath:"+this.datapath);
 		System.out.println("Line Search Alpha:"+this.lineSearch_alpha);
 		System.out.println("Line Search Beta:"+this.lineSearch_beta);
+		System.out.println("Line Search Max Iterations:"+this.lineSearch_MaxIterations);
 		System.out.println("#Topics:"+this.nTopics);
 		for (int iter = 0; iter < max_GibbsEM_Iterations; iter++) {
 			// EM part that employs alternating optimization
@@ -1223,7 +1220,7 @@ public class MultithreadCTLR {
 			System.out.println();
 		}
 		// print out the learned parameters
-		output_topicWord();
+		//output_topicWord();
 		output_topicInterest();
 		output_authority();
 		output_hub();
