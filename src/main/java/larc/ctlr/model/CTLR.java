@@ -52,7 +52,7 @@ public class CTLR {
 	// options for learning
 	public double lineSearch_alpha = 0.0001;
 	public double lineSearch_beta = 0.1;
-	public int lineSearch_MaxIterations = 50;;
+	public int lineSearch_MaxIterations = 10;;
 	public double lineSearch_lambda;
 	
 	public int maxIteration_topicalInterest = 10;
@@ -1038,7 +1038,7 @@ public class CTLR {
 	 * initialize the data before training
 	 */
 	public void init() {
-		alpha = nTopics / 100;
+		alpha = 50/ (double)(nTopics);
 		gamma = 0.001;
 		sigma = 0.2;
 		delta = 0.2;
@@ -1102,8 +1102,10 @@ public class CTLR {
 		double maxLikelihood = 0;
 		double currentLikelihood = 0;
 		System.out.println("Datapath:"+this.datapath);
+		System.out.println("Alpha:"+this.alpha);
 		System.out.println("Line Search Alpha:"+this.lineSearch_alpha);
 		System.out.println("Line Search Beta:"+this.lineSearch_beta);
+		System.out.println("Line Search Max Iterations:"+this.lineSearch_MaxIterations);
 		System.out.println("#Topics:"+this.nTopics);
 		for (int iter = 0; iter < max_GibbsEM_Iterations; iter++) {
 			/*
