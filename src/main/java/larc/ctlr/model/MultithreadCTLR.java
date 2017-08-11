@@ -175,7 +175,7 @@ public class MultithreadCTLR {
 					}
 					HuAv = HuAv * lamda;
 					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-					linkRelationshipLikelihood += Math.log(1 - fHuAv);
+					linkRelationshipLikelihood += Math.log10(1 - fHuAv);
 
 					if (Double.isInfinite(linkRelationshipLikelihood)) {
 						System.out.printf("[non-Followers] HuAv = %.12f fHuAv = %.12f\n", HuAv, fHuAv);
@@ -195,7 +195,7 @@ public class MultithreadCTLR {
 					}
 					HuAv = HuAv * lamda;
 					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-					linkRelationshipLikelihood += Math.log(fHuAv);
+					linkRelationshipLikelihood += Math.log10(fHuAv);
 
 					if (Double.isInfinite(linkRelationshipLikelihood)) {
 						System.out.printf("[followers] HuAv = %.12f fHuAv = %.12f\n", HuAv, fHuAv);
@@ -219,7 +219,7 @@ public class MultithreadCTLR {
 						}
 						HuAv = HuAv * lamda;
 						double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-						linkRelationshipLikelihood += Math.log(1.0 - fHuAv);
+						linkRelationshipLikelihood += Math.log10(1.0 - fHuAv);
 						if (Double.isInfinite(linkRelationshipLikelihood)) {
 							System.out.printf("[non-followees] HuAv = %.12f fHuAv = %.12f\n", HuAv, fHuAv);
 						}
@@ -245,7 +245,7 @@ public class MultithreadCTLR {
 						}
 						HuAv = HuAv * lamda;
 						double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-						linkRelationshipLikelihood += Math.log(fHuAv);
+						linkRelationshipLikelihood += Math.log10(fHuAv);
 						if (Double.isInfinite(linkRelationshipLikelihood)) {
 							System.out.printf("[followees] HuAv = %.12f fHuAv = %.12f\n", HuAv, fHuAv);
 						}
@@ -254,19 +254,19 @@ public class MultithreadCTLR {
 			}
 
 			for (int k = 0; k < nTopics; k++) {
-				//linkAuthorityLikelihood += (-Math.log(sigma)
-				//		- (Math.pow(Math.log(currUser.authorities[k]) - currUser.topicalInterests[k], 2)
+				//linkAuthorityLikelihood += (-Math.log10(sigma)
+				//		- (Math.pow(Math.log10(currUser.authorities[k]) - currUser.topicalInterests[k], 2)
 				//				/ (2 * Math.pow(sigma, 2))));
-				linkAuthorityLikelihood += -Math.pow((Math.log(currUser.authorities[k]) - currUser.topicalInterests[k]), 2) / (2 * Math.pow(delta, 2));
+				linkAuthorityLikelihood += -Math.pow((Math.log10(currUser.authorities[k]) - currUser.topicalInterests[k]), 2) / (2 * Math.pow(delta, 2));
 				
 				if (Double.isInfinite(linkAuthorityLikelihood)) {
 					System.out.printf("[authority] A[%d] = %.12f\n", k, currUser.authorities[k]);
 				}
-				//linkHubLikelihood += (-Math.log(delta)
-				//		- (Math.pow(Math.log(currUser.hubs[k]) - currUser.topicalInterests[k], 2)
+				//linkHubLikelihood += (-Math.log10(delta)
+				//		- (Math.pow(Math.log10(currUser.hubs[k]) - currUser.topicalInterests[k], 2)
 				//				/ (2 * Math.pow(delta, 2))));
 				
-				linkHubLikelihood += -Math.pow((Math.log(currUser.hubs[k]) - currUser.topicalInterests[k]), 2) / (2 * Math.pow(sigma, 2));
+				linkHubLikelihood += -Math.pow((Math.log10(currUser.hubs[k]) - currUser.topicalInterests[k]), 2) / (2 * Math.pow(sigma, 2));
 				
 				if (Double.isInfinite(linkHubLikelihood)) {
 					System.out.printf("[authority] H[%d] = %.12f\n", k, currUser.hubs[k]);
@@ -280,9 +280,9 @@ public class MultithreadCTLR {
 					Post currPost = currUser.posts[s];
 					for (int w = 0; w < currPost.words.length; w++) {
 						int word = currPost.words[w];
-						postWordLikelihood += Math.log(topicWordDist[currPost.topic][word]);
+						postWordLikelihood += Math.log10(topicWordDist[currPost.topic][word]);
 					}
-					postTopicLikelihood += Math.log(currUser.topicalInterests[currPost.topic]);
+					postTopicLikelihood += Math.log10(currUser.topicalInterests[currPost.topic]);
 					if (Double.isInfinite(postTopicLikelihood)) {
 						System.out.printf("[Post] Theta[%d] = %.12f\n", currPost.topic,
 								currUser.topicalInterests[currPost.topic]);
@@ -291,13 +291,13 @@ public class MultithreadCTLR {
 			}
 
 			for (int k = 0; k < nTopics; k++) {
-				postThetaLikelihood += (alpha - 1) * Math.log(currUser.topicalInterests[k]);
+				postThetaLikelihood += (alpha - 1) * Math.log10(currUser.topicalInterests[k]);
 			}
 		}
 
 		for (int k = 0; k < nTopics; k++) {
 			for (int w = 0; w < dataset.vocabulary.length; w++) {
-				postTauLikelihood += (gamma - 1) * Math.log(topicWordDist[k][w]);
+				postTauLikelihood += (gamma - 1) * Math.log10(topicWordDist[k][w]);
 			}
 		}
 
@@ -333,11 +333,11 @@ public class MultithreadCTLR {
 		User currUser = dataset.users[u];
 
 		for (int k = 0; k < nTopics; k++) {
-			authorityLikelihood += -Math.pow((Math.log(currUser.authorities[k]) - x[k]), 2) / (2 * Math.pow(delta, 2));
+			authorityLikelihood += -Math.pow((Math.log10(currUser.authorities[k]) - x[k]), 2) / (2 * Math.pow(delta, 2));
 		}
 
 		for (int k = 0; k < nTopics; k++) {
-			hubLikelihood += -Math.pow((Math.log(currUser.hubs[k]) - x[k]), 2) / (2 * Math.pow(sigma, 2));
+			hubLikelihood += -Math.pow((Math.log10(currUser.hubs[k]) - x[k]), 2) / (2 * Math.pow(sigma, 2));
 		}
 
 		for (int i = 0; i < currUser.nPosts; i++) {
@@ -346,12 +346,12 @@ public class MultithreadCTLR {
 			if (currUser.postBatches[i] == batch) {
 				int postTopic = currUser.posts[i].topic;
 				// postLikelihood += x[postTopic];
-				postLikelihood += Math.log(x[postTopic]);
+				postLikelihood += Math.log10(x[postTopic]);
 			}
 		}
 
 		for (int k = 0; k < nTopics; k++) {
-			topicLikelihood += (alpha - 1) * Math.log(x[k]);
+			topicLikelihood += (alpha - 1) * Math.log10(x[k]);
 		}
 		// finalLikelihood = authorityLikelihood + hubLikelihood +
 		// postLikelihood + topicLikelihood;
@@ -389,9 +389,9 @@ public class MultithreadCTLR {
 		// Set the current user to be u
 		User currUser = dataset.users[u];
 
-		authorityLikelihood = ((Math.log(currUser.authorities[k]) - x) / Math.pow(delta, 2));
+		authorityLikelihood = ((Math.log10(currUser.authorities[k]) - x) / Math.pow(delta, 2));
 
-		hubLikelihood = ((Math.log(currUser.hubs[k]) - x) / Math.pow(sigma, 2));
+		hubLikelihood = ((Math.log10(currUser.hubs[k]) - x) / Math.pow(sigma, 2));
 
 		for (int i = 0; i < currUser.nPosts; i++) {
 			// Only compute post likelihood of posts which are in batch
@@ -581,7 +581,7 @@ public class MultithreadCTLR {
 				// System.out.println("HuAv:"+HuAv);
 				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
 				// System.out.println("fHuAv:"+fHuAv);
-				nonFollowerLikelihood += Math.log(1 - fHuAv);
+				nonFollowerLikelihood += Math.log10(1 - fHuAv);
 			}
 		}
 
@@ -598,13 +598,13 @@ public class MultithreadCTLR {
 				}
 				HuAv = HuAv * lamda;
 				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-				followerLikelihood += Math.log(fHuAv);
+				followerLikelihood += Math.log10(fHuAv);
 			}
 		}
 
 		// Compute post likelihood
 		for (int k = 0; k < nTopics; k++) {
-			postLikelihood += Math.pow((Math.log(x[k]) - currUser.topicalInterests[k]), 2) / (2 * Math.pow(sigma, 2));
+			postLikelihood += Math.pow((Math.log10(x[k]) - currUser.topicalInterests[k]), 2) / (2 * Math.pow(sigma, 2));
 		}
 
 		likelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
@@ -682,7 +682,7 @@ public class MultithreadCTLR {
 			}
 		}
 
-		postLikelihood = ((Math.log(x) - currUser.topicalInterests[k]) / Math.pow(sigma, 2)) * (1 / x);
+		postLikelihood = ((Math.log10(x) - currUser.topicalInterests[k]) / Math.pow(sigma, 2)) * (1 / x);
 
 		gradLikelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
 
@@ -798,7 +798,7 @@ public class MultithreadCTLR {
 					}
 					HuAv = HuAv * lamda;
 					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-					nonFollowingLikelihood += Math.log(1.0 - fHuAv);
+					nonFollowingLikelihood += Math.log10(1.0 - fHuAv);
 					;
 				}
 			}
@@ -821,14 +821,14 @@ public class MultithreadCTLR {
 					}
 					HuAv = HuAv * lamda;
 					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-					followingLikelihood += Math.log(fHuAv);
+					followingLikelihood += Math.log10(fHuAv);
 				}
 			}
 		}
 
 		// Compute post likelihood
 		for (int k = 0; k < nTopics; k++) {
-			postLikelihood += Math.pow(Math.log(x[k]) - currUser.topicalInterests[k], 2) / (2 * Math.pow(delta, 2));
+			postLikelihood += Math.pow(Math.log10(x[k]) - currUser.topicalInterests[k], 2) / (2 * Math.pow(delta, 2));
 		}
 
 		likelihood = nonFollowingLikelihood + followingLikelihood - postLikelihood;
@@ -910,7 +910,7 @@ public class MultithreadCTLR {
 			}
 		}
 
-		postLikelihood = ((Math.log(x) - currUser.topicalInterests[k]) / Math.pow(delta, 2)) * (1 / x);
+		postLikelihood = ((Math.log10(x) - currUser.topicalInterests[k]) / Math.pow(delta, 2)) * (1 / x);
 
 		gradLikelihood = nonFollowingLikelihood + followingLikelihood - postLikelihood;
 
@@ -1047,13 +1047,13 @@ public class MultithreadCTLR {
 		double max = -Double.MAX_VALUE;
 		for (int z = 0; z < nTopics; z++) {
 			// User-topic
-			p[z] = Math.log(currUser.topicalInterests[z]);
+			p[z] = Math.log10(currUser.topicalInterests[z]);
 
 			// topic-word
 			Post currPost = currUser.posts[n];
 			for (int w = 0; w < currPost.words.length; w++) {
 				int word = currPost.words[w];
-				p[z] += Math.log(topicWordDist[z][word]);
+				p[z] += Math.log10(topicWordDist[z][word]);
 			}
 
 			// update min
@@ -1642,7 +1642,7 @@ public class MultithreadCTLR {
 
 	public static void main(String[] args) {
 		double x = 0;
-		double a = Math.log(x);
+		double a = Math.log10(x);
 		double b = 1 / x;
 		System.out.printf("a = %f b = %f\n", a, b);
 
