@@ -53,13 +53,13 @@ public class MultithreadCTLR {
 	// options for learning
 	public static double lineSearch_alpha = 0.0001;
 	public static double lineSearch_beta = 0.1;
-	public static int lineSearch_MaxIterations = 12;;
+	public static int lineSearch_MaxIterations = 12;
 	public static double lineSearch_lambda;
 	
 	public static int maxIteration_topicalInterest = 10;
 	public static int maxIteration_Authorities = 10;
 	public static int maxIteration_Hubs = 10;
-	public static int max_GibbsEM_Iterations = 200;
+	public static int max_GibbsEM_Iterations =200;
 	
 	public int nParallelThreads = 10;
 	public int[] threadStartIndexes = null;
@@ -1196,6 +1196,7 @@ public class MultithreadCTLR {
 			executor.shutdown();
 			
 			altOptimize_topics();
+			
 			// Gibbs part
 			for (int u = 0; u < dataset.nUsers; u++) {
 				for (int n = 0; n < dataset.users[u].nPosts; n++) {
@@ -1209,6 +1210,14 @@ public class MultithreadCTLR {
 			currentLikelihood = getLikelihood();
 			if (iter==0){
 				maxLikelihood = currentLikelihood;
+				optTopicWordDist = topicWordDist;
+				//set optimized user topical interest, authority and hub
+				for (int u = 0; u < dataset.nUsers; u++) {
+					User currUser = dataset.users[u];
+					currUser.optTopicalInterests = currUser.topicalInterests;
+					currUser.optAuthorities = currUser.authorities;
+					currUser.optHubs = currUser.hubs;
+				}
 			} else{
 				if (maxLikelihood<currentLikelihood){
 					maxLikelihood = currentLikelihood;
@@ -1234,14 +1243,15 @@ public class MultithreadCTLR {
 		output_OptTopicInterest();
 		output_OptAuthority();
 		output_OptHub();
-		output_OptPostTopicTopWords(20);
+		output_OptPostTopicTopWords(50);
 		output_OptLikelihoodPerplexity();
 		output_LastTopicInterest();
 		output_LastAuthority();
 		output_LastHub();
 		output_LastPostTopicTopWords(20);
 		output_LastLikelihoodPerplexity();
-		//output_topicWord();
+		//output_OptTopicWord();
+		output_optPostTopic();
 	}
 
 	private double getOptPostLikelihood(int u, int j) {
@@ -1253,7 +1263,7 @@ public class MultithreadCTLR {
 			double p = 0;
 			for (int z = 0; z < nTopics; z++) {
 				double p_z = optTopicWordDist[z][w] * dataset.users[u].optTopicalInterests[z];
-				p = p + p_z;
+				p = p + p_z;		
 			}
 			logLikelihood = logLikelihood + Math.log10(p);
 		}
@@ -1540,6 +1550,27 @@ public class MultithreadCTLR {
 		}
 	}
 
+	public void output_optPostTopic(){
+		try {
+			File f = new File(dataset.path +"/"+nTopics+ "/l_OptPostTopic.csv");
+			FileWriter fo = new FileWriter(f);
+			for (int u = 0; u < dataset.nUsers; u++) {
+				User currUser = dataset.users[u];
+				for (int p=0; p<currUser.nPosts; p++){
+					if (currUser.postBatches[p] == batch){
+						String text = currUser.posts[p].postId;
+						text = text + "," + Double.toString(currUser.posts[p].topic);
+						fo.write(text + "\n");
+					}
+				}
+			}
+			fo.close();
+		} catch (Exception e) {
+			System.out.println("Error in writing to authority file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
 	/***
 	 * checking if the gradient computation of likelihood by user topical
 	 * interest theta_{u,k} is properly implemented

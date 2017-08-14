@@ -134,7 +134,7 @@ public class Dataset {
 				sc = new Scanner(line.toString());
 				sc.useDelimiter(",");
 				while (sc.hasNext()) {
-					sc.next();// ignore postId
+					String postId = sc.next();// ignore postId
 					String userId = sc.next();
 					String words = sc.next().trim();
 					int batch = sc.nextInt();
@@ -145,6 +145,7 @@ public class Dataset {
 							- postCounts.get(user_index)] = batch;
 					String[] tokens = words.toString().split(" ");
 					users[user_index].posts[users[user_index].nPosts - postCounts.get(user_index)] = new Post();
+					users[user_index].posts[users[user_index].nPosts - postCounts.get(user_index)].postId = postId;
 					users[user_index].posts[users[user_index].nPosts
 							- postCounts.get(user_index)].nWords = tokens.length;
 					users[user_index].posts[users[user_index].nPosts
