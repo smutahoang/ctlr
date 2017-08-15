@@ -150,6 +150,8 @@ public class Dataset {
 							- postCounts.get(user_index)].nWords = tokens.length;
 					users[user_index].posts[users[user_index].nPosts
 							- postCounts.get(user_index)].words = new int[tokens.length];
+					users[user_index].posts[users[user_index].nPosts
+											- postCounts.get(user_index)].wordTopics = new int[tokens.length];
 					for (int i = 0; i < tokens.length; i++) {
 						users[user_index].posts[users[user_index].nPosts
 								- postCounts.get(user_index)].words[i] = Integer.parseInt(tokens[i]);

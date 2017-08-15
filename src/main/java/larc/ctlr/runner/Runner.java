@@ -43,8 +43,8 @@ public class Runner {
 		model.train();
 	}
 	
-	static void multiTrain(String datasetPath, int nTopics, int batch) {
-		larc.ctlr.model.MultithreadCTLR model = new MultithreadCTLR(datasetPath, nTopics, batch);
+	static void multiTrain(String datasetPath, int nTopics, int batch, int mode) {
+		larc.ctlr.model.MultithreadCTLR model = new MultithreadCTLR(datasetPath, nTopics, batch, mode);
 		//model.init();
 		model.train();
 	}
@@ -82,7 +82,8 @@ public class Runner {
 				String datasetPath = args[1];
 				int nTopics = Integer.parseInt(args[2]);
 				int batch = Integer.parseInt(args[3]);
-				multiTrain(datasetPath, nTopics, batch);
+				int mode = Integer.parseInt(args[4]);
+				multiTrain(datasetPath, nTopics, batch, mode);
 			} else {
 				System.out.printf("%s is not an option!!!");
 			}
