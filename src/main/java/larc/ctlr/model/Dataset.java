@@ -23,20 +23,25 @@ public class Dataset {
 	 * 
 	 * @param path
 	 */
-	public Dataset(String path, int nTopics) {
+	public Dataset(String path) {
 		this.path = path;
-		loadUsers(path + "users.csv", nTopics);
-		loadPosts(path + "posts.csv");
-		loadVocabulary(path + "vocabulary.csv");
-		loadRelationship(path + "relationships.csv");
-		loadNonRelationship(path + "nonrelationships.csv");
+		System.out.println("loading user list");
+		loadUsers(String.format("%s/users.csv", path));
+		System.out.println("loading posts");
+		loadPosts(String.format("%s/posts.csv", path));
+		System.out.println("loading vocabulary");
+		loadVocabulary(String.format("%s/vocabulary.csv", path));
+		System.out.println("loading links");
+		loadRelationship(String.format("%s/relationships.csv", path));
+		System.out.println("loading non-links");
+		loadNonRelationship(String.format("%s/nonrelationships.csv", path));
 		// loadFollowers(path+"followers/");
 		// loadFollowings(path+"followings/");
 		// loadNonFollowers(path+"nonfollowers/");
 		// loadNonFollowings(path+"nonfollowings/");
 	}
 
-	public void loadUsers(String filename, int nTopics) {
+	public void loadUsers(String filename) {
 		Scanner sc = null;
 		BufferedReader br = null;
 		String line = null;
@@ -70,10 +75,7 @@ public class Dataset {
 					users[u].username = username;
 					users[u].userIndex = u;
 					userId2Index.put(userId, u);
-					userIndex2Id.put(u, userId);
-					users[u].topicalInterests = new double[nTopics];
-					users[u].authorities = new double[nTopics];
-					users[u].hubs = new double[nTopics];
+					userIndex2Id.put(u, userId);					
 					u++;
 				}
 			}
@@ -86,78 +88,54 @@ public class Dataset {
 	}
 
 	public void loadPosts(String filename) {
-		Scanner sc = null;
+
 		BufferedReader br = null;
 		String line = null;
-
-		HashMap<Integer, Integer> postCounts = new HashMap<Integer, Integer>();
 
 		try {
 			File file = new File(filename);
 
 			// Get total number of users' posts
+			for (int u = 0; u < nUsers; u++) {
+				users[u].nPosts = 0;
+			}
 
 			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
 			while ((line = br.readLine()) != null) {
-				sc = new Scanner(line.toString());
-				sc.useDelimiter(",");
-				while (sc.hasNext()) {
-					String postId = sc.next();
-					String userId = sc.next();
-					sc.next().trim();// ignore words
-					sc.nextInt();// ignore batch
-					int user_index = userId2Index.get(userId);
-					// update post count
-					if (postCounts.containsKey(user_index)) {
-						int count = postCounts.get(user_index) + 1;
-						postCounts.put(user_index, count);
-					} else {
-						postCounts.put(user_index, 1);
-					}
-				}
+				String userId = line.split(",")[1];
+				int u = userId2Index.get(userId);
+				users[u].nPosts++;
 			}
 
 			br.close();
 
 			// initalize the users'post arrays
 			for (int u = 0; u < nUsers; u++) {
-				if (postCounts.containsKey(u)) {
-					users[u].nPosts = postCounts.get(u);
-					users[u].posts = new Post[postCounts.get(u)];
-					users[u].postBatches = new int[postCounts.get(u)];
-				}
+				users[u].posts = new Post[users[u].nPosts];
+				users[u].postBatches = new int[users[u].nPosts];
+				users[u].nPosts = 0;
 			}
 
 			// Read and load user into users' follower and following array
 			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
 			while ((line = br.readLine()) != null) {
-				sc = new Scanner(line.toString());
-				sc.useDelimiter(",");
-				while (sc.hasNext()) {
-					String postId = sc.next();// ignore postId
-					String userId = sc.next();
-					String words = sc.next().trim();
-					int batch = sc.nextInt();
-					int user_index = userId2Index.get(userId);
+				String[] tokens = line.split(",");
+				String postId = tokens[0];
+				String userId = tokens[1];
+				int batch = Integer.parseInt(tokens[3]);
+				int u = userId2Index.get(userId);
+				users[u].postBatches[users[u].nPosts] = batch;
+				users[u].posts[users[u].nPosts] = new Post();
+				users[u].posts[users[u].nPosts].postId = postId;
 
-					// System.out.println(postCounts.get(user_index));
-					users[user_index].postBatches[users[user_index].postBatches.length
-							- postCounts.get(user_index)] = batch;
-					String[] tokens = words.toString().split(" ");
-					users[user_index].posts[users[user_index].nPosts - postCounts.get(user_index)] = new Post();
-					users[user_index].posts[users[user_index].nPosts - postCounts.get(user_index)].postId = postId;
-					users[user_index].posts[users[user_index].nPosts
-							- postCounts.get(user_index)].nWords = tokens.length;
-					users[user_index].posts[users[user_index].nPosts
-							- postCounts.get(user_index)].words = new int[tokens.length];
-					for (int i = 0; i < tokens.length; i++) {
-						users[user_index].posts[users[user_index].nPosts
-								- postCounts.get(user_index)].words[i] = Integer.parseInt(tokens[i]);
-					}
-
-					int updatePostCount = postCounts.get(user_index) - 1;
-					postCounts.put(user_index, updatePostCount);
+				tokens = tokens[2].split(" ");
+				users[u].posts[users[u].nPosts].nWords = tokens.length;
+				users[u].posts[users[u].nPosts].words = new int[tokens.length];
+				for (int i = 0; i < tokens.length; i++) {
+					users[u].posts[users[u].nPosts].words[i] = Integer.parseInt(tokens[i]);
 				}
+				users[u].nPosts++;
+
 			}
 			br.close();
 		} catch (Exception e) {
@@ -168,7 +146,6 @@ public class Dataset {
 	}
 
 	public void loadVocabulary(String filename) {
-		Scanner sc = null;
 		BufferedReader br = null;
 		String line = null;
 
@@ -183,13 +160,10 @@ public class Dataset {
 
 			br = new BufferedReader(new FileReader(filename));
 			while ((line = br.readLine()) != null) {
-				sc = new Scanner(line.toString());
-				sc.useDelimiter(",");
-				while (sc.hasNext()) {
-					int index = sc.nextInt();
-					String vocab = sc.next();
-					vocabulary[index] = vocab;
-				}
+				String[] tokens = line.split(",");
+				int index = Integer.parseInt(tokens[0]);
+				String vocab = tokens[1];
+				vocabulary[index] = vocab;
 			}
 			br.close();
 			// System.out.println("Number of Vocabulary loaded:" + nVocabs);
@@ -201,12 +175,13 @@ public class Dataset {
 	}
 
 	public void loadRelationship(String filename) {
-		Scanner sc = null;
 		BufferedReader br = null;
 		String line = null;
 
-		HashMap<Integer, Integer> followerCounts = new HashMap<Integer, Integer>();
-		HashMap<Integer, Integer> followingCounts = new HashMap<Integer, Integer>();
+		for (int u = 0; u < nUsers; u++) {
+			users[u].nFollowers = 0;
+			users[u].nFollowings = 0;
+		}
 
 		try {
 			File file = new File(filename);
@@ -214,67 +189,49 @@ public class Dataset {
 			// Get total number of users' followers and following
 			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
 			while ((line = br.readLine()) != null) {
-				sc = new Scanner(line.toString());
-				sc.useDelimiter(",");
-				while (sc.hasNext()) {
-					String src_user = sc.next();
-					String des_user = sc.next();
-					sc.nextInt();// ignore batch
-					int src_user_index = userId2Index.get(src_user);
-					int des_user_index = userId2Index.get(des_user);
-					// update follower count
-					if (followerCounts.containsKey(des_user_index)) {
-						int count = followerCounts.get(des_user_index) + 1;
-						followerCounts.put(des_user_index, count);
-					} else {
-						int count = 1;
-						followerCounts.put(des_user_index, count);
-					}
-					// update following count
-					if (followingCounts.containsKey(src_user_index)) {
-						int count = followingCounts.get(src_user_index) + 1;
-						followingCounts.put(src_user_index, count);
-					} else {
-						int count = 1;
-						followingCounts.put(src_user_index, count);
-					}
-				}
+				String[] tokens = line.split(",");
+				String src_user = tokens[0];
+				String des_user = tokens[1];
+				int src_user_index = userId2Index.get(src_user);
+				int des_user_index = userId2Index.get(des_user);
+				// update follower count
+				users[des_user_index].nFollowers++;
+				// update following count
+				users[src_user_index].nFollowings++;
+
 			}
 			br.close();
 
 			// initalize the users' follower and following arrays
 			for (int u = 0; u < nUsers; u++) {
-				if (followerCounts.containsKey(u)) {
-					users[u].followers = new int[followerCounts.get(u)];
+				if (users[u].nFollowers > 0) {
+					users[u].followers = new int[users[u].nFollowers];
+					users[u].nFollowers = 0;
 				}
-				if (followingCounts.containsKey(u)) {
-					users[u].followings = new int[followingCounts.get(u)];
-					users[u].followingBatches = new int[followingCounts.get(u)];
+				if (users[u].nFollowings > 0) {
+					users[u].followings = new int[users[u].nFollowings];
+					users[u].followingBatches = new int[users[u].nFollowings];
+					users[u].nFollowings = 0;
 				}
 			}
 
 			// Read and load user into users' follower and following array
 			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
 			while ((line = br.readLine()) != null) {
-				sc = new Scanner(line.toString());
-				sc.useDelimiter(",");
-				while (sc.hasNext()) {
-					String src_user = sc.next();
-					String des_user = sc.next();
-					int batch = sc.nextInt();
-					int src_user_index = userId2Index.get(src_user);
-					int des_user_index = userId2Index.get(des_user);
-					users[des_user_index].followers[users[des_user_index].followers.length
-							- followerCounts.get(des_user_index)] = src_user_index;
-					users[src_user_index].followings[users[src_user_index].followings.length
-							- followingCounts.get(src_user_index)] = des_user_index;
-					users[src_user_index].followingBatches[users[src_user_index].followingBatches.length
-							- followingCounts.get(src_user_index)] = batch;
-					int updateFollowerCount = followerCounts.get(des_user_index) - 1;
-					int updateFollowingCount = followingCounts.get(src_user_index) - 1;
-					followerCounts.put(des_user_index, updateFollowerCount);
-					followingCounts.put(src_user_index, updateFollowingCount);
-				}
+				String[] tokens = line.split(",");
+				String src_user = tokens[0];
+				String des_user = tokens[1];
+				int batch = Integer.parseInt(tokens[2]);
+
+				int src_user_index = userId2Index.get(src_user);
+				int des_user_index = userId2Index.get(des_user);
+				users[des_user_index].followers[users[des_user_index].nFollowers] = src_user_index;
+				users[des_user_index].nFollowers++;
+
+				users[src_user_index].followings[users[src_user_index].nFollowings] = des_user_index;
+				users[src_user_index].followingBatches[users[src_user_index].nFollowings] = batch;
+				users[src_user_index].nFollowings++;
+
 			}
 			br.close();
 		} catch (Exception e) {
@@ -285,12 +242,14 @@ public class Dataset {
 	}
 
 	public void loadNonRelationship(String filename) {
-		Scanner sc = null;
+
 		BufferedReader br = null;
 		String line = null;
 
-		HashMap<Integer, Integer> followerNonCounts = new HashMap<Integer, Integer>();
-		HashMap<Integer, Integer> followingNonCounts = new HashMap<Integer, Integer>();
+		for (int u = 0; u < nUsers; u++) {
+			users[u].nNonFollowers = 0;
+			users[u].nNonFollowings = 0;
+		}
 
 		try {
 			File file = new File(filename);
@@ -298,68 +257,50 @@ public class Dataset {
 			// Get total number of users' followers and following
 			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
 			while ((line = br.readLine()) != null) {
-				sc = new Scanner(line.toString());
-				sc.useDelimiter(",");
-				while (sc.hasNext()) {
-					String src_user = sc.next();
-					String des_user = sc.next();
-					sc.nextInt(); // ignore batch
-					int src_user_index = userId2Index.get(src_user);
-					int des_user_index = userId2Index.get(des_user);
-					// update follower count
-					if (followerNonCounts.containsKey(des_user_index)) {
-						int count = followerNonCounts.get(des_user_index) + 1;
-						followerNonCounts.put(des_user_index, count);
-					} else {
-						int count = 1;
-						followerNonCounts.put(des_user_index, count);
-					}
-					// update following count
-					if (followingNonCounts.containsKey(src_user_index)) {
-						int count = followingNonCounts.get(src_user_index) + 1;
-						followingNonCounts.put(src_user_index, count);
-					} else {
-						int count = 1;
-						followingNonCounts.put(src_user_index, count);
-					}
-				}
+				String[] tokens = line.split(",");
+				String src_user = tokens[0];
+				String des_user = tokens[1];
+
+				int src_user_index = userId2Index.get(src_user);
+				int des_user_index = userId2Index.get(des_user);
+				// update follower count
+				users[des_user_index].nNonFollowers++;
+				// update following count
+				users[src_user_index].nNonFollowings++;
+
 			}
 
 			br.close();
 
 			// initalize the users' follower and following arrays
 			for (int u = 0; u < nUsers; u++) {
-				if (followerNonCounts.containsKey(u)) {
-					users[u].nonFollowers = new int[followerNonCounts.get(u)];
+				if (users[u].nNonFollowers > 0) {
+					users[u].nonFollowers = new int[users[u].nNonFollowers];
+					users[u].nNonFollowers = 0;
 				}
-				if (followingNonCounts.containsKey(u)) {
-					users[u].nonFollowings = new int[followingNonCounts.get(u)];
-					users[u].nonFollowingBatches = new int[followingNonCounts.get(u)];
+				if (users[u].nNonFollowings > 0) {
+					users[u].nonFollowings = new int[users[u].nNonFollowings];
+					users[u].nonFollowingBatches = new int[users[u].nNonFollowings];
+					users[u].nNonFollowings = 0;
 				}
 			}
 
 			// Read and load user into users' follower and following array
 			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
 			while ((line = br.readLine()) != null) {
-				sc = new Scanner(line.toString());
-				sc.useDelimiter(",");
-				while (sc.hasNext()) {
-					String src_user = sc.next();
-					String des_user = sc.next();
-					int batch = sc.nextInt();
-					int src_user_index = userId2Index.get(src_user);
-					int des_user_index = userId2Index.get(des_user);
-					users[des_user_index].nonFollowers[users[des_user_index].nonFollowers.length
-							- followerNonCounts.get(des_user_index)] = src_user_index;
-					users[src_user_index].nonFollowings[users[src_user_index].nonFollowings.length
-							- followingNonCounts.get(src_user_index)] = des_user_index;
-					users[src_user_index].nonFollowingBatches[users[src_user_index].nonFollowingBatches.length
-							- followingNonCounts.get(src_user_index)] = batch;
-					int updateNonFollowerCount = followerNonCounts.get(des_user_index) - 1;
-					int updateNonFollowingCount = followingNonCounts.get(src_user_index) - 1;
-					followerNonCounts.put(des_user_index, updateNonFollowerCount);
-					followingNonCounts.put(src_user_index, updateNonFollowingCount);
-				}
+				String[] tokens = line.split(",");
+				String src_user = tokens[0];
+				String des_user = tokens[1];
+				int batch = Integer.parseInt(tokens[2]);
+				int src_user_index = userId2Index.get(src_user);
+				int des_user_index = userId2Index.get(des_user);
+				users[des_user_index].nonFollowers[users[des_user_index].nNonFollowers] = src_user_index;
+				users[des_user_index].nNonFollowers++;
+
+				users[src_user_index].nonFollowings[users[src_user_index].nNonFollowings] = des_user_index;
+				users[src_user_index].nonFollowingBatches[users[src_user_index].nNonFollowings] = batch;
+				users[src_user_index].nNonFollowings++;
+
 			}
 			br.close();
 		} catch (Exception e) {

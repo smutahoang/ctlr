@@ -18,39 +18,39 @@ public class Runner {
 		larc.ctlr.model.CTLR model = new CTLR(datasetPath, nTopics, batch);
 		model.train();
 	}
-	
+
 	static void gradCheck(String datasetPath, int nTopics, int batch) {
 		larc.ctlr.model.CTLR model = new CTLR(datasetPath, nTopics, batch);
 		model.init();
-		for (int k=0; k < nTopics; k++){
-			//model.gradCheck_Authority(0, k);
-			//model.gradCheck_Hub(5,k);
+		for (int k = 0; k < nTopics; k++) {
+			// model.gradCheck_Authority(0, k);
+			// model.gradCheck_Hub(5,k);
 			model.gradCheck_TopicalInterest(5, k);
 		}
 	}
-	
+
 	static void altOptCheck(String datasetPath, int nTopics, int batch) {
 		larc.ctlr.model.CTLR model = new CTLR(datasetPath, nTopics, batch);
 		model.init();
 		model.altCheck_TopicalInterest(15);
-		//model.altCheck_Authority(15);
-		//model.altCheck_Hub(15);
+		// model.altCheck_Authority(15);
+		// model.altCheck_Hub(15);
 	}
-	
+
 	static void train(String datasetPath, int nTopics, int batch) {
 		larc.ctlr.model.CTLR model = new CTLR(datasetPath, nTopics, batch);
-		//model.init();
+		// model.init();
 		model.train();
 	}
-	
-	static void multiTrain(String datasetPath, int nTopics, int batch) {
-		larc.ctlr.model.MultithreadCTLR model = new MultithreadCTLR(datasetPath, nTopics, batch);
-		//model.init();
+
+	static void multiTrain(String datasetPath, int nTopics, int batch, int mode) {
+		larc.ctlr.model.MultithreadCTLR model = new MultithreadCTLR(datasetPath, nTopics, batch, mode);
+		// model.init();
 		model.train();
 	}
 
 	public static void main(String[] args) {
-		
+
 		try {
 			if (args[0].equals("gen")) {
 				int nUsers = Integer.parseInt(args[1]);
@@ -63,26 +63,27 @@ public class Runner {
 				int nTopics = Integer.parseInt(args[2]);
 				int batch = Integer.parseInt(args[3]);
 				runCTLR(datasetPath, nTopics, batch);
-			} else if (args[0].equals("gradCheck")){
+			} else if (args[0].equals("gradCheck")) {
 				String datasetPath = args[1];
 				int nTopics = Integer.parseInt(args[2]);
 				int batch = Integer.parseInt(args[3]);
 				gradCheck(datasetPath, nTopics, batch);
-			} else if (args[0].equals("altCheck")){
+			} else if (args[0].equals("altCheck")) {
 				String datasetPath = args[1];
 				int nTopics = Integer.parseInt(args[2]);
 				int batch = Integer.parseInt(args[3]);
 				altOptCheck(datasetPath, nTopics, batch);
-			} else if (args[0].equals("train")){
+			} else if (args[0].equals("train")) {
 				String datasetPath = args[1];
 				int nTopics = Integer.parseInt(args[2]);
 				int batch = Integer.parseInt(args[3]);
 				train(datasetPath, nTopics, batch);
-			} else if (args[0].equals("multiTrain")){
+			} else if (args[0].equals("multiTrain")) {
 				String datasetPath = args[1];
 				int nTopics = Integer.parseInt(args[2]);
 				int batch = Integer.parseInt(args[3]);
-				multiTrain(datasetPath, nTopics, batch);
+				int mode = Integer.parseInt(args[4]);
+				multiTrain(datasetPath, nTopics, batch, mode);
 			} else {
 				System.out.printf("%s is not an option!!!");
 			}

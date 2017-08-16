@@ -45,16 +45,15 @@ public class CTLR {
 											// distribution of word w for topic
 											// k. Sum of each words distribution
 											// for each k = 1
-	
+
 	public double[][] optTopicWordDist = null; // optimized topicWordDist[k][w]
-					
 
 	// options for learning
 	public double lineSearch_alpha = 0.0001;
 	public double lineSearch_beta = 0.1;
 	public int lineSearch_MaxIterations = 10;;
 	public double lineSearch_lambda;
-	
+
 	public int maxIteration_topicalInterest = 10;
 	public int maxIteration_Authorities = 10;
 	public int maxIteration_Hubs = 10;
@@ -68,7 +67,7 @@ public class CTLR {
 	 */
 	public CTLR(String _datasetPath, int _nTopics, int _batch) {
 		this.datapath = _datasetPath;
-		this.dataset = new Dataset(_datasetPath, _nTopics);
+		this.dataset = new Dataset(_datasetPath);
 		this.nTopics = _nTopics;
 		this.batch = _batch;
 		n_zu = new int[nTopics][dataset.nUsers];
@@ -303,7 +302,8 @@ public class CTLR {
 		 * , u, authorityLikelihood, hubLikelihood, postLikelihood);
 		 */
 
-		//finalLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + topicLikelihood;
+		// finalLikelihood = authorityLikelihood + hubLikelihood +
+		// postLikelihood + topicLikelihood;
 		finalLikelihood = authorityLikelihood + hubLikelihood + postLikelihood;
 		return finalLikelihood;
 	}
@@ -347,7 +347,8 @@ public class CTLR {
 			}
 		}
 
-		//gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + ((alpha -1) / x);
+		// gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood
+		// + ((alpha -1) / x);
 		gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood;
 
 		/*
@@ -433,9 +434,9 @@ public class CTLR {
 		double f = Double.MAX_VALUE;
 
 		// parameters for line search
-		//lineSearch_alpha = 0.0001;
-		//lineSearch_beta = 0.1;
-		//lineSearch_MaxIterations = 5;
+		// lineSearch_alpha = 0.0001;
+		// lineSearch_beta = 0.1;
+		// lineSearch_MaxIterations = 5;
 
 		for (int iter = 0; iter < maxIteration_topicalInterest; iter++) {
 			// compute gradient
@@ -647,9 +648,9 @@ public class CTLR {
 		double f = Double.MAX_VALUE;
 
 		// parameters for line search
-		//lineSearch_alpha = 0.0001;
-		//lineSearch_beta = 0.1;
-		//lineSearch_MaxIterations = 5;
+		// lineSearch_alpha = 0.0001;
+		// lineSearch_beta = 0.1;
+		// lineSearch_MaxIterations = 5;
 
 		for (int iter = 0; iter < maxIteration_Authorities; iter++) {
 			// compute gradient
@@ -695,8 +696,7 @@ public class CTLR {
 				// u, iter, f);
 			} else {
 				// to see if F actually reduce after every iteration
-				 System.out.printf("alt_authority: u = %d iter = %d f = %f\n",
-				 u, iter, f);
+				System.out.printf("alt_authority: u = %d iter = %d f = %f\n", u, iter, f);
 				break;// cannot improve further
 			}
 		}
@@ -879,9 +879,9 @@ public class CTLR {
 		double f = Double.MAX_VALUE;
 
 		// parameters for line search
-		//lineSearch_alpha = 0.0001;
-		//lineSearch_beta = 0.1;
-		//lineSearch_MaxIterations = 5;
+		// lineSearch_alpha = 0.0001;
+		// lineSearch_beta = 0.1;
+		// lineSearch_MaxIterations = 5;
 
 		for (int iter = 0; iter < maxIteration_Hubs; iter++) {
 			// compute gradient
@@ -1038,7 +1038,7 @@ public class CTLR {
 	 * initialize the data before training
 	 */
 	public void init() {
-		alpha = 50/ (double)(nTopics);
+		alpha = 50 / (double) (nTopics);
 		gamma = 0.001;
 		sigma = 0.2;
 		delta = 0.2;
@@ -1101,12 +1101,12 @@ public class CTLR {
 		init();
 		double maxLikelihood = 0;
 		double currentLikelihood = 0;
-		System.out.println("Datapath:"+this.datapath);
-		System.out.println("Alpha:"+this.alpha);
-		System.out.println("Line Search Alpha:"+this.lineSearch_alpha);
-		System.out.println("Line Search Beta:"+this.lineSearch_beta);
-		System.out.println("Line Search Max Iterations:"+this.lineSearch_MaxIterations);
-		System.out.println("#Topics:"+this.nTopics);
+		System.out.println("Datapath:" + this.datapath);
+		System.out.println("Alpha:" + this.alpha);
+		System.out.println("Line Search Alpha:" + this.lineSearch_alpha);
+		System.out.println("Line Search Beta:" + this.lineSearch_beta);
+		System.out.println("Line Search Max Iterations:" + this.lineSearch_MaxIterations);
+		System.out.println("#Topics:" + this.nTopics);
 		for (int iter = 0; iter < max_GibbsEM_Iterations; iter++) {
 			/*
 			 * for (int k=0;k<nTopics;k++){ System.out.printf("%f \t",
@@ -1136,16 +1136,17 @@ public class CTLR {
 					}
 				}
 			}
-			//set first Likelihood as the maxLikelihood
+			// set first Likelihood as the maxLikelihood
 			currentLikelihood = getLikelihood();
-			if (iter==0){
+			if (iter == 0) {
 				maxLikelihood = currentLikelihood;
-			} else{
-				if (maxLikelihood<currentLikelihood){
+			} else {
+				if (maxLikelihood < currentLikelihood) {
 					maxLikelihood = currentLikelihood;
-					//set optimized topicWordDist to be the current TopicWordsDist
+					// set optimized topicWordDist to be the current
+					// TopicWordsDist
 					optTopicWordDist = topicWordDist;
-					//set optimized user topical interest, authority and hub
+					// set optimized user topical interest, authority and hub
 					for (int u = 0; u < dataset.nUsers; u++) {
 						User currUser = dataset.users[u];
 						currUser.optTopicalInterests = currUser.topicalInterests;
@@ -1154,7 +1155,7 @@ public class CTLR {
 					}
 				}
 			}
-			
+
 			System.out.printf("likelihood after %d steps: %f, max %f ", iter, currentLikelihood, maxLikelihood);
 			System.out.println();
 		}
@@ -1168,7 +1169,7 @@ public class CTLR {
 
 	public void output_topicWord() {
 		try {
-			File f = new File(dataset.path+"/"+nTopics+"/l_topicalWordDistributions.csv");
+			File f = new File(dataset.path + "/" + nTopics + "/l_topicalWordDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int k = 0; k < nTopics; k++) {
 				String text = Integer.toString(k);
@@ -1187,7 +1188,7 @@ public class CTLR {
 
 	private void outputPostTopicTopWords(int k) {
 		try {
-			File f = new File(dataset.path +"/"+nTopics+ "/l_topTopicWords.csv");
+			File f = new File(dataset.path + "/" + nTopics + "/l_topTopicWords.csv");
 			BufferedWriter bw = new BufferedWriter(new FileWriter(f.getAbsoluteFile()));
 			RankingTool rankTool = new RankingTool();
 			WeightedElement[] topWords = null;
@@ -1207,7 +1208,7 @@ public class CTLR {
 
 	public void output_topicInterest() {
 		try {
-			File f = new File(dataset.path +"/"+nTopics+ "/l_userTopicalInterestDistributions.csv");
+			File f = new File(dataset.path + "/" + nTopics + "/l_userTopicalInterestDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
@@ -1227,7 +1228,7 @@ public class CTLR {
 
 	public void output_authority() {
 		try {
-			File f = new File(dataset.path +"/"+nTopics+ "/l_userAuthorityDistributions.csv");
+			File f = new File(dataset.path + "/" + nTopics + "/l_userAuthorityDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
@@ -1247,7 +1248,7 @@ public class CTLR {
 
 	public void output_hub() {
 		try {
-			File f = new File(dataset.path +"/"+nTopics+ "/l_userHubDistributions.csv");
+			File f = new File(dataset.path + "/" + nTopics + "/l_userHubDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
