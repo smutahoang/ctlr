@@ -119,6 +119,7 @@ public class Dataset {
 			// Read and load user into users' follower and following array
 			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
 			while ((line = br.readLine()) != null) {
+<<<<<<< HEAD
 				String[] tokens = line.split(",");
 				String postId = tokens[0];
 				String userId = tokens[1];
@@ -133,6 +134,36 @@ public class Dataset {
 				users[u].posts[users[u].nPosts].words = new int[tokens.length];
 				for (int i = 0; i < tokens.length; i++) {
 					users[u].posts[users[u].nPosts].words[i] = Integer.parseInt(tokens[i]);
+=======
+				sc = new Scanner(line.toString());
+				sc.useDelimiter(",");
+				while (sc.hasNext()) {
+					String postId = sc.next();// ignore postId
+					String userId = sc.next();
+					String words = sc.next().trim();
+					int batch = sc.nextInt();
+					int user_index = userId2Index.get(userId);
+
+					// System.out.println(postCounts.get(user_index));
+					users[user_index].postBatches[users[user_index].postBatches.length
+							- postCounts.get(user_index)] = batch;
+					String[] tokens = words.toString().split(" ");
+					users[user_index].posts[users[user_index].nPosts - postCounts.get(user_index)] = new Post();
+					users[user_index].posts[users[user_index].nPosts - postCounts.get(user_index)].postId = postId;
+					users[user_index].posts[users[user_index].nPosts
+							- postCounts.get(user_index)].nWords = tokens.length;
+					users[user_index].posts[users[user_index].nPosts
+							- postCounts.get(user_index)].words = new int[tokens.length];
+					users[user_index].posts[users[user_index].nPosts
+											- postCounts.get(user_index)].wordTopics = new int[tokens.length];
+					for (int i = 0; i < tokens.length; i++) {
+						users[user_index].posts[users[user_index].nPosts
+								- postCounts.get(user_index)].words[i] = Integer.parseInt(tokens[i]);
+					}
+
+					int updatePostCount = postCounts.get(user_index) - 1;
+					postCounts.put(user_index, updatePostCount);
+>>>>>>> origin/master
 				}
 				users[u].nPosts++;
 

@@ -42,10 +42,17 @@ public class Runner {
 		// model.init();
 		model.train();
 	}
+<<<<<<< HEAD
 
 	static void multiTrain(String datasetPath, int nTopics, int batch, int mode) {
 		larc.ctlr.model.MultithreadCTLR model = new MultithreadCTLR(datasetPath, nTopics, batch, mode);
 		// model.init();
+=======
+	
+	static void multiTrain(String datasetPath, int nTopics, int batch, int mode) {
+		larc.ctlr.model.MultithreadCTLR model = new MultithreadCTLR(datasetPath, nTopics, batch, mode);
+		//model.init();
+>>>>>>> origin/master
 		model.train();
 	}
 

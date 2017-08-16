@@ -64,6 +64,7 @@ public class MultithreadCTLR {
 	public int nParallelThreads = 20;
 	public int[] threadStartIndexes = null;
 	public int[] threadEndIndexes = null;
+<<<<<<< HEAD
 
 	public static double[] threadLikelihood;
 
@@ -71,6 +72,16 @@ public class MultithreadCTLR {
 	private double postLastLogPerplexity;
 	private double postOptLogLikelidhood;
 	private double postOptLogPerplexity;
+=======
+	
+	public double postLastLogLikelidhood;
+	public double postLastLogPerplexity;
+	public double postOptLogLikelidhood;
+	public double postOptLogPerplexity;
+	
+	public static int mode; //0 for single topic in a post, 1 for multiple topics in a post
+	
+>>>>>>> origin/master
 
 	public static int mode; // 0 for single topic in a post, 1 for multiple
 							// topics in a post
@@ -191,11 +202,18 @@ public class MultithreadCTLR {
 	 */
 	public MultithreadCTLR(String _datasetPath, int _nTopics, int _batch, int _mode) {
 		this.datapath = _datasetPath;
+<<<<<<< HEAD
 		MultithreadCTLR.dataset = new Dataset(_datasetPath);
 		MultithreadCTLR.nTopics = _nTopics;
 		MultithreadCTLR.batch = _batch;
 		MultithreadCTLR.mode = _mode;
 
+=======
+		this.dataset = new Dataset(_datasetPath, _nTopics);
+		this.nTopics = _nTopics;
+		this.batch = _batch;
+		this.mode = _mode;
+>>>>>>> origin/master
 		n_zu = new int[nTopics][dataset.nUsers];
 		sum_nzu = new int[dataset.nUsers];
 		n_zw = new int[nTopics][dataset.vocabulary.length];
@@ -344,6 +362,7 @@ public class MultithreadCTLR {
 
 		linkLikelihood += linkRelationshipLikelihood + linkAuthorityLikelihood + linkHubLikelihood;
 
+<<<<<<< HEAD
 		for (int s = 0; s < currUser.nPosts; s++) {
 			if (currUser.postBatches[s] == batch) {
 				Post currPost = currUser.posts[s];
@@ -368,6 +387,37 @@ public class MultithreadCTLR {
 									currUser.topicalInterests[currPost.topic]);
 						}
 					}
+=======
+			for (int s = 0; s < currUser.nPosts; s++) {
+				if (currUser.postBatches[s] == batch) {
+					Post currPost = currUser.posts[s];
+					
+					//Check if mode is 0 or 1
+					if (mode == 0){
+						for (int w = 0; w < currPost.words.length; w++) {
+							int word = currPost.words[w];
+							postWordLikelihood += Math.log10(topicWordDist[currPost.topic][word]);
+						}
+						postTopicLikelihood += Math.log10(currUser.topicalInterests[currPost.topic]);
+						if (Double.isInfinite(postTopicLikelihood)) {
+							System.out.printf("[Post] Theta[%d] = %.12f\n", currPost.topic,
+									currUser.topicalInterests[currPost.topic]);
+						}
+					} else {
+						for (int w = 0; w < currPost.words.length; w++) {
+							int word = currPost.words[w];
+							int topic = currPost.wordTopics[w];
+							postWordLikelihood += Math.log10(topicWordDist[topic][word]);
+							postTopicLikelihood += Math.log10(currUser.topicalInterests[topic]);
+							if (Double.isInfinite(postTopicLikelihood)) {
+								System.out.printf("[Post] Theta[%d] = %.12f\n", currPost.topic,
+										currUser.topicalInterests[currPost.topic]);
+							}
+						}
+					}
+					
+					
+>>>>>>> origin/master
 				}
 			}
 		}
@@ -438,14 +488,24 @@ public class MultithreadCTLR {
 			// Only compute post likelihood of posts which are in batch (i.e.
 			// training batch = 1)
 			if (currUser.postBatches[i] == batch) {
+<<<<<<< HEAD
 				if (mode == 0) {
+=======
+				//Check if mode is 0 or 1
+				if (mode == 0){
+>>>>>>> origin/master
 					int postTopic = currUser.posts[i].topic;
 					// postLikelihood += x[postTopic];
 					postLikelihood += Math.log10(x[postTopic]);
 				} else {
 					Post currPost = currUser.posts[i];
+<<<<<<< HEAD
 					for (int j = 0; j < currPost.nWords; j++) {
 						int wordTopic = currPost.wordTopics[j];
+=======
+					for (int w=0; w<currPost.wordTopics.length;w++){
+						int wordTopic = currPost.wordTopics[w];
+>>>>>>> origin/master
 						postLikelihood += Math.log10(x[wordTopic]);
 					}
 				}
@@ -502,6 +562,7 @@ public class MultithreadCTLR {
 			if (currUser.postBatches[i] == batch) {
 				// Only consider posts which are assigned topic k (i.e. z_{v,s}
 				// = k)
+<<<<<<< HEAD
 				if (currUser.posts[i].topic == k) {
 					// Check if mode is 0 or 1
 					if (mode == 0) {
@@ -516,6 +577,20 @@ public class MultithreadCTLR {
 								postLikelihood += 1 / x;
 							}
 						}
+=======
+				//Check if mode is 0 or 1
+				if (mode == 0){
+					if (currUser.posts[i].topic == k) {
+						postLikelihood += 1 / x;
+					}
+				} else {
+					Post currPost = currUser.posts[i];
+					for (int w=0; w<currPost.wordTopics.length;w++){
+						int wordTopic = currPost.wordTopics[w];
+						if (wordTopic == k) {
+							postLikelihood += 1 / x;
+						}
+>>>>>>> origin/master
 					}
 				}
 			}
@@ -1122,11 +1197,15 @@ public class MultithreadCTLR {
 			User currUser = dataset.users[u];
 			for (int n = 0; n < currUser.posts.length; n++) {
 				Post currPost = currUser.posts[n];
-
 				// only consider posts in batch
 				if (currUser.postBatches[n] == batch) {
+<<<<<<< HEAD
 					// check if mode = 0 or 1
 					if (mode == 0) {
+=======
+					//check if mode = 0 or 1
+					if (mode == 0){
+>>>>>>> origin/master
 						int z = currPost.topic;
 						for (int w = 0; w < currPost.words.length; w++) {
 							int wordIndex = currPost.words[w];
@@ -1134,9 +1213,15 @@ public class MultithreadCTLR {
 							n_zw[z][wordIndex] += 1;
 						}
 					} else {
+<<<<<<< HEAD
 						for (int i = 0; i < currPost.nWords; i++) {
 							int wordIndex = currPost.words[i];
 							int z = currPost.wordTopics[i];
+=======
+						for (int w = 0; w < currPost.words.length; w++) {
+							int wordIndex = currPost.words[w];
+							int z = currPost.wordTopics[w];
+>>>>>>> origin/master
 							sum_nzw[z] += 1;
 							n_zw[z][wordIndex] += 1;
 						}
@@ -1159,7 +1244,11 @@ public class MultithreadCTLR {
 	 * @param u
 	 * @param n
 	 */
+<<<<<<< HEAD
 	private static void sampleTopic(int u, int n) {
+=======
+	private void samplePostTopic(int u, int n) {
+>>>>>>> origin/master
 		// Set the current user to be u
 		User currUser = dataset.users[u];
 
@@ -1206,6 +1295,7 @@ public class MultithreadCTLR {
 			} else {
 				// Sample topic
 				currUser.posts[n].topic = z;
+<<<<<<< HEAD
 				/*if (currUser.topicalInterests[z] <= 10E-12) {
 					System.err.println("Something wrong!!! ");
 					for (int k = 0; k < nTopics; k++) {
@@ -1316,9 +1406,143 @@ public class MultithreadCTLR {
 						sum_nzu[u] += 1;
 						n_zu[randTopic][u] += 1;
 					}
+=======
+				if (currUser.topicalInterests[z] <= 10E-12) {
+					System.err.println("Something wrong!!! ");
+					for (int k = 0; k < nTopics; k++) {
+						System.out.printf("p[%d] = %.12f sump = %.12f\n", k, p[k], sump);
+						System.out.printf("z = %d",z);
+					}
+				System.exit(-1);
+				}
+				return;
+			}
+		}
+	}
+	
+	/***
+	 * to sample topic for word w of post n of user u
+	 * 
+	 * @param u
+	 * @param n
+	 * @param w
+	 */
+	private void sampleWordTopic(int u, int n, int w) {
+		// Set the current user to be u
+		User currUser = dataset.users[u];
+
+		double sump = 0;
+		// p: p(z_u,s = z| rest)
+
+		double[] p = new double[nTopics];
+		double max = -Double.MAX_VALUE;
+		for (int z = 0; z < nTopics; z++) {
+			// User-topic
+			p[z] = Math.log10(currUser.topicalInterests[z]);
+
+			// topic-word
+			Post currPost = currUser.posts[n];
+			int word = currPost.words[w];
+			p[z] += Math.log10(topicWordDist[z][word]);
+			
+			// update min
+			if (max < p[z]) {
+				max = p[z];
+			}
+
+		}
+		// convert log(sump) to probability
+		for (int z = 0; z < nTopics; z++) {
+			p[z] = p[z] - max;
+			p[z] = Math.exp(p[z]);
+
+			// cumulative
+			p[z] = sump + p[z];
+			sump = p[z];
+		}
+
+		sump = rand.nextDouble() * sump;
+		for (int z = 0; z < nTopics; z++) {
+			if (sump > p[z]){
+				continue;
+			} else{
+			// Sample topic
+				currUser.posts[n].wordTopics[w] = z;
+				if (currUser.topicalInterests[z] <= 10E-12) {
+					System.err.println("Something wrong!!! ");
+					for (int k = 0; k < nTopics; k++) {
+						System.out.printf("p[%d] = %.12f sump = %.12f\n", k, p[k], sump);
+						System.out.printf("z = %d",z);
+					}
+				System.exit(-1);
+				}
+				return;
+			}
+		}
+	}
+
+	/***
+	 * initialize the data before training
+	 */
+	public void init() {
+		alpha = (double)(50)/(double)(nTopics);// prior for users' interest
+		gamma = 0.001;
+		beta = 0.001; // prior for topics
+		sigma = 0.2;// variance of users' authorities
+		delta= 0.2;// variance of users' hubs
+		
+		rand = new Random();
+		
+		//Check if mode is 0 or 1
+		if (mode == 0){
+			// initialize the count variables
+			for (int u = 0; u < dataset.nUsers; u++) {
+				sum_nzu[u] = 0;
+				for (int k = 0; k < nTopics; k++) {
+					n_zu[k][u] = 0;
+				}
+			}
+
+			// randomly assign topics to posts
+			for (int u = 0; u < dataset.nUsers; u++) {
+				User currUser = dataset.users[u];
+				for (int n = 0; n < currUser.posts.length; n++) {
+					// only consider posts in batch
+					if (currUser.postBatches[n] == batch) {
+						int randTopic = rand.nextInt(nTopics);
+						currUser.posts[n].topic = randTopic;
+						sum_nzu[u] += 1;
+						n_zu[randTopic][u] += 1;
+					}
+				}
+			}
+		} else {
+			// initialize the count variables
+			for (int u = 0; u < dataset.nUsers; u++) {
+				sum_nzu[u] = 0;
+				for (int k = 0; k < nTopics; k++) {
+					n_zu[k][u] = 0;
+				}
+			}
+			// randomly assign topics to posts
+			for (int u = 0; u < dataset.nUsers; u++) {
+				User currUser = dataset.users[u];
+				for (int n = 0; n < currUser.posts.length; n++) {
+					// only consider posts in batch
+					if (currUser.postBatches[n] == batch) {
+						Post currPost = currUser.posts[n];
+						for (int w=0; w<currPost.nWords; w++){
+							int randTopic = rand.nextInt(nTopics);
+							currPost.wordTopics[w] = randTopic;
+							sum_nzu[u] += 1;
+							n_zu[randTopic][u] += 1;
+						}
+					}
+>>>>>>> origin/master
 				}
 			}
 		}
+		
 
 		for (int k = 0; k < nTopics; k++) {
 			currUser.topicalInterests[k] = (n_zu[k][u] + alpha) / (sum_nzu[u] + (alpha * nTopics));
@@ -1429,6 +1653,7 @@ public class MultithreadCTLR {
 			altOptimize_topics();
 
 			// Gibbs part
+<<<<<<< HEAD
 			System.out.printf("[iter-%d] sampling topic for users' posts\n", iter);
 			executor = Executors.newFixedThreadPool(nParallelThreads);
 			for (int i = 0; i < nParallelThreads; i++) {
@@ -1438,6 +1663,22 @@ public class MultithreadCTLR {
 			executor.shutdown();
 			while (!executor.isTerminated()) {
 				// do nothing, just wait for the threads to finish
+=======
+			for (int u = 0; u < dataset.nUsers; u++) {
+				for (int n = 0; n < dataset.users[u].nPosts; n++) {
+					// only consider posts in batch
+					if (dataset.users[u].postBatches[n] == batch) {
+						//check if mode is 0 or 1
+						if (mode == 0) {
+							samplePostTopic(u, n);
+						}else {
+							for (int w=0; w<dataset.users[u].posts[n].nWords; w++){
+								sampleWordTopic(u, n, w);
+							}
+						}
+					}
+				}
+>>>>>>> origin/master
 			}
 
 			// set first Likelihood as the maxLikelihood
