@@ -131,8 +131,9 @@ public class Dataset {
 				users[u].posts[users[u].nPosts].nWords = tokens.length;
 				users[u].posts[users[u].nPosts].words = new int[tokens.length];
 				for (int i = 0; i < tokens.length; i++) {
+					//System.out.println(postId+","+tokens[i]);
 					users[u].posts[users[u].nPosts].words[i] = Integer.parseInt(tokens[i]);
-
+					
 				}
 				users[u].nPosts++;
 

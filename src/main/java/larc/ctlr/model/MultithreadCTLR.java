@@ -59,7 +59,7 @@ public class MultithreadCTLR {
 	public static int maxIteration_topicalInterest = 10;
 	public static int maxIteration_Authorities = 10;
 	public static int maxIteration_Hubs = 10;
-	public static int max_GibbsEM_Iterations = 200;
+	public static int max_GibbsEM_Iterations = 500;
 
 	public int nParallelThreads = 20;
 	public int[] threadStartIndexes = null;
@@ -1339,11 +1339,11 @@ public class MultithreadCTLR {
 	 * initialize the data before training
 	 */
 	public void init() {
-		alpha = (double) (50) / (double) (nTopics);// prior for users' interest
+		alpha = (double) (120) / (double) (nTopics);// prior for users' interest
 		gamma = 0.001;
 		beta = 0.001; // prior for topics
-		sigma = 0.2;// variance of users' authorities
-		delta = 0.2;// variance of users' hubs
+		sigma = 0.02;// variance of users' authorities
+		delta = 0.02;// variance of users' hubs
 		rand = new Random();
 		// initialize for the users
 		for (int u = 0; u < dataset.nUsers; u++) {
