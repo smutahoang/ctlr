@@ -127,7 +127,7 @@ public class Dataset {
 				users[u].postBatches[users[u].nPosts] = batch;
 				users[u].posts[users[u].nPosts] = new Post();
 				users[u].posts[users[u].nPosts].postId = postId;
-				tokens = tokens[2].split(" ");
+				tokens = tokens[2].trim().split(" ");
 				users[u].posts[users[u].nPosts].nWords = tokens.length;
 				users[u].posts[users[u].nPosts].words = new int[tokens.length];
 				for (int i = 0; i < tokens.length; i++) {

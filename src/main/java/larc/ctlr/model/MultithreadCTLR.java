@@ -23,7 +23,7 @@ public class MultithreadCTLR {
 	public static double delta;// variance of users' hubs
 	public static double gamma; // variance of topic word distribution
 	public static double epsilon = 0.000001;
-	public static double lamda = 0.01;
+	public static double lamda = 0.1;
 
 	public static Random rand;
 
@@ -59,7 +59,7 @@ public class MultithreadCTLR {
 	public static int maxIteration_topicalInterest = 10;
 	public static int maxIteration_Authorities = 10;
 	public static int maxIteration_Hubs = 10;
-	public static int max_GibbsEM_Iterations = 500;
+	public static int max_GibbsEM_Iterations = 888;
 
 	public int nParallelThreads = 20;
 	public int[] threadStartIndexes = null;
@@ -67,10 +67,14 @@ public class MultithreadCTLR {
 
 	public static double[] threadLikelihood;
 
-	private double postLastLogLikelidhood;
-	private double postLastLogPerplexity;
-	private double postOptLogLikelidhood;
-	private double postOptLogPerplexity;
+	private double postLastLogLikelidhoodMode0;
+	private double postLastLogPerplexityMode0;
+	private double postOptLogLikelidhoodMode0;
+	private double postOptLogPerplexityMode0;
+	private double postLastLogLikelidhoodMode1;
+	private double postLastLogPerplexityMode1;
+	private double postOptLogLikelidhoodMode1;
+	private double postOptLogPerplexityMode1;
 
 	public static int mode; // 0 for single topic in a post, 1 for multiple
 							// topics in a post
@@ -240,7 +244,7 @@ public class MultithreadCTLR {
 				}
 				HuAv = HuAv * lamda;
 				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-				linkRelationshipLikelihood += Math.log10(1 - fHuAv);
+				linkRelationshipLikelihood += Math.log(1 - fHuAv);
 
 				if (Double.isInfinite(linkRelationshipLikelihood)) {
 					System.out.printf("[non-Followers] HuAv = %.12f fHuAv = %.12f\n", HuAv, fHuAv);
@@ -260,7 +264,7 @@ public class MultithreadCTLR {
 				}
 				HuAv = HuAv * lamda;
 				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-				linkRelationshipLikelihood += Math.log10(fHuAv);
+				linkRelationshipLikelihood += Math.log(fHuAv);
 
 				if (Double.isInfinite(linkRelationshipLikelihood)) {
 					System.out.printf("[followers] HuAv = %.12f fHuAv = %.12f\n", HuAv, fHuAv);
@@ -284,7 +288,7 @@ public class MultithreadCTLR {
 					}
 					HuAv = HuAv * lamda;
 					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-					linkRelationshipLikelihood += Math.log10(1.0 - fHuAv);
+					linkRelationshipLikelihood += Math.log(1.0 - fHuAv);
 					if (Double.isInfinite(linkRelationshipLikelihood)) {
 						System.out.printf("[non-followees] HuAv = %.12f fHuAv = %.12f\n", HuAv, fHuAv);
 					}
@@ -310,7 +314,7 @@ public class MultithreadCTLR {
 					}
 					HuAv = HuAv * lamda;
 					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-					linkRelationshipLikelihood += Math.log10(fHuAv);
+					linkRelationshipLikelihood += Math.log(fHuAv);
 					if (Double.isInfinite(linkRelationshipLikelihood)) {
 						System.out.printf("[followees] HuAv = %.12f fHuAv = %.12f\n", HuAv, fHuAv);
 					}
@@ -319,22 +323,22 @@ public class MultithreadCTLR {
 		}
 
 		for (int k = 0; k < nTopics; k++) {
-			// linkAuthorityLikelihood += (-Math.log10(sigma)
-			// - (Math.pow(Math.log10(currUser.authorities[k]) -
+			// linkAuthorityLikelihood += (-Math.log(sigma)
+			// - (Math.pow(Math.log(currUser.authorities[k]) -
 			// currUser.topicalInterests[k], 2)
 			// / (2 * Math.pow(sigma, 2))));
-			linkAuthorityLikelihood += -Math.pow((Math.log10(currUser.authorities[k]) - currUser.topicalInterests[k]),
+			linkAuthorityLikelihood += -Math.pow((Math.log(currUser.authorities[k]) - currUser.topicalInterests[k]),
 					2) / (2 * Math.pow(delta, 2));
 
 			if (Double.isInfinite(linkAuthorityLikelihood)) {
 				System.out.printf("[authority] A[%d] = %.12f\n", k, currUser.authorities[k]);
 			}
-			// linkHubLikelihood += (-Math.log10(delta)
-			// - (Math.pow(Math.log10(currUser.hubs[k]) -
+			// linkHubLikelihood += (-Math.log(delta)
+			// - (Math.pow(Math.log(currUser.hubs[k]) -
 			// currUser.topicalInterests[k], 2)
 			// / (2 * Math.pow(delta, 2))));
 
-			linkHubLikelihood += -Math.pow((Math.log10(currUser.hubs[k]) - currUser.topicalInterests[k]), 2)
+			linkHubLikelihood += -Math.pow((Math.log(currUser.hubs[k]) - currUser.topicalInterests[k]), 2)
 					/ (2 * Math.pow(sigma, 2));
 
 			if (Double.isInfinite(linkHubLikelihood)) {
@@ -350,9 +354,9 @@ public class MultithreadCTLR {
 				if (mode == 0) {
 					for (int w = 0; w < currPost.words.length; w++) {
 						int word = currPost.words[w];
-						postWordLikelihood += Math.log10(topicWordDist[currPost.topic][word]);
+						postWordLikelihood += Math.log(topicWordDist[currPost.topic][word]);
 					}
-					postTopicLikelihood += Math.log10(currUser.topicalInterests[currPost.topic]);
+					postTopicLikelihood += Math.log(currUser.topicalInterests[currPost.topic]);
 					if (Double.isInfinite(postTopicLikelihood)) {
 						System.out.printf("[Post] Theta[%d] = %.12f\n", currPost.topic,
 								currUser.topicalInterests[currPost.topic]);
@@ -361,8 +365,8 @@ public class MultithreadCTLR {
 					for (int i = 0; i < currPost.nWords; i++) {
 						int word = currPost.words[i];
 						int topic = currPost.wordTopics[i];
-						postWordLikelihood += Math.log10(topicWordDist[topic][word]);
-						postTopicLikelihood += Math.log10(currUser.topicalInterests[topic]);
+						postWordLikelihood += Math.log(topicWordDist[topic][word]);
+						postTopicLikelihood += Math.log(currUser.topicalInterests[topic]);
 						if (Double.isInfinite(postTopicLikelihood)) {
 							System.out.printf("[Post] Theta[%d] = %.12f\n", currPost.topic,
 									currUser.topicalInterests[currPost.topic]);
@@ -375,7 +379,7 @@ public class MultithreadCTLR {
 		postLikelihood = postWordLikelihood + postTopicLikelihood;
 		// for (int k = 0; k < nTopics; k++) {
 		// postThetaLikelihood += (alpha - 1) *
-		// Math.log10(currUser.topicalInterests[k]);
+		// Math.log(currUser.topicalInterests[k]);
 		// }
 		if (Double.isInfinite(linkLikelihood) || Double.isInfinite(postLikelihood)) {
 			System.out.println("In getLikelihood(int u): infinite!");
@@ -427,12 +431,12 @@ public class MultithreadCTLR {
 		User currUser = dataset.users[u];
 
 		for (int k = 0; k < nTopics; k++) {
-			authorityLikelihood += -Math.pow((Math.log10(currUser.authorities[k]) - x[k]), 2)
-					/ (2 * Math.pow(delta, 2));
+			authorityLikelihood += -Math.pow((Math.log(currUser.authorities[k]) - x[k]), 2)
+					/ (2 * Math.pow(sigma, 2));
 		}
 
 		for (int k = 0; k < nTopics; k++) {
-			hubLikelihood += -Math.pow((Math.log10(currUser.hubs[k]) - x[k]), 2) / (2 * Math.pow(sigma, 2));
+			hubLikelihood += -Math.pow((Math.log(currUser.hubs[k]) - x[k]), 2) / (2 * Math.pow(delta, 2));
 		}
 
 		for (int i = 0; i < currUser.nPosts; i++) {
@@ -440,22 +444,21 @@ public class MultithreadCTLR {
 			// training batch = 1)
 			if (currUser.postBatches[i] == batch) {
 				if (mode == 0) {
-
 					int postTopic = currUser.posts[i].topic;
 					// postLikelihood += x[postTopic];
-					postLikelihood += Math.log10(x[postTopic]);
+					postLikelihood += Math.log(x[postTopic]);
 				} else {
 					Post currPost = currUser.posts[i];
 					for (int j = 0; j < currPost.nWords; j++) {
 						int wordTopic = currPost.wordTopics[j];
-						postLikelihood += Math.log10(x[wordTopic]);
+						postLikelihood += Math.log(x[wordTopic]);
 					}
 				}
 			}
 		}
 
 		for (int k = 0; k < nTopics; k++) {
-			topicLikelihood += (alpha - 1) * Math.log10(x[k]);
+			topicLikelihood += (alpha - 1) * Math.log(x[k]);
 		}
 		// finalLikelihood = authorityLikelihood + hubLikelihood +
 		// postLikelihood + topicLikelihood;
@@ -466,9 +469,9 @@ public class MultithreadCTLR {
 		 * , u, authorityLikelihood, hubLikelihood, postLikelihood);
 		 */
 
-		// finalLikelihood = authorityLikelihood + hubLikelihood +
-		// postLikelihood + topicLikelihood;
-		finalLikelihood = authorityLikelihood + hubLikelihood + postLikelihood;
+		 finalLikelihood = authorityLikelihood + hubLikelihood +
+		 postLikelihood + topicLikelihood;
+		//finalLikelihood = authorityLikelihood + hubLikelihood + postLikelihood;
 		return finalLikelihood;
 	}
 
@@ -494,9 +497,9 @@ public class MultithreadCTLR {
 		// Set the current user to be u
 		User currUser = dataset.users[u];
 
-		authorityLikelihood = ((Math.log10(currUser.authorities[k]) - x) / Math.pow(delta, 2));
+		authorityLikelihood = ((Math.log(currUser.authorities[k]) - x) / Math.pow(delta, 2));
 
-		hubLikelihood = ((Math.log10(currUser.hubs[k]) - x) / Math.pow(sigma, 2));
+		hubLikelihood = ((Math.log(currUser.hubs[k]) - x) / Math.pow(sigma, 2));
 
 		for (int i = 0; i < currUser.nPosts; i++) {
 			// Only compute post likelihood of posts which are in batch
@@ -524,9 +527,9 @@ public class MultithreadCTLR {
 			}
 		}
 
-		// gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood
-		// + ((alpha -1) / x);
-		gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood;
+		 gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood
+		 + ((alpha -1) / x);
+		//gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood;
 
 		/*
 		 * System.out.printf(
@@ -700,7 +703,7 @@ public class MultithreadCTLR {
 				// System.out.println("HuAv:"+HuAv);
 				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
 				// System.out.println("fHuAv:"+fHuAv);
-				nonFollowerLikelihood += Math.log10(1 - fHuAv);
+				nonFollowerLikelihood += Math.log(1 - fHuAv);
 			}
 		}
 
@@ -717,13 +720,13 @@ public class MultithreadCTLR {
 				}
 				HuAv = HuAv * lamda;
 				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-				followerLikelihood += Math.log10(fHuAv);
+				followerLikelihood += Math.log(fHuAv);
 			}
 		}
 
 		// Compute post likelihood
 		for (int k = 0; k < nTopics; k++) {
-			postLikelihood += Math.pow((Math.log10(x[k]) - currUser.topicalInterests[k]), 2) / (2 * Math.pow(sigma, 2));
+			postLikelihood += Math.pow((Math.log(x[k]) - currUser.topicalInterests[k]), 2) / (2 * Math.pow(sigma, 2));
 		}
 
 		likelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
@@ -734,6 +737,8 @@ public class MultithreadCTLR {
 		// System.out.println("Num of Followers:" + currUser.followers.length);
 		// System.out.println("FollowerLikelihood:" + followerLikelihood);
 		// System.out.println("PostLikelihood:" + postLikelihood);
+		
+		
 
 		return likelihood;
 	}
@@ -798,12 +803,15 @@ public class MultithreadCTLR {
 				HuAv = HuAv * lamda;
 				followerLikelihood += ((1 / (1 - Math.exp(-HuAv))) * -Math.exp(-HuAv) * -(lamda * follower.hubs[k]))
 						- ((1 / (Math.exp(-HuAv) + 1)) * Math.exp(-HuAv) * -(lamda * follower.hubs[k]));
+				
 			}
 		}
 
-		postLikelihood = ((Math.log10(x) - currUser.topicalInterests[k]) / Math.pow(sigma, 2)) * (1 / x);
+		postLikelihood = ((Math.log(x) - currUser.topicalInterests[k]) / Math.pow(sigma, 2)) * (1 / x);
 
 		gradLikelihood = nonFollowerLikelihood + followerLikelihood - postLikelihood;
+		
+		
 
 		return gradLikelihood;
 	}
@@ -813,6 +821,7 @@ public class MultithreadCTLR {
 	 * 
 	 * @param u
 	 */
+	
 	static void altOptimize_Authorities(int u) {
 		double[] grad = new double[nTopics];
 		double[] currentX = dataset.users[u].authorities;
@@ -867,6 +876,9 @@ public class MultithreadCTLR {
 				currentF = f;
 				for (int k = 0; k < nTopics; k++) {
 					currentX[k] = x[k];
+					//if (dataset.users[u].userId.equals("409147008")){
+					//	System.out.println("k:"+k+" x:"+ currentX[k]);;
+					//}
 				}
 				// to see if F actually reduce after every iteration
 				// System.out.printf("alt_authority: u = %d iter = %d f = %f\n",
@@ -880,6 +892,7 @@ public class MultithreadCTLR {
 		}
 	}
 
+	
 	/***
 	 * compute likelihood of data as a function of hub of u when the hub is x,
 	 * i.e., if L(data|parameters) = f(H_u) + const-of-H_u then this function
@@ -916,7 +929,7 @@ public class MultithreadCTLR {
 					}
 					HuAv = HuAv * lamda;
 					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-					nonFollowingLikelihood += Math.log10(1.0 - fHuAv);
+					nonFollowingLikelihood += Math.log(1.0 - fHuAv);
 				}
 			}
 		}
@@ -937,14 +950,14 @@ public class MultithreadCTLR {
 					}
 					HuAv = HuAv * lamda;
 					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-					followingLikelihood += Math.log10(fHuAv);
+					followingLikelihood += Math.log(fHuAv);
 				}
 			}
 		}
 
 		// Compute post likelihood
 		for (int k = 0; k < nTopics; k++) {
-			postLikelihood += Math.pow(Math.log10(x[k]) - currUser.topicalInterests[k], 2) / (2 * Math.pow(delta, 2));
+			postLikelihood += Math.pow(Math.log(x[k]) - currUser.topicalInterests[k], 2) / (2 * Math.pow(delta, 2));
 		}
 
 		likelihood = nonFollowingLikelihood + followingLikelihood - postLikelihood;
@@ -1026,7 +1039,7 @@ public class MultithreadCTLR {
 			}
 		}
 
-		postLikelihood = ((Math.log10(x) - currUser.topicalInterests[k]) / Math.pow(delta, 2)) * (1 / x);
+		postLikelihood = ((Math.log(x) - currUser.topicalInterests[k]) / Math.pow(delta, 2)) * (1 / x);
 
 		gradLikelihood = nonFollowingLikelihood + followingLikelihood - postLikelihood;
 
@@ -1174,13 +1187,13 @@ public class MultithreadCTLR {
 		double max = -Double.MAX_VALUE;
 		for (int z = 0; z < nTopics; z++) {
 			// User-topic
-			p[z] = Math.log10(currUser.topicalInterests[z]);
+			p[z] = Math.log(currUser.topicalInterests[z]);
 
 			// topic-word
 			Post currPost = currUser.posts[n];
 			for (int w = 0; w < currPost.words.length; w++) {
 				int word = currPost.words[w];
-				p[z] += Math.log10(topicWordDist[z][word]);
+				p[z] += Math.log(topicWordDist[z][word]);
 			}
 
 			// update min
@@ -1216,7 +1229,7 @@ public class MultithreadCTLR {
 				 * < nTopics; k++) { System.out.printf(
 				 * "theta[%d] = %.12f \tlog(theta[%d]) = %.12f \tplog[%d] = %.12f \t p[%d] = %.12f sump = %.12f\n"
 				 * , k, currUser.topicalInterests[k], k,
-				 * Math.log10(currUser.topicalInterests[k]), k, plog[k], k,
+				 * Math.log(currUser.topicalInterests[k]), k, plog[k], k,
 				 * p[k], sump); } System.out.printf("z = %d\n", z);
 				 * System.exit(-1); }
 				 */
@@ -1242,12 +1255,12 @@ public class MultithreadCTLR {
 		double max = -Double.MAX_VALUE;
 		for (int z = 0; z < nTopics; z++) {
 			// User-topic
-			p[z] = Math.log10(currUser.topicalInterests[z]);
+			p[z] = Math.log(currUser.topicalInterests[z]);
 
 			// topic-word
 			Post currPost = currUser.posts[n];
 			int word = currPost.words[i];
-			p[z] += Math.log10(topicWordDist[z][word]);
+			p[z] += Math.log(topicWordDist[z][word]);
 
 			// update min
 			if (max < p[z]) {
@@ -1337,11 +1350,11 @@ public class MultithreadCTLR {
 	 * initialize the data before training
 	 */
 	public void init() {
-		alpha = (double) (120) / (double) (nTopics);// prior for users' interest
+		alpha = (double) (20) / (double) (nTopics);// prior for users' interest
 		gamma = 0.001;
 		beta = 0.001; // prior for topics
-		sigma = 0.02;// variance of users' authorities
-		delta = 0.02;// variance of users' hubs
+		sigma = 0.2;// variance of users' authorities
+		delta = 0.2;// variance of users' hubs
 		rand = new Random();
 		// initialize for the users
 		for (int u = 0; u < dataset.nUsers; u++) {
@@ -1470,121 +1483,176 @@ public class MultithreadCTLR {
 			}
 			System.out.printf("likelihood after %d steps: %f, max %f\n", iter, currentLikelihood, maxLikelihood);
 		}
-		getOptLikelihoodPerplexity();
-		getLastLikelihoodPerplexity();
+		getOptLikelihoodPerplexityMode0();
+		getOptLikelihoodPerplexityMode1();
+		getLastLikelihoodPerplexityMode0();
+		getLastLikelihoodPerplexityMode1();
 
 		// print out the learned parameters
 		output_OptTopicInterest();
 		output_OptAuthority();
 		output_OptHub();
 		output_OptPostTopicTopWords(50);
-		output_OptLikelihoodPerplexity();
+		output_OptLikelihoodPerplexityMode0();
+		output_OptLikelihoodPerplexityMode1();
 		output_LastTopicInterest();
 		output_LastAuthority();
 		output_LastHub();
 		output_LastPostTopicTopWords(20);
-		output_LastLikelihoodPerplexity();
+		output_LastLikelihoodPerplexityMode0();
+		output_LastLikelihoodPerplexityMode1();
 		// output_OptTopicWord();
 		output_optPostTopic();
+		output_userFollowerHub();
+		output_userFolloweeAuthority();
+		output_userFollowerInterests();
+		output_userFolloweeInterests();
+		
+		output_userNonFollowerHub();
+		output_userNonFolloweeAuthority();
 	}
 
-	private double getOptPostLikelihood(int u, int j) {
+	
+	private double getOptPostLikelihoodMode0(int u, int j) {
 		// Compute likelihood of post number j of user number u
 		double logLikelihood = 0;
-		if (mode == 0) {
-			for (int z = 0; z < nTopics; z++) {
-				double l_z = Math.log10(dataset.users[u].optTopicalInterests[z]);
-				if (Double.isInfinite(l_z)) // in case theta[u][z] = 0
-					continue;
-				logLikelihood = logLikelihood + l_z;
-				for (int i = 0; i < dataset.users[u].posts[j].nWords; i++) {
-					int w = dataset.users[u].posts[j].words[i];
-					logLikelihood += Math.log10(optTopicWordDist[z][w]);
-				}
-			}
-		} else {
+		for (int z = 0; z < nTopics; z++) {
+			double l_z = Math.log10(dataset.users[u].optTopicalInterests[z]);
+			if (Double.isInfinite(l_z)) // in case theta[u][z] = 0
+				continue;
+			logLikelihood = logLikelihood + l_z;
 			for (int i = 0; i < dataset.users[u].posts[j].nWords; i++) {
 				int w = dataset.users[u].posts[j].words[i];
-				// Probability that word i is generated by other topics
-				double p = 0;
-				for (int z = 0; z < nTopics; z++) {
-					double p_z = optTopicWordDist[z][w] * dataset.users[u].optTopicalInterests[z];
-					p = p + p_z;
-				}
-				logLikelihood = logLikelihood + Math.log10(p);
+				logLikelihood += Math.log10(optTopicWordDist[z][w]);
 			}
 		}
 		return logLikelihood;
 	}
-
-	private double getLastPostLikelihood(int u, int j) {
+	
+	private double getOptPostLikelihoodMode1(int u, int j) {
 		// Compute likelihood of post number j of user number u
 		double logLikelihood = 0;
-		if (mode == 0) {
+		for (int i = 0; i < dataset.users[u].posts[j].nWords; i++) {
+			int w = dataset.users[u].posts[j].words[i];
+			// Probability that word i is generated by other topics
+			double p = 0;
 			for (int z = 0; z < nTopics; z++) {
-				double l_z = Math.log10(dataset.users[u].topicalInterests[z]);
-				if (Double.isInfinite(l_z)) // in case theta[u][z] = 0
-					continue;
-				logLikelihood = logLikelihood + l_z;
-				for (int i = 0; i < dataset.users[u].posts[j].nWords; i++) {
-					int w = dataset.users[u].posts[j].words[i];
-					logLikelihood += Math.log10(topicWordDist[z][w]);
-				}
+				double p_z = optTopicWordDist[z][w] * dataset.users[u].optTopicalInterests[z];
+				p = p + p_z;
 			}
-		} else {
-			for (int i = 0; i < dataset.users[u].posts[j].nWords; i++) {
-				int w = dataset.users[u].posts[j].words[i];
-				// Probability that word i is generated by other topics
-				double p = 0;
-				for (int z = 0; z < nTopics; z++) {
-					double p_z = topicWordDist[z][w] * dataset.users[u].topicalInterests[z];
-					p = p + p_z;
-				}
-				logLikelihood = logLikelihood + Math.log10(p);
-			}
+			logLikelihood = logLikelihood + Math.log10(p);
 		}
 		return logLikelihood;
 	}
 
-	private void getOptLikelihoodPerplexity() {
-		postOptLogLikelidhood = 0;
-		postOptLogPerplexity = 0;
-		int nTestPost = 0;
-		for (int u = 0; u < dataset.nUsers; u++) {
-			for (int t = 0; t < dataset.users[u].nPosts; t++) {
-				double logLikelihood = getOptPostLikelihood(u, t);
-				if (dataset.users[u].postBatches[t] == batch)
-					postOptLogLikelidhood += logLikelihood;
-				else {
-					postOptLogPerplexity += (-logLikelihood);
-					nTestPost++;
-				}
+	
+	private double getLastPostLikelihoodMode0(int u, int j) {
+		// Compute likelihood of post number j of user number u
+		double logLikelihood = 0;
+		for (int z = 0; z < nTopics; z++) {
+			double l_z = Math.log10(dataset.users[u].topicalInterests[z]);
+			if (Double.isInfinite(l_z)) // in case theta[u][z] = 0
+				continue;
+			logLikelihood = logLikelihood + l_z;
+			for (int i = 0; i < dataset.users[u].posts[j].nWords; i++) {
+				int w = dataset.users[u].posts[j].words[i];
+				logLikelihood += Math.log10(topicWordDist[z][w]);
 			}
 		}
-		postOptLogPerplexity /= nTestPost;
+		return logLikelihood;
+	}
+	
+	private double getLastPostLikelihoodMode1(int u, int j) {
+		// Compute likelihood of post number j of user number u
+		double logLikelihood = 0;
+		for (int i = 0; i < dataset.users[u].posts[j].nWords; i++) {
+			int w = dataset.users[u].posts[j].words[i];
+			// Probability that word i is generated by other topics
+			double p = 0;
+			for (int z = 0; z < nTopics; z++) {
+				double p_z = topicWordDist[z][w] * dataset.users[u].topicalInterests[z];
+				p = p + p_z;
+			}
+			logLikelihood = logLikelihood + Math.log10(p);
+		}
+		return logLikelihood;
 	}
 
-	private void getLastLikelihoodPerplexity() {
-		postLastLogLikelidhood = 0;
-		postLastLogPerplexity = 0;
+	private void getOptLikelihoodPerplexityMode0() {
+		postOptLogLikelidhoodMode0 = 0;
+		postOptLogPerplexityMode0 = 0;
 		int nTestPost = 0;
 		for (int u = 0; u < dataset.nUsers; u++) {
 			for (int t = 0; t < dataset.users[u].nPosts; t++) {
-				double logLikelihood = getLastPostLikelihood(u, t);
+				double logLikelihood = getOptPostLikelihoodMode0(u, t);
 				if (dataset.users[u].postBatches[t] == batch)
-					postLastLogLikelidhood += logLikelihood;
+					postOptLogLikelidhoodMode0 += logLikelihood;
 				else {
-					postLastLogPerplexity += (-logLikelihood);
+					postOptLogPerplexityMode0 += (-logLikelihood);
 					nTestPost++;
 				}
 			}
 		}
-		postLastLogPerplexity /= nTestPost;
+		postOptLogPerplexityMode0 /= nTestPost;
+	}
+	
+	private void getOptLikelihoodPerplexityMode1() {
+		postOptLogLikelidhoodMode1 = 0;
+		postOptLogPerplexityMode1 = 0;
+		int nTestPost = 0;
+		for (int u = 0; u < dataset.nUsers; u++) {
+			for (int t = 0; t < dataset.users[u].nPosts; t++) {
+				double logLikelihood = getOptPostLikelihoodMode1(u, t);
+				if (dataset.users[u].postBatches[t] == batch)
+					postOptLogLikelidhoodMode1 += logLikelihood;
+				else {
+					postOptLogPerplexityMode1 += (-logLikelihood);
+					nTestPost++;
+				}
+			}
+		}
+		postOptLogPerplexityMode1 /= nTestPost;
+	}
+
+	private void getLastLikelihoodPerplexityMode0() {
+		postLastLogLikelidhoodMode0 = 0;
+		postLastLogPerplexityMode0 = 0;
+		int nTestPost = 0;
+		for (int u = 0; u < dataset.nUsers; u++) {
+			for (int t = 0; t < dataset.users[u].nPosts; t++) {
+				double logLikelihood = getLastPostLikelihoodMode0(u, t);
+				if (dataset.users[u].postBatches[t] == batch)
+					postLastLogLikelidhoodMode0 += logLikelihood;
+				else {
+					postLastLogPerplexityMode0 += (-logLikelihood);
+					nTestPost++;
+				}
+			}
+		}
+		postLastLogPerplexityMode0 /= nTestPost;
+	}
+	
+	private void getLastLikelihoodPerplexityMode1() {
+		postLastLogLikelidhoodMode1 = 0;
+		postLastLogPerplexityMode1 = 0;
+		int nTestPost = 0;
+		for (int u = 0; u < dataset.nUsers; u++) {
+			for (int t = 0; t < dataset.users[u].nPosts; t++) {
+				double logLikelihood = getLastPostLikelihoodMode1(u, t);
+				if (dataset.users[u].postBatches[t] == batch)
+					postLastLogLikelidhoodMode1 += logLikelihood;
+				else {
+					postLastLogPerplexityMode1 += (-logLikelihood);
+					nTestPost++;
+				}
+			}
+		}
+		postLastLogPerplexityMode1 /= nTestPost;
 	}
 
 	public void output_OptTopicWord() {
 		try {
-			File f = new File(dataset.path + "/" + nTopics + "/l_OptTopicalWordDistributions.csv");
+			File f = new File(dataset.path + "/" + mode + "/" + nTopics + "/l_OptTopicalWordDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int k = 0; k < nTopics; k++) {
 				String text = Integer.toString(k);
@@ -1603,7 +1671,7 @@ public class MultithreadCTLR {
 
 	public void output_LastTopicWord() {
 		try {
-			File f = new File(dataset.path + "/" + nTopics + "/l_LastTopicalWordDistributions.csv");
+			File f = new File(dataset.path + "/" + mode  + "/" + nTopics + "/l_LastTopicalWordDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int k = 0; k < nTopics; k++) {
 				String text = Integer.toString(k);
@@ -1622,7 +1690,7 @@ public class MultithreadCTLR {
 
 	private void output_OptPostTopicTopWords(int k) {
 		try {
-			File f = new File(dataset.path + "/" + nTopics + "/l_OptTopTopicWords.csv");
+			File f = new File(dataset.path + "/" + mode + "/" + nTopics + "/l_OptTopTopicWords.csv");
 			BufferedWriter bw = new BufferedWriter(new FileWriter(f.getAbsoluteFile()));
 			RankingTool rankTool = new RankingTool();
 			WeightedElement[] topWords = null;
@@ -1642,7 +1710,7 @@ public class MultithreadCTLR {
 
 	private void output_LastPostTopicTopWords(int k) {
 		try {
-			File f = new File(dataset.path + "/" + nTopics + "/l_LastTopTopicWords.csv");
+			File f = new File(dataset.path + "/" + mode + "/" + nTopics + "/l_LastTopTopicWords.csv");
 			BufferedWriter bw = new BufferedWriter(new FileWriter(f.getAbsoluteFile()));
 			RankingTool rankTool = new RankingTool();
 			WeightedElement[] topWords = null;
@@ -1662,7 +1730,7 @@ public class MultithreadCTLR {
 
 	public void output_OptTopicInterest() {
 		try {
-			File f = new File(dataset.path + "/" + nTopics + "/l_OptUserTopicalInterestDistributions.csv");
+			File f = new File(dataset.path + "/" + mode + "/" + nTopics + "/l_OptUserTopicalInterestDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
@@ -1682,7 +1750,7 @@ public class MultithreadCTLR {
 
 	public void output_LastTopicInterest() {
 		try {
-			File f = new File(dataset.path + "/" + nTopics + "/l_LastUserTopicalInterestDistributions.csv");
+			File f = new File(dataset.path + "/" + mode + "/" + nTopics + "/l_LastUserTopicalInterestDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
@@ -1702,11 +1770,36 @@ public class MultithreadCTLR {
 
 	public void output_OptAuthority() {
 		try {
-			File f = new File(dataset.path + "/" + nTopics + "/l_OptUserAuthorityDistributions.csv");
+			File f = new File(dataset.path + "/" + mode + "/" + nTopics + "/l_OptUserAuthorityDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
 				String text = currUser.userId;
+				if (currUser.followers != null){
+					text = text + "," + currUser.followers.length;
+				} else {
+					text = text + ",0"; 
+				}
+				if (currUser.followings != null){
+					text = text + "," + currUser.followings.length;
+				} else {
+					text = text + ",0"; 
+				}
+				if (currUser.nonFollowers != null){
+					text = text + "," + currUser.nonFollowers.length;
+				} else {
+					text = text + ",0"; 
+				}
+				if (currUser.nonFollowings != null){
+					text = text + "," + currUser.nonFollowings.length;
+				} else {
+					text = text + ",0"; 
+				}
+				if (currUser.posts != null){
+					text = text + "," + currUser.posts.length;
+				} else {
+					text = text + ",0"; 
+				}
 				for (int k = 0; k < nTopics; k++) {
 					text = text + "," + Double.toString(currUser.optAuthorities[k]);
 				}
@@ -1719,10 +1812,11 @@ public class MultithreadCTLR {
 			System.exit(0);
 		}
 	}
+	
 
 	public void output_LastAuthority() {
 		try {
-			File f = new File(dataset.path + "/" + nTopics + "/l_LastUserAuthorityDistributions.csv");
+			File f = new File(dataset.path + "/" + mode + "/" + nTopics + "/l_LastUserAuthorityDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
@@ -1739,14 +1833,40 @@ public class MultithreadCTLR {
 			System.exit(0);
 		}
 	}
+	
 
 	public void output_OptHub() {
 		try {
-			File f = new File(dataset.path + "/" + nTopics + "/l_OptUserHubDistributions.csv");
+			File f = new File(dataset.path + "/" + mode + "/" + nTopics + "/l_OptUserHubDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
 				String text = currUser.userId;
+				if (currUser.followers != null){
+					text = text + "," + currUser.followers.length;
+				} else {
+					text = text + ",0"; 
+				}
+				if (currUser.followings != null){
+					text = text + "," + currUser.followings.length;
+				} else {
+					text = text + ",0"; 
+				}
+				if (currUser.nonFollowers != null){
+					text = text + "," + currUser.nonFollowers.length;
+				} else {
+					text = text + ",0"; 
+				}
+				if (currUser.nonFollowings != null){
+					text = text + "," + currUser.nonFollowings.length;
+				} else {
+					text = text + ",0"; 
+				}
+				if (currUser.posts != null){
+					text = text + "," + currUser.posts.length;
+				} else {
+					text = text + ",0"; 
+				}
 				for (int k = 0; k < nTopics; k++) {
 					text = text + "," + Double.toString(currUser.optHubs[k]);
 				}
@@ -1762,7 +1882,7 @@ public class MultithreadCTLR {
 
 	public void output_LastHub() {
 		try {
-			File f = new File(dataset.path + "/" + nTopics + "/l_LastUserHubDistributions.csv");
+			File f = new File(dataset.path + "/" + mode + "/" + nTopics + "/l_LastUserHubDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
@@ -1780,12 +1900,26 @@ public class MultithreadCTLR {
 		}
 	}
 
-	public void output_OptLikelihoodPerplexity() {
+	public void output_OptLikelihoodPerplexityMode0() {
 		try {
-			File f = new File(dataset.path + "/" + nTopics + "/l_OptLikelihoodPerplexity.csv");
+			File f = new File(dataset.path + "/" + mode + "/" + "/" + nTopics + "/l_OptLikelihoodPerplexityMode0.csv");
 			FileWriter fo = new FileWriter(f);
-			fo.write("PostLogLikelihood:" + postOptLogLikelidhood + "\n");
-			fo.write("PostLogPerplexity:" + postOptLogPerplexity + "\n");
+			fo.write("PostLogLikelihood:" + postOptLogLikelidhoodMode0 + "\n");
+			fo.write("PostLogPerplexity:" + postOptLogPerplexityMode0 + "\n");
+			fo.close();
+		} catch (Exception e) {
+			System.out.println("Error in writing to topical interest file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	
+	public void output_OptLikelihoodPerplexityMode1() {
+		try {
+			File f = new File(dataset.path+ "/" + mode + "/" + nTopics + "/l_OptLikelihoodPerplexityMode1.csv");
+			FileWriter fo = new FileWriter(f);
+			fo.write("PostLogLikelihood:" + postOptLogLikelidhoodMode1 + "\n");
+			fo.write("PostLogPerplexity:" + postOptLogPerplexityMode1 + "\n");
 			fo.close();
 		} catch (Exception e) {
 			System.out.println("Error in writing to topical interest file!");
@@ -1794,12 +1928,26 @@ public class MultithreadCTLR {
 		}
 	}
 
-	public void output_LastLikelihoodPerplexity() {
+	public void output_LastLikelihoodPerplexityMode0() {
 		try {
-			File f = new File(dataset.path + "/" + nTopics + "/l_LastLikelihoodPerplexity.csv");
+			File f = new File(dataset.path + "/" + mode + "/" + + nTopics + "/l_LastLikelihoodPerplexityMode0.csv");
 			FileWriter fo = new FileWriter(f);
-			fo.write("PostLogLikelihood:" + postLastLogLikelidhood + "\n");
-			fo.write("PostLogPerplexity:" + postLastLogPerplexity + "\n");
+			fo.write("PostLogLikelihood:" + postLastLogLikelidhoodMode0 + "\n");
+			fo.write("PostLogPerplexity:" + postLastLogPerplexityMode0 + "\n");
+			fo.close();
+		} catch (Exception e) {
+			System.out.println("Error in writing to topical interest file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	
+	public void output_LastLikelihoodPerplexityMode1() {
+		try {
+			File f = new File(dataset.path + "/" + mode + "/" + + nTopics + "/l_LastLikelihoodPerplexityMode1.csv");
+			FileWriter fo = new FileWriter(f);
+			fo.write("PostLogLikelihood:" + postLastLogLikelidhoodMode1 + "\n");
+			fo.write("PostLogPerplexity:" + postLastLogPerplexityMode1 + "\n");
 			fo.close();
 		} catch (Exception e) {
 			System.out.println("Error in writing to topical interest file!");
@@ -1810,7 +1958,7 @@ public class MultithreadCTLR {
 
 	public void output_optPostTopic() {
 		try {
-			File f = new File(dataset.path + "/" + nTopics + "/l_OptPostTopic.csv");
+			File f = new File(dataset.path + "/" + mode + "/" + + nTopics + "/l_OptPostTopic.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
@@ -1830,6 +1978,189 @@ public class MultithreadCTLR {
 		}
 	}
 
+	public void output_userFollowerHub(){
+		try {
+			File f;
+			FileWriter fo;
+			for (int u = 0; u < dataset.nUsers; u++) {
+				User currUser = dataset.users[u];
+				String filename = currUser.userId;
+				f = new File(dataset.path + "/" + mode + "/" + nTopics + "/follower_hubs/"+filename+".csv");
+				fo = new FileWriter(f);
+				if (currUser.followers != null){
+					for (int v=0; v< currUser.nFollowers; v++){
+						int followerId = currUser.followers[v];
+						User follower = dataset.users[followerId];
+						String text = follower.userId;
+						for (int k = 0; k < nTopics; k++) {
+							text = text + "," + Double.toString(follower.optHubs[k]);
+						}	
+						fo.write(text + "\n");
+					}
+				}
+				fo.close();
+			}
+		} catch (Exception e) {
+			System.out.println("Error in writing to topical interest file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	
+	public void output_userFollowerInterests(){
+		try {
+			File f;
+			FileWriter fo;
+			for (int u = 0; u < dataset.nUsers; u++) {
+				User currUser = dataset.users[u];
+				String filename = currUser.userId;
+				f = new File(dataset.path + "/" + mode + "/" + nTopics + "/follower_Interests/"+filename+".csv");
+				fo = new FileWriter(f);
+				if (currUser.followers != null){
+					for (int v=0; v< currUser.nFollowers; v++){
+						int followerId = currUser.followers[v];
+						User follower = dataset.users[followerId];
+						String text = follower.userId;
+						for (int k = 0; k < nTopics; k++) {
+							text = text + "," + Double.toString(follower.optTopicalInterests[k]);
+						}	
+						fo.write(text + "\n");
+					}
+				}
+				fo.close();
+			}
+		} catch (Exception e) {
+			System.out.println("Error in writing to topical interest file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	
+	public void output_userFolloweeAuthority(){
+		try {
+			File f;
+			FileWriter fo;
+			for (int u = 0; u < dataset.nUsers; u++) {
+				User currUser = dataset.users[u];
+				String filename = currUser.userId;
+				f = new File(dataset.path + "/" + mode + "/" + nTopics + "/followee_authorities/"+filename+".csv");
+				fo = new FileWriter(f);
+				if (currUser.followings != null){
+					for (int v=0; v< currUser.nFollowings; v++){
+						if (currUser.followingBatches[v] == batch){
+							int followeeId = currUser.followings[v];
+							User followee = dataset.users[followeeId];
+							String text = followee.userId;
+							for (int k = 0; k < nTopics; k++) {
+								text = text + "," + Double.toString(followee.optAuthorities[k]);
+							}	
+							fo.write(text + "\n");
+						}	
+					}
+				}
+				fo.close();
+			}
+		} catch (Exception e) {
+			System.out.println("Error in writing to topical interest file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	
+	
+	public void output_userFolloweeInterests(){
+		try {
+			File f;
+			FileWriter fo;
+			for (int u = 0; u < dataset.nUsers; u++) {
+				User currUser = dataset.users[u];
+				String filename = currUser.userId;
+				f = new File(dataset.path + "/" + mode + "/" + nTopics + "/followee_interests/"+filename+".csv");
+				fo = new FileWriter(f);
+				if (currUser.followings != null){
+					for (int v=0; v< currUser.nFollowings; v++){
+						if (currUser.followingBatches[v] == batch){
+							int followeeId = currUser.followings[v];
+							User followee = dataset.users[followeeId];
+							String text = followee.userId;
+							for (int k = 0; k < nTopics; k++) {
+								text = text + "," + Double.toString(followee.optTopicalInterests[k]);
+							}	
+							fo.write(text + "\n");
+						}	
+					}
+				}
+				fo.close();
+			}
+		} catch (Exception e) {
+			System.out.println("Error in writing to topical interest file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	
+	public void output_userNonFollowerHub(){
+		try {
+			File f;
+			FileWriter fo;
+			for (int u = 0; u < dataset.nUsers; u++) {
+				User currUser = dataset.users[u];
+				String filename = currUser.userId;
+				f = new File(dataset.path + "/" + mode + "/" + nTopics + "/non_follower_hubs/"+filename+".csv");
+				fo = new FileWriter(f);
+				if (currUser.nonFollowers != null){
+					for (int v=0; v< currUser.nNonFollowers; v++){
+						int nonFollowerId = currUser.nonFollowers[v];
+						User nonFollower = dataset.users[nonFollowerId];
+						String text = nonFollower.userId;
+						for (int k = 0; k < nTopics; k++) {
+							text = text + "," + Double.toString(nonFollower.optHubs[k]);
+						}	
+						fo.write(text + "\n");
+					}
+				}
+				fo.close();
+			}
+		} catch (Exception e) {
+			System.out.println("Error in writing to topical interest file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	
+	public void output_userNonFolloweeAuthority(){
+		try {
+			File f;
+			FileWriter fo;
+			for (int u = 0; u < dataset.nUsers; u++) {
+				User currUser = dataset.users[u];
+				String filename = currUser.userId;
+				f = new File(dataset.path + "/" + mode + "/" + nTopics + "/non_followee_authorities/"+filename+".csv");
+				fo = new FileWriter(f);
+				if (currUser.nonFollowings != null){
+					for (int v=0; v< currUser.nNonFollowings; v++){
+						if (currUser.nonFollowingBatches[v] == batch){
+							int nonFolloweeId = currUser.nonFollowings[v];
+							User nonFollowee = dataset.users[nonFolloweeId];
+							String text = nonFollowee.userId;
+							for (int k = 0; k < nTopics; k++) {
+								text = text + "," + Double.toString(nonFollowee.optAuthorities[k]);
+							}	
+							fo.write(text + "\n");
+						}	
+					}
+				}
+				fo.close();
+			}
+		} catch (Exception e) {
+			System.out.println("Error in writing to topical interest file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	
+	
+	
 	/***
 	 * checking if the gradient computation of likelihood by user topical
 	 * interest theta_{u,k} is properly implemented
@@ -1932,7 +2263,7 @@ public class MultithreadCTLR {
 
 	public static void main(String[] args) {
 		double x = 0;
-		double a = Math.log10(x);
+		double a = Math.log(x);
 		double b = 1 / x;
 		double c = Math.exp(a);
 		System.out.printf("a = %f b = %f c = %f\n", a, b, c);
