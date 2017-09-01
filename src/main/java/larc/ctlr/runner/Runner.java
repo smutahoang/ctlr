@@ -5,12 +5,13 @@ package larc.ctlr.runner;
 
 import larc.ctlr.data.Synthetic;
 import larc.ctlr.model.CTLR;
+import larc.ctlr.model.Configure.ModelMode;
 import larc.ctlr.model.MultithreadCTLR;
 
 public class Runner {
 
-	static void syntheticDataGeneration(int nUsers, int nTopics, int nWords, String outputPath) {
-		larc.ctlr.data.Synthetic synthetic = new Synthetic();
+	static void syntheticDataGeneration(int nUsers, int nTopics, int nWords, ModelMode mode, String outputPath) {
+		larc.ctlr.data.Synthetic synthetic = new Synthetic(mode);
 		synthetic.genData(nUsers, nTopics, nWords, outputPath);
 	}
 
@@ -43,7 +44,7 @@ public class Runner {
 		model.train();
 	}
 
-	static void multiTrain(String datasetPath, int nTopics, int batch, int mode) {
+	static void multiTrain(String datasetPath, int nTopics, int batch, ModelMode mode) {
 		larc.ctlr.model.MultithreadCTLR model = new MultithreadCTLR(datasetPath, nTopics, batch, mode);
 		// model.init();
 		model.train();
@@ -56,8 +57,13 @@ public class Runner {
 				int nUsers = Integer.parseInt(args[1]);
 				int nTopics = Integer.parseInt(args[2]);
 				int nWords = Integer.parseInt(args[3]);
-				String outputPath = args[4];
-				syntheticDataGeneration(nUsers, nTopics, nWords, outputPath);
+				int mode = Integer.parseInt(args[4]);
+				String outputPath = args[5];
+				if (mode == 0) {
+					syntheticDataGeneration(nUsers, nTopics, nWords, ModelMode.TWITTER_LDA, outputPath);
+				} else {
+					syntheticDataGeneration(nUsers, nTopics, nWords, ModelMode.ORIGINAL_LDA, outputPath);
+				}
 			} else if (args[0].equals("ctrl")) {
 				String datasetPath = args[1];
 				int nTopics = Integer.parseInt(args[2]);
@@ -83,7 +89,12 @@ public class Runner {
 				int nTopics = Integer.parseInt(args[2]);
 				int batch = Integer.parseInt(args[3]);
 				int mode = Integer.parseInt(args[4]);
-				multiTrain(datasetPath, nTopics, batch, mode);
+				if (mode == 0) {
+					multiTrain(datasetPath, nTopics, batch, ModelMode.TWITTER_LDA);
+				} else {
+					multiTrain(datasetPath, nTopics, batch, ModelMode.ORIGINAL_LDA);
+				}
+
 			} else {
 				System.out.printf("%s is not an option!!!");
 			}

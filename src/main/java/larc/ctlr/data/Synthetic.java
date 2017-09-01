@@ -12,6 +12,7 @@ import java.util.Random;
 
 import org.apache.commons.math3.distribution.NormalDistribution;
 
+import larc.ctlr.model.Configure.ModelMode;
 import larc.ctlr.tool.MathTool;
 import larc.ctlr.tool.StatTool;
 
@@ -41,7 +42,13 @@ public class Synthetic {
 
 	private Random rand = new Random();
 
-	int[] nTopicCounts;
+	private int[] nTopicCounts;
+
+	private ModelMode mode;
+
+	public Synthetic(ModelMode _mode) {
+		mode = _mode;
+	}
 
 	private double[][] genTopics(int nTopics, int nWords) {
 		System.out.println("nTopics = " + nTopics);
@@ -61,15 +68,24 @@ public class Synthetic {
 	}
 
 	private int[] genPost(int u, double[] interest, double[][] topics) {
-		// topic
-		int z = statTool.sampleMult(interest, false, rand);
-		nTopicCounts[z]++;
 		// #words in the post
 		int nTweetWords = rand.nextInt(maxNWords - minNWords) + minNWords;
 		int[] post = new int[nTweetWords];
-		// words
-		for (int j = 0; j < nTweetWords; j++) {
-			post[j] = statTool.sampleMult(topics[z], false, rand);
+		if (mode == ModelMode.TWITTER_LDA) {
+			// topic
+			int z = statTool.sampleMult(interest, false, rand);
+			nTopicCounts[z]++;
+			// words
+			for (int j = 0; j < nTweetWords; j++) {
+				post[j] = statTool.sampleMult(topics[z], false, rand);
+			}
+		} else {
+			for (int j = 0; j < nTweetWords; j++) {
+				// topic
+				int z = statTool.sampleMult(interest, false, rand);
+				// word
+				post[j] = statTool.sampleMult(topics[z], false, rand);
+			}
 		}
 		return post;
 	}
@@ -330,7 +346,7 @@ public class Synthetic {
 	}
 
 	public static void main(String[] args) {
-		Synthetic generator = new Synthetic();
+		Synthetic generator = new Synthetic(ModelMode.TWITTER_LDA);
 		generator.genData(1000, 10, 1000, "E:/code/java/ctlr/output");
 	}
 }
