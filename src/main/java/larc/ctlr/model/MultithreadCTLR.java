@@ -578,7 +578,7 @@ public class MultithreadCTLR {
 			p = x[i] - theta;
 			if (p < 0) {
 				p = 0.0;
-				// p = epsilon;
+				//p = epsilon;
 			}
 			projX[i] = p;
 		}
@@ -1256,7 +1256,7 @@ public class MultithreadCTLR {
 			// topic-word
 			for (int w = 0; w < currPost.words.length; w++) {
 				int word = currPost.words[w];
-				p[z] += Math.log((n_zw[word][z] + beta) / (sum_nzw[z] + beta * dataset.vocabulary.length));
+				p[z] += Math.log((n_zw[z][word] + beta) / (sum_nzw[z] + beta * dataset.vocabulary.length));
 			}
 			// update min
 			if (max < p[z]) {
@@ -1458,6 +1458,7 @@ public class MultithreadCTLR {
 		}
 		// gibss sampling
 		for (int iter = 0; iter < gibbs_BurningPeriods + max_Gibbs_Iterations; iter++) {
+			System.out.println("Gibb Iteration:" + iter);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				for (int n = 0; n < dataset.users[u].nPosts; n++) {
 					if (mode == ModelMode.TWITTER_LDA) {
@@ -1695,6 +1696,8 @@ public class MultithreadCTLR {
 		getOptLikelihoodPerplexity_OriginalLDA();
 		getLastLikelihoodPerplexity_TwitterLDA();
 		getLastLikelihoodPerplexity_OriginalLDA();
+		
+		
 
 		// print out the learned parameters
 		output_OptTopicInterest();
