@@ -26,8 +26,8 @@ public class MultithreadCTLR {
 	private static double epsilon = 0.000001;
 	private static double lamda = 0.1;
 
-	private static boolean initByTopicModeling = true;
-	private static boolean onlyLearnAuthorityHub = true;
+	private static boolean initByTopicModeling = false;
+	private static boolean onlyLearnAuthorityHub = false;
 
 	private static Random rand;
 
@@ -608,7 +608,7 @@ public class MultithreadCTLR {
 		double currentF = 0 - getLikelihood_topicalInterest(u, currentX);
 
 		boolean flag = true;
-		double delta = 0;
+		double diff = 0;
 		double f = Double.MAX_VALUE;
 
 		// parameters for line search
@@ -637,12 +637,12 @@ public class MultithreadCTLR {
 				f = 0 - getLikelihood_topicalInterest(u, x);
 
 				// compute ||currentX - x||^2
-				delta = 0;
+				diff = 0;
 				for (int k = 0; k < nTopics; k++) {
-					delta += Math.pow(currentX[k] - x[k], 2);
+					diff += Math.pow(currentX[k] - x[k], 2);
 				}
 				// check the condition to stop line search
-				if (f - currentF <= (-lineSearch_alpha / lineSearch_lambda) * delta) {
+				if (f - currentF <= (-lineSearch_alpha / lineSearch_lambda) * diff) {
 					flag = true;
 					break;
 				} else {
@@ -824,7 +824,7 @@ public class MultithreadCTLR {
 		double currentF = 0 - getLikelihood_authority(u, currentX);
 
 		boolean flag = true;
-		double delta = 0;
+		double diff = 0;
 		double f = Double.MAX_VALUE;
 
 		// parameters for line search
@@ -854,12 +854,12 @@ public class MultithreadCTLR {
 				f = 0 - getLikelihood_authority(u, x);
 
 				// compute ||currentX - x||^2
-				delta = 0;
+				diff = 0;
 				for (int k = 0; k < nTopics; k++) {
-					delta += Math.pow(currentX[k] - x[k], 2);
+					diff += Math.pow(currentX[k] - x[k], 2);
 				}
 				// check the condition to stop line search
-				if (f - currentF <= (-lineSearch_alpha / lineSearch_lambda) * delta) {
+				if (f - currentF <= (-lineSearch_alpha / lineSearch_lambda) * diff) {
 					flag = true;
 					break;
 				} else {
@@ -1055,7 +1055,7 @@ public class MultithreadCTLR {
 		double currentF = 0 - getLikelihood_hub(u, currentX);
 
 		boolean flag = true;
-		double delta = 0;
+		double diff = 0;
 		double f = Double.MAX_VALUE;
 
 		// parameters for line search
@@ -1085,12 +1085,12 @@ public class MultithreadCTLR {
 				f = 0 - getLikelihood_hub(u, x);
 
 				// compute ||currentX - x||^2
-				delta = 0;
+				diff = 0;
 				for (int k = 0; k < nTopics; k++) {
-					delta += Math.pow(currentX[k] - x[k], 2);
+					diff += Math.pow(currentX[k] - x[k], 2);
 				}
 				// check the condition to stop line search
-				if (f - currentF <= (-lineSearch_alpha / lineSearch_lambda) * delta) {
+				if (f - currentF <= (-lineSearch_alpha / lineSearch_lambda) * diff) {
 					flag = true;
 					break;
 				} else {
@@ -1349,7 +1349,7 @@ public class MultithreadCTLR {
 				return;
 			}
 		}
-		System.err.println("Something wrong!!! ");
+		System.err.println("Something wrong 1352!!! ");
 		for (int k = 0; k < nTopics; k++) {
 			System.out.printf("theta[%d] = %.12f \t p[%d] = %.12f sump = %.12f\n", k, currUser.topicalInterests[k], k,
 					p[k], sump);
@@ -1402,7 +1402,7 @@ public class MultithreadCTLR {
 				return;
 			}
 		}
-		System.err.println("Something wrong!!! ");
+		System.err.println("Something wrong 1405!!! ");
 		for (int k = 0; k < nTopics; k++) {
 			System.out.printf("theta[%d] = %.12f \t p[%d] = %.12f sump = %.12f\n", k,
 					dataset.users[u].topicalInterests[k], k, p[k], sump);
@@ -1559,8 +1559,8 @@ public class MultithreadCTLR {
 		alpha = (double) (20) / (double) (nTopics);// prior for users' interest
 		gamma = 0.001;
 		beta = 0.001; // prior for topics
-		sigma = 0.2;// variance of users' authorities
-		delta = 0.2;// variance of users' hubs
+		sigma = 0.1;// variance of users' authorities
+		delta = 0.1;// variance of users' hubs
 		rand = new Random();
 		// initialize for the users
 		for (int u = 0; u < dataset.nUsers; u++) {
