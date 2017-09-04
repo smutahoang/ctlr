@@ -50,9 +50,19 @@ public class Runner {
 		model.train();
 	}
 
-	public static void main(String[] args) {
+	static void test() {
+		String datasetPath = "E:/code/java/ctlr/data/synthetic";
+		int nTopics = 10;
+		int batch = 1;
+		ModelMode mode = ModelMode.ORIGINAL_LDA;
+		larc.ctlr.model.MultithreadCTLR model = new MultithreadCTLR(datasetPath, nTopics, batch, mode);
+		// model.init();
+		model.train();
+	}
 
+	public static void main(String[] args) {
 		try {
+			//test();
 			if (args[0].equals("gen")) {
 				int nUsers = Integer.parseInt(args[1]);
 				int nTopics = Integer.parseInt(args[2]);
@@ -111,8 +121,7 @@ public class Runner {
 					multiTrain(datasetPath, nTopics3, batch, ModelMode.ORIGINAL_LDA);
 				}
 
-			}
-			else {
+			} else {
 				System.out.printf("%s is not an option!!!");
 			}
 		} catch (Exception e) {
