@@ -97,10 +97,10 @@ public class Runner {
 			} else if (args[0].equals("3x-multiTrain")) {
 				String datasetPath = args[1];
 				int nTopics1 = Integer.parseInt(args[2]);
-				int nTopics2 = Integer.parseInt(args[2]);
-				int nTopics3 = Integer.parseInt(args[2]);
-				int batch = Integer.parseInt(args[3]);
-				int mode = Integer.parseInt(args[4]);
+				int nTopics2 = Integer.parseInt(args[3]);
+				int nTopics3 = Integer.parseInt(args[4]);
+				int batch = Integer.parseInt(args[5]);
+				int mode = Integer.parseInt(args[6]);
 				if (mode == 0) {
 					multiTrain(datasetPath, nTopics1, batch, ModelMode.TWITTER_LDA);
 					multiTrain(datasetPath, nTopics2, batch, ModelMode.TWITTER_LDA);

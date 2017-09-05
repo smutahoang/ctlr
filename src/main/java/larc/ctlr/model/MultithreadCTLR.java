@@ -24,7 +24,7 @@ public class MultithreadCTLR {
 	private static double delta;// variance of users' hubs
 	private static double gamma; // variance of topic word distribution
 	private static double epsilon = 0.000001;
-	private static double lamda = 0.1;
+	private static double lamda = 0.01;
 
 	private static boolean initByTopicModeling = false;
 	private static boolean onlyLearnAuthorityHub = false;
@@ -50,7 +50,7 @@ public class MultithreadCTLR {
 
 	private static double[][] optTopicWordDist = null; // optimized
 														// topicWordDist[k][w]
-
+	
 	// options for learning
 	public static double lineSearch_alpha = 0.0001;
 	public static double lineSearch_beta = 0.1;
@@ -1559,8 +1559,8 @@ public class MultithreadCTLR {
 		alpha = (double) (20) / (double) (nTopics);// prior for users' interest
 		gamma = 0.001;
 		beta = 0.001; // prior for topics
-		sigma = 0.1;// variance of users' authorities
-		delta = 0.1;// variance of users' hubs
+		sigma = 0.15;// variance of users' authorities
+		delta = 0.15;// variance of users' hubs
 		rand = new Random();
 		// initialize for the users
 		for (int u = 0; u < dataset.nUsers; u++) {
@@ -1712,7 +1712,7 @@ public class MultithreadCTLR {
 		output_LastPostTopicTopWords(20);
 		output_LastLikelihoodPerplexityMode0();
 		output_LastLikelihoodPerplexityMode1();
-		// output_OptTopicWord();
+		//output_OptTopicWord();
 		output_optPostTopic();
 		output_userFollowerHub();
 		output_userFolloweeAuthority();

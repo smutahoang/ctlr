@@ -376,8 +376,8 @@ public class CompareWithGroundTruth {
 	}
 
 	public static void main(String[] args) {
-		CompareWithGroundTruth comparator = new CompareWithGroundTruth("F:/Users/roylee/CTLR/data/synthetic/groundtruth",
-				"F:/Users/roylee/CTLR/data/synthetic/learnt", 1, "euclidean", "F:/Users/roylee/CTLR/data/synthetic/evaluation");
+		CompareWithGroundTruth comparator = new CompareWithGroundTruth("F:/Users/roylee/CTLR/data/synthetic_mode_1/groundtruth",
+				"F:/Users/roylee/CTLR/data/synthetic_mode_1/learnt", 1, "euclidean", "F:/Users/roylee/CTLR/data/synthetic_mode_1/evaluation");
 		comparator.measureGoodness();
 	}
 
