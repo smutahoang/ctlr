@@ -5,9 +5,9 @@ public class MathTool {
 		double d = 0;
 		for (int i = 0; i < nDim; i++) {
 			d += x[i] * y[i];
-			//System.out.println(String.format("%f - %f", x[i], y[i]));
+			// System.out.println(String.format("%f - %f", x[i], y[i]));
 		}
-		//System.out.println("d = " + d);
+		// System.out.println("d = " + d);
 		return d;
 	}
 
@@ -26,7 +26,26 @@ public class MathTool {
 		}
 		// double s = sigmoid(x);
 		double s = sigmoid(0.01, x);
-		//System.out.println("s = " + s);
+		// System.out.println("s = " + s);
 		return 2 * (s - 0.5);
+	}
+
+	public static double log10Sum(double[] x) {
+		double max = Double.NEGATIVE_INFINITY;
+		double min = Double.POSITIVE_INFINITY;
+		for (int i = 0; i < x.length; i++) {
+			if (x[i] > max) {
+				max = x[i];
+			}
+			if (x[i] < min) {
+				min = x[i];
+			}
+		}
+		double mid = (max + min) / 2;
+		double sum = 0;
+		for (int i = 0; i < x.length; i++) {
+			sum += Math.pow(10, x[i] - mid);
+		}
+		return mid + Math.log10(sum);
 	}
 }
