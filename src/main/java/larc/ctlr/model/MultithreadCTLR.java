@@ -6,7 +6,6 @@ import larc.ctlr.tool.*;
 import java.io.BufferedWriter;
 import java.util.Arrays;
 import java.util.Random;
-import org.apache.commons.math3.distribution.NormalDistribution;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.concurrent.ExecutorService;
@@ -19,14 +18,15 @@ public class MultithreadCTLR {
 	private static int batch;
 
 	private static double alpha;// prior for users' interest
-	private static double beta; // prior for topics
+	private static double gamma; // variance of topic word distribution
+
 	private static double sigma;// variance of users' authorities
 	private static double delta;// variance of users' hubs
-	private static double gamma; // variance of topic word distribution
+
 	private static double epsilon = 0.0001;
 	private static double lamda = 0.01;
 
-	private static boolean initByTopicModeling = false;
+	private static boolean initByTopicModeling = true;
 	private static boolean onlyLearnAuthorityHub = false;
 
 	private static Random rand;
@@ -51,7 +51,7 @@ public class MultithreadCTLR {
 
 	private static double[][] optTopicWordDist = null; // optimized
 														// topicWordDist[k][w]
-	
+
 	// options for learning
 	public static double lineSearch_alpha = 0.0001;
 	public static double lineSearch_beta = 0.1;
@@ -67,7 +67,7 @@ public class MultithreadCTLR {
 	public static int max_Gibbs_Iterations = 20;
 	public static int gibbs_Sampling_Gap = 2;
 
-	public int nParallelThreads = 20;
+	public int nParallelThreads = 4;
 	public int[] threadStartIndexes = null;
 	public int[] threadEndIndexes = null;
 
@@ -193,8 +193,8 @@ public class MultithreadCTLR {
 					// delta);
 					// currUser.hubs[z] = Math.exp(g.sample());
 
-					currUser.authorities[z] = currUser.topicalInterests[z];
-					currUser.hubs[z] = currUser.topicalInterests[z];
+					currUser.authorities[z] = Math.exp(currUser.topicalInterests[z]);
+					currUser.hubs[z] = Math.exp(currUser.topicalInterests[z]);
 				}
 			}
 		}
@@ -234,6 +234,7 @@ public class MultithreadCTLR {
 	 * @return
 	 */
 	private static double getLikelihood(int u) {
+		// System.out.printf("computing likelihood with u = %d\n", u);
 		// to be written
 		// Compute the likelihood to make sure that it is improving L(text) +
 		// L(link)
@@ -265,7 +266,7 @@ public class MultithreadCTLR {
 				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
 				linkRelationshipLikelihood += Math.log(1 - fHuAv);
 
-				if (Double.isInfinite(linkRelationshipLikelihood)) {
+				if (Double.isInfinite(linkRelationshipLikelihood) || Double.isNaN(linkRelationshipLikelihood)) {
 					System.out.printf("[non-Followers] HuAv = %.12f fHuAv = %.12f\n", HuAv, fHuAv);
 				}
 			}
@@ -285,7 +286,7 @@ public class MultithreadCTLR {
 				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
 				linkRelationshipLikelihood += Math.log(fHuAv);
 
-				if (Double.isInfinite(linkRelationshipLikelihood)) {
+				if (Double.isInfinite(linkRelationshipLikelihood) || Double.isNaN(linkRelationshipLikelihood)) {
 					System.out.printf("[followers] HuAv = %.12f fHuAv = %.12f\n", HuAv, fHuAv);
 				}
 			}
@@ -308,7 +309,7 @@ public class MultithreadCTLR {
 					HuAv = HuAv * lamda;
 					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
 					linkRelationshipLikelihood += Math.log(1.0 - fHuAv);
-					if (Double.isInfinite(linkRelationshipLikelihood)) {
+					if (Double.isInfinite(linkRelationshipLikelihood) || Double.isNaN(linkRelationshipLikelihood)) {
 						System.out.printf("[non-followees] HuAv = %.12f fHuAv = %.12f\n", HuAv, fHuAv);
 					}
 				}
@@ -334,7 +335,7 @@ public class MultithreadCTLR {
 					HuAv = HuAv * lamda;
 					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
 					linkRelationshipLikelihood += Math.log(fHuAv);
-					if (Double.isInfinite(linkRelationshipLikelihood)) {
+					if (Double.isInfinite(linkRelationshipLikelihood) || Double.isNaN(linkRelationshipLikelihood)) {
 						System.out.printf("[followees] HuAv = %.12f fHuAv = %.12f\n", HuAv, fHuAv);
 					}
 				}
@@ -349,7 +350,7 @@ public class MultithreadCTLR {
 			linkAuthorityLikelihood += -Math.pow((Math.log(currUser.authorities[k]) - currUser.topicalInterests[k]), 2)
 					/ (2 * Math.pow(delta, 2));
 
-			if (Double.isInfinite(linkAuthorityLikelihood)) {
+			if (Double.isInfinite(linkAuthorityLikelihood) || Double.isNaN(linkAuthorityLikelihood)) {
 				System.out.printf("[authority] A[%d] = %.12f\n", k, currUser.authorities[k]);
 			}
 			// linkHubLikelihood += (-Math.log(delta)
@@ -360,7 +361,7 @@ public class MultithreadCTLR {
 			linkHubLikelihood += -Math.pow((Math.log(currUser.hubs[k]) - currUser.topicalInterests[k]), 2)
 					/ (2 * Math.pow(sigma, 2));
 
-			if (Double.isInfinite(linkHubLikelihood)) {
+			if (Double.isInfinite(linkHubLikelihood) || Double.isNaN(linkHubLikelihood)) {
 				System.out.printf("[authority] H[%d] = %.12f\n", k, currUser.hubs[k]);
 			}
 		}
@@ -376,7 +377,7 @@ public class MultithreadCTLR {
 						postWordLikelihood += Math.log(topicWordDist[currPost.topic][word]);
 					}
 					postTopicLikelihood += Math.log(currUser.topicalInterests[currPost.topic]);
-					if (Double.isInfinite(postTopicLikelihood)) {
+					if (Double.isInfinite(postTopicLikelihood) || Double.isNaN(postTopicLikelihood)) {
 						System.out.printf("[Post] Theta[%d] = %.12f\n", currPost.topic,
 								currUser.topicalInterests[currPost.topic]);
 					}
@@ -386,7 +387,7 @@ public class MultithreadCTLR {
 						int topic = currPost.wordTopics[i];
 						postWordLikelihood += Math.log(topicWordDist[topic][word]);
 						postTopicLikelihood += Math.log(currUser.topicalInterests[topic]);
-						if (Double.isInfinite(postTopicLikelihood)) {
+						if (Double.isInfinite(postTopicLikelihood) || Double.isNaN(postTopicLikelihood)) {
 							System.out.printf("[Post] Theta[%d] = %.12f\n", currPost.topic,
 									currUser.topicalInterests[currPost.topic]);
 						}
@@ -400,7 +401,8 @@ public class MultithreadCTLR {
 		// postThetaLikelihood += (alpha - 1) *
 		// Math.log(currUser.topicalInterests[k]);
 		// }
-		if (Double.isInfinite(linkLikelihood) || Double.isInfinite(postLikelihood)) {
+		if (Double.isInfinite(linkLikelihood) || Double.isNaN(linkLikelihood) || Double.isInfinite(postLikelihood)
+				|| Double.isNaN(postLikelihood)) {
 			System.out.println("In getLikelihood(int u): infinite!");
 			System.exit(-1);
 		}
@@ -1255,6 +1257,10 @@ public class MultithreadCTLR {
 		// reduce current counts
 		int currZ = currPost.topic;
 		n_zu[currZ][u]--;
+		if (n_zu[currZ][u] < 0) {
+			System.out.printf("u = %d z = %d n_zu = %d\n", u, currZ, n_zu[currZ][u]);
+			System.exit(-1);
+		}
 		sum_nzw[currZ] -= currPost.nWords;
 		for (int w = 0; w < currPost.nWords; w++) {
 			int word = currPost.words[w];
@@ -1303,15 +1309,6 @@ public class MultithreadCTLR {
 					int word = currPost.words[w];
 					n_zw[z][word]++;
 				}
-				/*
-				 * if (currUser.topicalInterests[z] <= 10E-12) {
-				 * System.err.println("Something wrong!!! "); for (int k = 0; k
-				 * < nTopics; k++) { System.out.printf(
-				 * "theta[%d] = %.12f \tlog(theta[%d]) = %.12f \tplog[%d] = %.12f \t p[%d] = %.12f sump = %.12f\n"
-				 * , k, currUser.topicalInterests[k], k,
-				 * Math.log(currUser.topicalInterests[k]), k, plog[k], k, p[k],
-				 * sump); } System.out.printf("z = %d\n", z); System.exit(-1); }
-				 */
 				return;
 			}
 		}
@@ -1386,7 +1383,7 @@ public class MultithreadCTLR {
 			// User-topic
 			p[z] = n_zu[z][u] + alpha;
 			// topic-word
-			p[z] *= (n_zw[z][word] + beta) / (sum_nzw[z] + beta * dataset.vocabulary.length);
+			p[z] *= (n_zw[z][word] + gamma) / (sum_nzw[z] + gamma * dataset.vocabulary.length);
 			p[z] = sump + p[z];
 			sump = p[z];
 		}
@@ -1500,11 +1497,13 @@ public class MultithreadCTLR {
 			System.out.println("Gibb Iteration:" + iter);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				for (int n = 0; n < dataset.users[u].nPosts; n++) {
-					if (mode == ModelMode.TWITTER_LDA) {
-						samplePostTopic_Gibbs(u, n);
-					} else {
-						for (int i = 0; i < dataset.users[u].posts[n].nWords; i++) {
-							sampleWordTopic_Gibbs(u, n, i);
+					if (dataset.users[u].postBatches[n] == batch) {
+						if (mode == ModelMode.TWITTER_LDA) {
+							samplePostTopic_Gibbs(u, n);
+						} else {
+							for (int i = 0; i < dataset.users[u].posts[n].nWords; i++) {
+								sampleWordTopic_Gibbs(u, n, i);
+							}
 						}
 					}
 				}
@@ -1548,6 +1547,11 @@ public class MultithreadCTLR {
 			for (int z = 0; z < nTopics; z++) {
 				dataset.users[u].topicalInterests[z] = (final_n_zu[z][u] + alpha)
 						/ (final_sum_nzu[u] + nTopics * alpha);
+
+				if (dataset.users[u].topicalInterests[z] < 0) {
+					System.out.printf("u = %d z = %d theta = %f\n", u, z, dataset.users[u].topicalInterests[z]);
+					System.exit(-1);
+				}
 			}
 		}
 	}
@@ -1558,7 +1562,6 @@ public class MultithreadCTLR {
 	private void init() {
 		alpha = (double) (20) / (double) (nTopics);// prior for users' interest
 		gamma = 0.001;
-		beta = 0.001; // prior for topics
 		sigma = 0.15;// variance of users' authorities
 		delta = 0.15;// variance of users' hubs
 		rand = new Random();
@@ -1769,14 +1772,14 @@ public class MultithreadCTLR {
 		output_LastPostTopicTopWords(20);
 		output_LastLikelihoodPerplexityMode0();
 		output_LastLikelihoodPerplexityMode1();
-		//output_OptTopicWord();
+		// output_OptTopicWord();
 		output_optPostTopic();
-		//output_userFollowerHub();
-		//output_userFolloweeAuthority();
-		//output_userFollowerInterests();
-		//output_userFolloweeInterests();
-		//output_userNonFollowerHub();
-		//output_userNonFolloweeAuthority();
+		// output_userFollowerHub();
+		// output_userFolloweeAuthority();
+		// output_userFollowerInterests();
+		// output_userFolloweeInterests();
+		// output_userNonFollowerHub();
+		// output_userNonFolloweeAuthority();
 	}
 
 	private double getOptPostLikelihood_TwitterLDA(int u, int n) {

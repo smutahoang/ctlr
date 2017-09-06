@@ -48,4 +48,9 @@ public class MathTool {
 		}
 		return mid + Math.log10(sum);
 	}
+
+	public static void main(String[] args) {
+		double[] x = new double[] { -100, -102, -103 };
+		System.out.printf("logSum = %f", log10Sum(x));
+	}
 }
