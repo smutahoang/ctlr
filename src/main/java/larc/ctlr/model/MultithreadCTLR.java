@@ -27,7 +27,7 @@ public class MultithreadCTLR {
 	private static double epsilon = 0.001;
 	private static double lamda = 0.1;
 
-	private static boolean initByTopicModeling = true;
+	private static boolean initByTopicModeling = false;
 	private static boolean onlyLearnAuthorityHub = false;
 
 	private static Random rand;
@@ -62,7 +62,7 @@ public class MultithreadCTLR {
 	public static int maxIteration_topicalInterest = 10;
 	public static int maxIteration_Authorities = 10;
 	public static int maxIteration_Hubs = 10;
-	public static int max_GibbsEM_Iterations = 10;
+	public static int max_GibbsEM_Iterations = 2;
 
 	public static int gibbs_BurningPeriods = 10;
 	public static int max_Gibbs_Iterations = 20;
@@ -1152,8 +1152,8 @@ public class MultithreadCTLR {
 				if (currUser.postBatches[n] == batch) {
 					if (mode == ModelMode.TWITTER_LDA) {
 						int z = currPost.topic;
-						for (int w = 0; w < currPost.words.length; w++) {
-							int wordIndex = currPost.words[w];
+						for (int i = 0; i < currPost.nWords; i++) {
+							int wordIndex = currPost.words[i];
 							sum_nzw[z] += 1;
 							n_zw[z][wordIndex] += 1;
 						}
@@ -1783,16 +1783,15 @@ public class MultithreadCTLR {
 
 	private double getOptPostLikelihood_TwitterLDA(int u, int n) {
 		// Compute likelihood of post number n of user number u
-		double p = 0;
+		double[] p = new double[nTopics];
 		for (int z = 0; z < nTopics; z++) {
-			double p_z = dataset.users[u].optTopicalInterests[z];
+			p[z] = Math.log10(dataset.users[u].optTopicalInterests[z]);
 			for (int i = 0; i < dataset.users[u].posts[n].nWords; i++) {
 				int w = dataset.users[u].posts[n].words[i];
-				p_z *= optTopicWordDist[z][w];
+				p[z] += Math.log10(optTopicWordDist[z][w]);
 			}
-			p += p_z;
 		}
-		return Math.log10(p);
+		return MathTool.log10Sum(p);
 	}
 
 	private double getOptPostLikelihood_OriginalLDA(int u, int j) {
@@ -1813,16 +1812,15 @@ public class MultithreadCTLR {
 
 	private double getLastPostLikelihood_TwitterLDA(int u, int j) {
 		// Compute likelihood of post number j of user number u
-		double p = 0;
+		double[] p = new double[nTopics];
 		for (int z = 0; z < nTopics; z++) {
-			double p_z = dataset.users[u].topicalInterests[z];
+			p[z] = Math.log10(dataset.users[u].topicalInterests[z]);
 			for (int i = 0; i < dataset.users[u].posts[j].nWords; i++) {
 				int w = dataset.users[u].posts[j].words[i];
-				p_z *= topicWordDist[z][w];
+				p[z] += Math.log10(topicWordDist[z][w]);
 			}
-			p = p + p_z;
 		}
-		return Math.log10(p);
+		return MathTool.log10Sum(p);
 	}
 
 	private double getLastPostLikelihood_OriginalLDA(int u, int j) {

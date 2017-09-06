@@ -51,10 +51,10 @@ public class Runner {
 	}
 
 	static void test() {
-		String datasetPath = "E:/code/java/ctlr/data/synthetic";
+		String datasetPath = "E:/code/java/ctlr/data/acm";
 		int nTopics = 10;
 		int batch = 1;
-		ModelMode mode = ModelMode.ORIGINAL_LDA;
+		ModelMode mode = ModelMode.TWITTER_LDA;
 		larc.ctlr.model.MultithreadCTLR model = new MultithreadCTLR(datasetPath, nTopics, batch, mode);
 		// model.init();
 		model.train();
@@ -62,7 +62,7 @@ public class Runner {
 
 	public static void main(String[] args) {
 		try {
-			//test();
+			test();
 			if (args[0].equals("gen")) {
 				int nUsers = Integer.parseInt(args[1]);
 				int nTopics = Integer.parseInt(args[2]);
