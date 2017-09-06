@@ -24,7 +24,7 @@ public class MultithreadCTLR {
 	private static double delta;// variance of users' hubs
 	private static double gamma; // variance of topic word distribution
 	private static double epsilon = 0.0001;
-	private static double lamda = 0.1;
+	private static double lamda = 0.01;
 
 	private static boolean initByTopicModeling = false;
 	private static boolean onlyLearnAuthorityHub = false;
@@ -1559,8 +1559,8 @@ public class MultithreadCTLR {
 		alpha = (double) (20) / (double) (nTopics);// prior for users' interest
 		gamma = 0.001;
 		beta = 0.001; // prior for topics
-		sigma = 0.2;// variance of users' authorities
-		delta = 0.2;// variance of users' hubs
+		sigma = 0.15;// variance of users' authorities
+		delta = 0.15;// variance of users' hubs
 		rand = new Random();
 
 		// allocate memory for counts

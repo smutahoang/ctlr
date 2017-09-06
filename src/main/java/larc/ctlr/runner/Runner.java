@@ -62,7 +62,6 @@ public class Runner {
 
 	public static void main(String[] args) {
 		try {
-			test();
 			if (args[0].equals("gen")) {
 				int nUsers = Integer.parseInt(args[1]);
 				int nTopics = Integer.parseInt(args[2]);
