@@ -24,7 +24,7 @@ public class MultithreadCTLR {
 	private static double delta;// variance of users' hubs
 
 	private static double epsilon = 0.0001;
-	private static double lamda = 0.01;
+	private static double lamda = 0.05;
 
 	private static boolean initByTopicModeling = true;
 	private static boolean onlyLearnAuthorityHub = false;
@@ -64,10 +64,10 @@ public class MultithreadCTLR {
 	public static int max_GibbsEM_Iterations = 500;
 
 	public static int gibbs_BurningPeriods = 10;
-	public static int max_Gibbs_Iterations = 20;
+	public static int max_Gibbs_Iterations = 50;
 	public static int gibbs_Sampling_Gap = 2;
 
-	public int nParallelThreads = 4;
+	public int nParallelThreads = 20;
 	public int[] threadStartIndexes = null;
 	public int[] threadEndIndexes = null;
 
@@ -1562,8 +1562,8 @@ public class MultithreadCTLR {
 	private void init() {
 		alpha = (double) (20) / (double) (nTopics);// prior for users' interest
 		gamma = 0.001;
-		sigma = 0.15;// variance of users' authorities
-		delta = 0.15;// variance of users' hubs
+		sigma = 0.2;// variance of users' authorities
+		delta = 0.2;// variance of users' hubs
 		rand = new Random();
 
 		// allocate memory for counts

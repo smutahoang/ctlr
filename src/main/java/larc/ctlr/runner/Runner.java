@@ -7,6 +7,7 @@ import larc.ctlr.data.Synthetic;
 import larc.ctlr.model.CTLR;
 import larc.ctlr.model.Configure.ModelMode;
 import larc.ctlr.model.MultithreadCTLR;
+import larc.ctlr.model.Prediction;
 
 public class Runner {
 
@@ -48,6 +49,11 @@ public class Runner {
 		larc.ctlr.model.MultithreadCTLR model = new MultithreadCTLR(datasetPath, nTopics, batch, mode);
 		// model.init();
 		model.train();
+	}
+	
+	static void predict(String datasetPath, String mode, String setting, int nTopics) {
+		larc.ctlr.model.Prediction prediction = new Prediction(datasetPath, mode, setting, nTopics);
+		
 	}
 
 	static void test() {
@@ -120,6 +126,13 @@ public class Runner {
 					multiTrain(datasetPath, nTopics3, batch, ModelMode.ORIGINAL_LDA);
 				}
 
+			} else if (args[0].equals("predict")) {
+				String datasetPath = args[1];
+				String mode = args[2];
+				String setting = args[3];
+				int topics = Integer.parseInt(args[4]);
+				predict(datasetPath, mode, setting, topics);
+				
 			} else {
 				System.out.printf("%s is not an option!!!");
 			}
