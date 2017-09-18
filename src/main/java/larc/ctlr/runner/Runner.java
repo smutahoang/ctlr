@@ -6,6 +6,7 @@ package larc.ctlr.runner;
 import larc.ctlr.data.Synthetic;
 import larc.ctlr.model.CTLR;
 import larc.ctlr.model.Configure.ModelMode;
+import larc.ctlr.model.Configure.PredictionMode;
 import larc.ctlr.model.MultithreadCTLR;
 import larc.ctlr.model.Prediction;
 
@@ -51,8 +52,8 @@ public class Runner {
 		model.train();
 	}
 	
-	static void predict(String datasetPath, String mode, String setting, int nTopics) {
-		larc.ctlr.model.Prediction prediction = new Prediction(datasetPath, mode, setting, nTopics);
+	static void predict(String datasetPath, String mode, String setting, int nTopics, PredictionMode pred_mode) {
+		larc.ctlr.model.Prediction prediction = new Prediction(datasetPath, mode, setting, nTopics, pred_mode);
 		
 	}
 
@@ -131,8 +132,14 @@ public class Runner {
 				String mode = args[2];
 				String setting = args[3];
 				int topics = Integer.parseInt(args[4]);
-				predict(datasetPath, mode, setting, topics);
-				
+				int pred_mode = Integer.parseInt(args[5]);
+				if (pred_mode == 0){
+					predict(datasetPath, mode, setting, topics,PredictionMode.HITS);
+				} else if (pred_mode == 1){
+					predict(datasetPath, mode, setting, topics,PredictionMode.COMMON_INTEREST);
+				} else {
+					predict(datasetPath, mode, setting, topics,PredictionMode.COMMON_NEIGHBOR);
+				}
 			} else {
 				System.out.printf("%s is not an option!!!");
 			}

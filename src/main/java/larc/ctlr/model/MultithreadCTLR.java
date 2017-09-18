@@ -24,7 +24,7 @@ public class MultithreadCTLR {
 	private static double delta;// variance of users' hubs
 
 	private static double epsilon = 0.0001;
-	private static double lamda = 0.05;
+	private static double lamda = 0.01;
 
 	private static boolean initByTopicModeling = true;
 	private static boolean onlyLearnAuthorityHub = false;
