@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.SortedSet;
@@ -41,10 +42,13 @@ public class Prediction {
 	public HashMap<String, float[]> userInterests;
 	public HashMap<String, String> userNeighbors;
 	public HashMap<String, Integer> userPositiveLinks;
+	public HashMap<String, String> newUsers;
 	public String[] testSrcUsers;
 	public String[] testDesUsers;
 	public int[] testLabels;
 	public float[] predictionScores;
+	public float[] newUserPredictionScores;
+	public int maxOverallTopK;
 	
 	
 	private static PredictionMode pred_mode;
@@ -62,7 +66,9 @@ public class Prediction {
 		System.out.println("loading testing data");
 		String relationshipFile = String.format("%s/relationships.csv", path);
 		String nonRelationshipFile = String.format("%s/nonrelationships.csv", path);
+		String newUserFile = String.format("%s/newusers.csv", path);
 		loadTestData(relationshipFile, nonRelationshipFile);
+		loadNewUserData(newUserFile);
 	
 		if (pred_mode == PredictionMode.HITS){
 			String authFilePath = String.format("%s/"+_model_mode+"/"+_setting+"/"+_nTopics+"/l_OptUserAuthorityDistributions.csv", path);
@@ -74,7 +80,7 @@ public class Prediction {
 			System.out.println("loaded hubs of "+hubSize+" users");
 			
 			System.out.println("compute prediction scores");
-			computeHITSScores();
+			computeCTLRScores();
 			
 		} else if (pred_mode == PredictionMode.COMMON_INTEREST){
 			String interestFilePath = String.format("%s/"+_model_mode+"/"+_setting+"/"+_nTopics+"/l_OptUserTopicalInterestDistributions.csv", path);
@@ -91,11 +97,19 @@ public class Prediction {
 		}
 		
 		output_PredictionScores();
-		//output_EvaluateOverallPrecisionRecall(7, 6395);
-		//output_EvaluateUserLevelPrecisionRecall(5);
-		output_EvaluateOverallPrecisionRecall(20, 27650);
-		output_EvaluateUserLevelPrecisionRecall(10);
+		output_EvaluateOverallPrecisionRecall(5, maxOverallTopK);
+		output_EvaluateUserLevelPrecisionRecall(5);
+		outout_EvaluateNewUserPrecisionRecall(5);
 		
+		/*
+		if (_model_mode.equals("TWITTER_LDA")){
+			output_EvaluateOverallPrecisionRecall(5, maxOverallTopK);
+			output_EvaluateUserLevelPrecisionRecall(5);
+		} else{
+			output_EvaluateOverallPrecisionRecall(5, maxOverallTopK);
+			output_EvaluateUserLevelPrecisionRecall(5);
+		}
+		*/
 	}
 	
 	public int loadUserAuthorities(String filename,int nTopics) {
@@ -253,8 +267,10 @@ public class Prediction {
 		Scanner sc = null;
 		BufferedReader br = null;
 		String line = null;
+		int nNewUserTest = 0;
 		int nTest = 0;
 		int iTest = 0;
+		maxOverallTopK = 0;
 		userPositiveLinks = new HashMap<String, Integer>();
 		
 		try {
@@ -273,15 +289,15 @@ public class Prediction {
 					vid = sc.next();
 					flag = sc.nextInt();
 					if (flag == 0){
+						maxOverallTopK++;
 						nTest++;
-					}
-					
-					if (userPositiveLinks.containsKey(uid)){
-						int count = userPositiveLinks.get(uid) +1;
-						userPositiveLinks.put(uid, count);
-					} else {
-						userPositiveLinks.put(uid,1);
-					}
+						if (userPositiveLinks.containsKey(uid)){
+							int count = userPositiveLinks.get(uid) +1;
+							userPositiveLinks.put(uid, count);
+						} else {
+							userPositiveLinks.put(uid,1);
+						}
+					}	
 				}
 			}
 			br.close();
@@ -358,8 +374,33 @@ public class Prediction {
 			System.exit(0);
 		}
 	}
-		
-	public void computeHITSScores(){
+	
+	public void loadNewUserData(String NewUserFile){
+		Scanner sc = null;
+		BufferedReader br = null;
+		String line = null;
+		newUsers = new HashMap<String, String>();
+		try {
+			File linkFile = new File(NewUserFile);
+			br = new BufferedReader(new FileReader(linkFile.getAbsolutePath()));
+			while ((line = br.readLine()) != null) {
+				sc = new Scanner(line.toString());
+				sc.useDelimiter(",");
+				String uid = "";
+				while (sc.hasNext()) {
+					uid = sc.next();
+					newUsers.put(uid, uid);
+				}
+			}
+			br.close();
+		} catch (Exception e) {
+			System.out.println("Error in reading user file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	
+	public void computeCTLRScores(){
 		String uid = "";
 		String vid = "";
 		float[] Hu;
@@ -375,6 +416,7 @@ public class Prediction {
 				HuAv += Hu[z] * Av[z];
 			}
 			predictionScores[i] = HuAv;
+			
 		}
 	}
 	
@@ -405,6 +447,10 @@ public class Prediction {
 		for (int i=0; i< testLabels.length; i++){
 			uid = testSrcUsers[i];
 			vid = testDesUsers[i];
+			if (userNeighbors.containsKey(uid)== false || userNeighbors.containsKey(vid)== false){
+				predictionScores[i] = 0f;
+				continue;
+			} 
 			uNeighbors = userNeighbors.get(uid).split(",");
 			vNeighbors = userNeighbors.get(vid).split(",");
 			
@@ -426,7 +472,7 @@ public class Prediction {
 	public void output_PredictionScores(){
 		try {
 			File f = new File(ouput_path + "/" + pred_mode +"_pred_scores.csv");
-			FileWriter fo = new FileWriter(f);
+			FileWriter fo = new FileWriter(f,false);
 			
 			for (int i=0; i< testLabels.length; i++){
 				fo.write(testSrcUsers[i]+ ","
@@ -476,7 +522,7 @@ public class Prediction {
 		
 		try {
 			File f = new File(ouput_path + "/" + pred_mode +"_Overall_PrecisionRecall.csv");
-			FileWriter fo = new FileWriter(f);
+			FileWriter fo = new FileWriter(f,false);
 			
 			for (int i=0; i<k ; i++){
 				fo.write(i+ ","
@@ -494,6 +540,7 @@ public class Prediction {
 	public void output_EvaluateUserLevelPrecisionRecall(int k){
 		float[] precision = new float[k];
 		float[] recall = new float[k];
+		Random rand = new Random();
 		
 		HashMap <String, String> UserLinkLabels = new HashMap <String, String>();
 		
@@ -505,11 +552,24 @@ public class Prediction {
 		
 		for (Map.Entry<Integer, Float> entry : sortedScores) {
 			int index = (Integer) entry.getKey();
+			float score = (Float) entry.getValue();
 			String label = Integer.toString(testLabels[index]);
 			String uid = testSrcUsers[index];
 			if (UserLinkLabels.containsKey(uid)){
-				String labels = UserLinkLabels.get(uid)+ ","+label;
-				UserLinkLabels.put(uid, labels);
+				if (score==0){
+					int coin = rand.nextInt(2);
+					System.out.println(coin);
+					if (coin == 0){
+						String labels = UserLinkLabels.get(uid)+ ","+label;
+						UserLinkLabels.put(uid, labels);
+					} else {
+						String labels = label+UserLinkLabels.get(uid)+ ",";
+						UserLinkLabels.put(uid, labels);
+					}
+				} else{
+					String labels = UserLinkLabels.get(uid)+ ","+label;
+					UserLinkLabels.put(uid, labels);
+				}
 			} else {
 				UserLinkLabels.put(uid, label);
 			}
@@ -523,7 +583,8 @@ public class Prediction {
 			for (int u=0; u<testSrcUsers.length; u++){
 				int posCount = 0;
 				String uid = testSrcUsers[u];
-				if (userPositiveLinks.get(uid)>=currK){
+				
+				if (userPositiveLinks.containsKey(uid) && userPositiveLinks.get(uid)>=currK){
 					count++;
 					String[] labels = UserLinkLabels.get(uid).split(",");
 					for (int l=0; l<currK; l++){
@@ -541,7 +602,7 @@ public class Prediction {
 		
 		try {
 			File f = new File(ouput_path + "/" + pred_mode +"_UserLevel_PrecisionRecall.csv");
-			FileWriter fo = new FileWriter(f);
+			FileWriter fo = new FileWriter(f,false);
 			
 			for (int i=0; i<k ; i++){
 				fo.write(i+ ","
@@ -555,6 +616,87 @@ public class Prediction {
 			System.exit(0);
 		}
 		
+	}
+	
+	public void outout_EvaluateNewUserPrecisionRecall(int k){
+		float[] precision = new float[k];
+		float[] recall = new float[k];
+		Random rand = new Random();
+		
+		HashMap <String, String> UserLinkLabels = new HashMap <String, String>();
+		
+		Map<Integer, Float> mapPredictionScores = new HashMap<Integer, Float>();
+		for (int s=0; s<predictionScores.length; s++){
+			mapPredictionScores.put(s, predictionScores[s]);
+		}
+		List<Entry<Integer, Float>> sortedScores =  sortByValue(mapPredictionScores);
+		
+		for (Map.Entry<Integer, Float> entry : sortedScores) {
+			int index = (Integer) entry.getKey();
+			float score = (Float) entry.getValue();
+			String label = Integer.toString(testLabels[index]);
+			String uid = testSrcUsers[index];
+			if (UserLinkLabels.containsKey(uid)){
+				if (score==0){
+					int coin = rand.nextInt(2);
+					System.out.println(coin);
+					if (coin == 0){
+						String labels = UserLinkLabels.get(uid)+ ","+label;
+						UserLinkLabels.put(uid, labels);
+					} else {
+						String labels = label+UserLinkLabels.get(uid)+ ",";
+						UserLinkLabels.put(uid, labels);
+					}
+				} else{
+					String labels = UserLinkLabels.get(uid)+ ","+label;
+					UserLinkLabels.put(uid, labels);
+				}
+			} else {
+				UserLinkLabels.put(uid, label);
+			}
+		}
+		
+		for (int i=0; i<k; i++){
+			int currK = i+1;
+			float sumPrecision = 0;
+			float sumRecall = 0;
+			int count = 0;
+			for (int u=0; u<testSrcUsers.length; u++){
+				int posCount = 0;
+				String uid = testSrcUsers[u];
+				if (newUsers.containsKey(uid)){
+					if (userPositiveLinks.containsKey(uid) && userPositiveLinks.get(uid)>=currK){
+						count++;
+						String[] labels = UserLinkLabels.get(uid).split(",");
+						for (int l=0; l<currK; l++){
+							if (labels[l].equals("1")){
+								posCount++;
+							}
+						}
+						sumPrecision += (float)posCount / (float)currK;
+						sumRecall += (float)posCount / (float)userPositiveLinks.get(uid);
+					}
+				}
+			}
+			precision[i] = sumPrecision/count;
+			recall[i] = sumRecall/count;
+		}
+		
+		try {
+			File f = new File(ouput_path + "/" + pred_mode +"_NewUserLevel_PrecisionRecall.csv");
+			FileWriter fo = new FileWriter(f,false);
+			
+			for (int i=0; i<k ; i++){
+				fo.write(i+ ","
+						+ precision[i] + ","
+						+ recall[i] + "\n");
+			}	    
+			fo.close();
+		} catch (Exception e) {
+			System.out.println("Error in writing out post topic top words to file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
 	}
 	
 	public <K,V extends Comparable<? super V>> List<Entry<K, V>> sortByValue(Map<K,V> map) {

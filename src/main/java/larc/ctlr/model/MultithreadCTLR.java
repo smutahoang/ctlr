@@ -67,7 +67,7 @@ public class MultithreadCTLR {
 	public static int max_Gibbs_Iterations = 50;
 	public static int gibbs_Sampling_Gap = 2;
 
-	public int nParallelThreads = 20;
+	public int nParallelThreads = 10;
 	public int[] threadStartIndexes = null;
 	public int[] threadEndIndexes = null;
 
