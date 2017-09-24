@@ -4,12 +4,12 @@
 package larc.ctlr.runner;
 
 import larc.ctlr.data.Synthetic;
+import larc.ctlr.evaluation.Prediction;
 import larc.ctlr.model.CTLR;
 import larc.ctlr.model.Configure.ModelMode;
 import larc.ctlr.model.Configure.PredictionMode;
 import larc.ctlr.model.HITS;
 import larc.ctlr.model.MultithreadCTLR;
-import larc.ctlr.model.Prediction;
 
 public class Runner {
 
@@ -54,7 +54,7 @@ public class Runner {
 	}
 	
 	static void predict(String datasetPath, String mode, String setting, int nTopics, PredictionMode pred_mode) {
-		larc.ctlr.model.Prediction prediction = new Prediction(datasetPath, mode, setting, nTopics, pred_mode);
+		larc.ctlr.evaluation.Prediction prediction = new Prediction(datasetPath, mode, setting, nTopics, pred_mode);
 		
 	}
 	
