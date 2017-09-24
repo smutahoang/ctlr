@@ -28,6 +28,7 @@ public class MultithreadCTLR {
 
 	private static boolean initByTopicModeling = true;
 	private static boolean onlyLearnAuthorityHub = false;
+	private static boolean onlyLearnGibbs = false;
 
 	private static Random rand;
 
@@ -66,6 +67,10 @@ public class MultithreadCTLR {
 	public static int gibbs_BurningPeriods = 10;
 	public static int max_Gibbs_Iterations = 50;
 	public static int gibbs_Sampling_Gap = 2;
+	
+	//public static int gibbs_BurningPeriods = 100;
+	//public static int max_Gibbs_Iterations = 500;
+	//public static int gibbs_Sampling_Gap = 20;
 
 	public int nParallelThreads = 10;
 	public int[] threadStartIndexes = null;
@@ -1658,6 +1663,11 @@ public class MultithreadCTLR {
 		System.out.println("initializing");
 		getThreadIndexes();
 		init();
+		
+		if (onlyLearnGibbs){
+			output_GibbTopicInterest();
+			System.exit(-1);
+		}
 
 		System.out.println("TEST");
 		for (int z = 0; z < nTopics; z++) {
@@ -2014,6 +2024,27 @@ public class MultithreadCTLR {
 		try {
 			File f = new File(
 					dataset.path + "/" + mode + "/" + nTopics + "/l_LastUserTopicalInterestDistributions.csv");
+			FileWriter fo = new FileWriter(f);
+			for (int u = 0; u < dataset.nUsers; u++) {
+				User currUser = dataset.users[u];
+				String text = currUser.userId;
+				for (int k = 0; k < nTopics; k++) {
+					text = text + "," + Double.toString(currUser.topicalInterests[k]);
+				}
+				fo.write(text + "\n");
+			}
+			fo.close();
+		} catch (Exception e) {
+			System.out.println("Error in writing to topical interest file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	
+	public void output_GibbTopicInterest() {
+		try {
+			File f = new File(
+					dataset.path + "/" + mode + "/" + nTopics + "/l_GibbUserTopicalInterestDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];

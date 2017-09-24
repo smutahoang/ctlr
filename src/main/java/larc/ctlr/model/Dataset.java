@@ -207,6 +207,7 @@ public class Dataset {
 			for (int u = 0; u < nUsers; u++) {
 				if (users[u].nFollowers > 0) {
 					users[u].followers = new int[users[u].nFollowers];
+					users[u].followerBatches = new int[users[u].nFollowers];
 					users[u].nFollowers = 0;
 				}
 				if (users[u].nFollowings > 0) {
@@ -227,6 +228,7 @@ public class Dataset {
 				int src_user_index = userId2Index.get(src_user);
 				int des_user_index = userId2Index.get(des_user);
 				users[des_user_index].followers[users[des_user_index].nFollowers] = src_user_index;
+				users[des_user_index].followerBatches[users[des_user_index].nFollowers] = batch;
 				users[des_user_index].nFollowers++;
 
 				users[src_user_index].followings[users[src_user_index].nFollowings] = des_user_index;

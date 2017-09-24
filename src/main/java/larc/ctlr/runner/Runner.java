@@ -7,6 +7,7 @@ import larc.ctlr.data.Synthetic;
 import larc.ctlr.model.CTLR;
 import larc.ctlr.model.Configure.ModelMode;
 import larc.ctlr.model.Configure.PredictionMode;
+import larc.ctlr.model.HITS;
 import larc.ctlr.model.MultithreadCTLR;
 import larc.ctlr.model.Prediction;
 
@@ -54,6 +55,11 @@ public class Runner {
 	
 	static void predict(String datasetPath, String mode, String setting, int nTopics, PredictionMode pred_mode) {
 		larc.ctlr.model.Prediction prediction = new Prediction(datasetPath, mode, setting, nTopics, pred_mode);
+		
+	}
+	
+	static void hits(String datasetPath) {
+		larc.ctlr.model.HITS hits = new HITS(datasetPath);
 		
 	}
 
@@ -134,12 +140,17 @@ public class Runner {
 				int topics = Integer.parseInt(args[4]);
 				int pred_mode = Integer.parseInt(args[5]);
 				if (pred_mode == 0){
-					predict(datasetPath, mode, setting, topics,PredictionMode.HITS);
+					predict(datasetPath, mode, setting, topics,PredictionMode.CTLR);
 				} else if (pred_mode == 1){
 					predict(datasetPath, mode, setting, topics,PredictionMode.COMMON_INTEREST);
-				} else {
+				} else if (pred_mode == 2){
 					predict(datasetPath, mode, setting, topics,PredictionMode.COMMON_NEIGHBOR);
+				} else if (pred_mode == 3){
+					predict(datasetPath, mode, setting, topics,PredictionMode.HITS);
 				}
+			} else if (args[0].equals("hits")) {
+				String datasetPath = args[1];
+				hits(datasetPath);
 			} else {
 				System.out.printf("%s is not an option!!!");
 			}

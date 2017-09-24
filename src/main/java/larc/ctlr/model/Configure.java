@@ -7,8 +7,9 @@ public class Configure {
 	}
 	
 	public static enum PredictionMode {
-		HITS, // Using u's hub and v's authority
+		CTLR, // Using u's hub and v's authority
 		COMMON_INTEREST,// Using u and v topical interests
 		COMMON_NEIGHBOR, // Using Jaccard Coefficient of u and v common neighborhood 
+		HITS,
 	}
 }

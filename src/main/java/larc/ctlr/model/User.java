@@ -19,6 +19,7 @@ public class User {
 
 	public int nFollowers;
 	public int[] followers;// index of followers
+	public int[] followerBatches;
 	
 	public int nNonFollowers;
 	public int[] nonFollowers;// index of non_followers
