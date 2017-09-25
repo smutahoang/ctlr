@@ -14,79 +14,120 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.List;
 
-import larc.ctlr.model.Configure;
 import larc.ctlr.model.Configure.PredictionMode;
 
 public class Prediction {
-	public String path;
-	public String ouput_path;
-	public static HashMap<String, double[]> userAuthorities;
-	public static HashMap<String, double[]> userHubs;
-	public static HashMap<String, double[]> userInterests;
-	public static HashMap<String, HashSet<String>> userNeighbors;
-	public static HashMap<String, Double> traditionalAuthorities;
-	public static HashMap<String, Double> traditionalHubs;
-	public static HashMap<String, Integer> userPositiveLinks;
-	public static HashSet<String> newUsers;
-	public static HashSet<String> users;
-	public static String[] testSrcUsers;
-	public static String[] testDesUsers;
-	public static int[] testLabels;
-	public static double[] predictionScores;
-	public static double[] newUserPredictionScores;
-	public static int maxOverallTopK;
-
-	private PredictionMode pred_mode;
+	private String dataPath;
+	private String resultPath;
+	private String modelMode;
+	private String setting;
+	private int nTopics;
+	private PredictionMode predMode;
+	private String outputPath;
+	// CTRL model
+	private HashMap<String, double[]> userAuthorities;
+	private HashMap<String, double[]> userHubs;
+	private HashMap<String, double[]> userInterests;
+	// Common-Neighbor
+	private HashMap<String, HashSet<String>> userNeighbors;
+	private HashMap<String, Double> traditionalAuthorities;
+	// HIST
+	private HashMap<String, Double> traditionalHubs;
+	// CTR
+	private HashMap<String, double[]> userUserLatentFactors;
+	private HashMap<String, double[]> userItemLatentFactors;
+	// data
+	private HashMap<String, Integer> userPositiveLinks;
+	private HashSet<String> newUsers;
+	private HashSet<String> users;
+	private String[] testSrcUsers;
+	private String[] testDesUsers;
+	private int[] testLabels;
+	private double[] predictionScores;
+	private double[] newUserPredictionScores;
+	private int maxOverallTopK;
 
 	/***
 	 * read dataset from folder "path"
 	 * 
-	 * @param path
+	 * @param dataPath
 	 */
-	public Prediction(String _path, String _model_mode, String _setting, int _nTopics, PredictionMode _pred_mode) {
-		this.path = _path;
-		this.ouput_path = String.format("%s/" + _model_mode + "/" + _setting + "/" + _nTopics, path);
-		this.pred_mode = _pred_mode;
+	public Prediction(String _path, String _resultPath, String _modelMode, String _setting, int _nTopics,
+			PredictionMode _predMode, String _outputPath) {
+		this.dataPath = _path;
+		this.resultPath = _resultPath;
+		this.modelMode = _modelMode;
+		this.setting = _setting;
+		this.nTopics = _nTopics;
+		this.predMode = _predMode;
+		if (predMode == PredictionMode.CTLR) {
+			this.outputPath = String.format("%s/%d/%s/%s", _outputPath, nTopics, setting, modelMode);
+		} else if (predMode == PredictionMode.WTFW) {
+			this.outputPath = String.format("%s/%s/%d", _outputPath, nTopics, setting);
+		} else if (predMode == PredictionMode.CTR) {
+			this.outputPath = String.format("%s/%d", _outputPath, nTopics);
+		} else {
+			this.outputPath = _outputPath;
+		}
 
+		File theDir = new File(outputPath);
+
+		// if the directory does not exist, create it
+		if (!theDir.exists()) {
+			System.out.println("creating directory: " + theDir.getAbsolutePath());
+			try {
+				theDir.mkdirs();
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.exit(-1);
+			}
+		}
+	}
+
+	public void evaluate() {
 		System.out.println("loading testing data");
-		String relationshipFile = String.format("%s/relationships.csv", path);
-		String nonRelationshipFile = String.format("%s/nonrelationships.csv", path);
-		String hitsFile = String.format("%s/user_hits.csv", path);
-		String newUserFile = String.format("%s/newusers.csv", path);
+		String relationshipFile = String.format("%s/relationships.csv", dataPath);
+		String nonRelationshipFile = String.format("%s/nonrelationships.csv", dataPath);
+		String hitsFile = String.format("%s/user_hits.csv", dataPath);
+		String newUserFile = String.format("%s/newusers.csv", dataPath);
 		loadTestData(relationshipFile, nonRelationshipFile);
 		loadNewUserData(newUserFile);
 
-		if (pred_mode == PredictionMode.CTLR) {
-			String authFilePath = String.format(
-					"%s/" + _model_mode + "/" + _setting + "/" + _nTopics + "/l_OptUserAuthorityDistributions.csv",
-					path);
-			int authSize = loadUserAuthorities(authFilePath, _nTopics);
+		if (predMode == PredictionMode.CTLR) {
+			String authFilePath = String.format("%s/%s/%s/%d/l_OptUserAuthorityDistributions.csv", resultPath,
+					modelMode, setting, nTopics);
+			int authSize = loadUserAuthorities(authFilePath, nTopics);
 			System.out.println("loaded authorities of " + authSize + " users");
 
-			String hubFilePath = String.format(
-					"%s/" + _model_mode + "/" + _setting + "/" + _nTopics + "/l_OptUserHubDistributions.csv", path);
-			int hubSize = loadUserHubs(hubFilePath, _nTopics);
+			String hubFilePath = String.format("%s/%s/%s/%d/l_OptUserHubDistributions.csv", resultPath, modelMode,
+					setting, nTopics);
+			int hubSize = loadUserHubs(hubFilePath, nTopics);
 			System.out.println("loaded hubs of " + hubSize + " users");
 
 			System.out.println("compute prediction scores");
 			computeCTLRScores();
 
-		} else if (pred_mode == PredictionMode.COMMON_INTEREST) {
-			String interestFilePath = String
-					.format("%s/" + _model_mode + "/" + _nTopics + "/l_GibbUserTopicalInterestDistributions.csv", path);
-			int interestSize = loadUserInterests(interestFilePath, _nTopics);
+		} else if (predMode == PredictionMode.CTR) {
+			loadCTR();
+			computeCTRScores();
+		}
+
+		else if (predMode == PredictionMode.COMMON_INTEREST) {
+			String interestFilePath = String.format("%s/%s/%d/l_GibbUserTopicalInterestDistributions.csv", resultPath,
+					modelMode, nTopics);
+			int interestSize = loadUserInterests(interestFilePath, nTopics);
 			System.out.println("loaded interests of " + interestSize + " users");
 
 			System.out.println("compute prediction scores");
 			computeCommonInterestScores();
 
-			this.ouput_path = String.format("%s/" + _model_mode + "/" + _nTopics, path);
+			this.outputPath = String.format("%s/%s/%s", dataPath, modelMode, nTopics);
 
-		} else if (pred_mode == PredictionMode.COMMON_NEIGHBOR) {
+		} else if (predMode == PredictionMode.COMMON_NEIGHBOR) {
 			int neighhorSize = loadUserNeighbors(relationshipFile);
 			System.out.println("loaded neighbors of " + neighhorSize + " users");
 			computeCommonNeighborScores();
-		} else if (pred_mode == PredictionMode.HITS) {
+		} else if (predMode == PredictionMode.HITS) {
 			loadTraditionalHITS(hitsFile);
 			computeHITSScores();
 		}
@@ -105,7 +146,7 @@ public class Prediction {
 		 */
 	}
 
-	public int loadUserAuthorities(String filename, int nTopics) {
+	private int loadUserAuthorities(String filename, int nTopics) {
 		BufferedReader br = null;
 		String line = null;
 		double[] authorities;
@@ -131,7 +172,7 @@ public class Prediction {
 		return userAuthorities.size();
 	}
 
-	public int loadUserHubs(String filename, int nTopics) {
+	private int loadUserHubs(String filename, int nTopics) {
 		BufferedReader br = null;
 		String line = null;
 		double[] hubs;
@@ -157,7 +198,7 @@ public class Prediction {
 		return userHubs.size();
 	}
 
-	public int loadUserInterests(String filename, int nTopics) {
+	private int loadUserInterests(String filename, int nTopics) {
 		BufferedReader br = null;
 		String line = null;
 		double[] interests;
@@ -183,7 +224,7 @@ public class Prediction {
 		return userInterests.size();
 	}
 
-	public int loadUserNeighbors(String relationshipFile) {
+	private int loadUserNeighbors(String relationshipFile) {
 		BufferedReader br = null;
 		String line = null;
 		userNeighbors = new HashMap<String, HashSet<String>>();
@@ -224,7 +265,7 @@ public class Prediction {
 		return userNeighbors.size();
 	}
 
-	public void loadTraditionalHITS(String filename) {
+	private void loadTraditionalHITS(String filename) {
 		BufferedReader br = null;
 		String line = null;
 		traditionalAuthorities = new HashMap<String, Double>();
@@ -248,7 +289,64 @@ public class Prediction {
 		}
 	}
 
-	public void loadTestData(String relationshipFile, String nonRelationshipFile) {
+	private void loadCTR() {
+		try {
+			userUserLatentFactors = new HashMap<String, double[]>();
+			HashMap<Integer, String> userIndex2Id = new HashMap<Integer, String>();
+			String filename = String.format("%s/ctr/user_index_id.txt", dataPath);
+			BufferedReader br = new BufferedReader(new FileReader(filename));
+			String line = null;
+			while ((line = br.readLine()) != null) {
+				String[] tokens = line.split(",");
+				userIndex2Id.put(Integer.parseInt(tokens[0]), tokens[1]);
+			}
+			br.close();
+
+			filename = String.format("%s/final-U.dat", resultPath);
+			int uIndex = 0;
+			br = new BufferedReader(new FileReader(filename));
+			while ((line = br.readLine()) != null) {
+				String[] tokens = line.split(" ");
+				double[] factors = new double[nTopics];
+				for (int i = 0; i < nTopics; i++) {
+					factors[i] = Double.parseDouble(tokens[i]);
+				}
+				userUserLatentFactors.put(userIndex2Id.get(uIndex), factors);
+				uIndex++;
+			}
+			br.close();
+
+			userItemLatentFactors = new HashMap<String, double[]>();
+			userIndex2Id = new HashMap<Integer, String>();
+			filename = String.format("%s/ctr/item_index_id.txt", dataPath);
+			br = new BufferedReader(new FileReader(filename));
+			while ((line = br.readLine()) != null) {
+				String[] tokens = line.split(",");
+				userIndex2Id.put(Integer.parseInt(tokens[0]), tokens[1]);
+			}
+			br.close();
+
+			filename = String.format("%s/final-V.dat", resultPath);
+			uIndex = 0;
+			br = new BufferedReader(new FileReader(filename));
+			while ((line = br.readLine()) != null) {
+				String[] tokens = line.split(" ");
+				double[] factors = new double[nTopics];
+				for (int i = 0; i < nTopics; i++) {
+					factors[i] = Double.parseDouble(tokens[i]);
+				}
+				userItemLatentFactors.put(userIndex2Id.get(uIndex), factors);
+				uIndex++;
+			}
+			br.close();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
+	}
+
+	private void loadTestData(String relationshipFile, String nonRelationshipFile) {
 		BufferedReader br = null;
 		String line = null;
 		int nTest = 0;
@@ -335,7 +433,7 @@ public class Prediction {
 		}
 	}
 
-	public void loadNewUserData(String NewUserFile) {
+	private void loadNewUserData(String NewUserFile) {
 		BufferedReader br = null;
 		String line = null;
 		newUsers = new HashSet<String>();
@@ -353,7 +451,7 @@ public class Prediction {
 		}
 	}
 
-	public void computeCTLRScores() {
+	private void computeCTLRScores() {
 		String uid = "";
 		String vid = "";
 		double[] Hu;
@@ -373,7 +471,30 @@ public class Prediction {
 		}
 	}
 
-	public void computeCommonInterestScores() {
+	private void computeCTRScores() {
+		String uid = null;
+		String vid = null;
+		double[] uU;
+		double[] vV;
+		double dotProduct = 0;
+		for (int i = 0; i < testLabels.length; i++) {
+			uid = testSrcUsers[i];
+			vid = testDesUsers[i];
+			uU = userUserLatentFactors.get(uid);
+			vV = userItemLatentFactors.get(vid);
+
+			// System.out.printf("u = %s v = %s isNull(uU) = %s isNull(vV) =
+			// %s\n", uid, vid, (uU == null), (vV == null));
+
+			dotProduct = 0;
+			for (int z = 0; z < nTopics; z++) {
+				dotProduct += uU[z] * vV[z];
+			}
+			predictionScores[i] = dotProduct;
+		}
+	}
+
+	private void computeCommonInterestScores() {
 		String uid = "";
 		String vid = "";
 		double[] Iu;
@@ -392,7 +513,7 @@ public class Prediction {
 		}
 	}
 
-	public void computeCommonNeighborScores() {
+	private void computeCommonNeighborScores() {
 		String uid = "";
 		String vid = "";
 		for (int i = 0; i < testLabels.length; i++) {
@@ -418,7 +539,7 @@ public class Prediction {
 		}
 	}
 
-	public void computeHITSScores() {
+	private void computeHITSScores() {
 		String uid = "";
 		String vid = "";
 		double HuAv = 0;
@@ -434,9 +555,9 @@ public class Prediction {
 		}
 	}
 
-	public void output_PredictionScores() {
+	private void output_PredictionScores() {
 		try {
-			File f = new File(ouput_path + "/" + pred_mode + "_pred_scores.csv");
+			File f = new File(outputPath + "/" + predMode + "_pred_scores.csv");
 			FileWriter fo = new FileWriter(f, false);
 
 			for (int i = 0; i < testLabels.length; i++) {
@@ -451,7 +572,7 @@ public class Prediction {
 		}
 	}
 
-	public void output_EvaluateOverallPrecisionRecall(int k, int totalPositive) {
+	private void output_EvaluateOverallPrecisionRecall(int k, int totalPositive) {
 		float[] precision = new float[k];
 		float[] recall = new float[k];
 
@@ -483,7 +604,7 @@ public class Prediction {
 		}
 
 		try {
-			File f = new File(ouput_path + "/" + pred_mode + "_Overall_PrecisionRecall.csv");
+			File f = new File(outputPath + "/" + predMode + "_Overall_PrecisionRecall.csv");
 			FileWriter fo = new FileWriter(f, false);
 
 			for (int i = 0; i < k; i++) {
@@ -497,7 +618,7 @@ public class Prediction {
 		}
 	}
 
-	public void output_EvaluateUserLevelPrecisionRecall(int k) {
+	private void output_EvaluateUserLevelPrecisionRecall(int k) {
 		double[] precision = new double[k];
 		double[] recall = new double[k];
 
@@ -578,7 +699,7 @@ public class Prediction {
 		mrr = sumMRR / countMRR;
 
 		try {
-			File f = new File(ouput_path + "/" + pred_mode + "_UserLevel_PrecisionRecall.csv");
+			File f = new File(outputPath + "/" + predMode + "_UserLevel_PrecisionRecall.csv");
 			FileWriter fo = new FileWriter(f, false);
 
 			for (int i = 0; i < k; i++) {
@@ -595,7 +716,7 @@ public class Prediction {
 
 	}
 
-	public void outout_EvaluateNewUserPrecisionRecall(int k) {
+	private void outout_EvaluateNewUserPrecisionRecall(int k) {
 		double[] precision = new double[k];
 		double[] recall = new double[k];
 		HashMap<String, ArrayList<Integer>> UserLinkLabels = new HashMap<String, ArrayList<Integer>>();
@@ -682,7 +803,7 @@ public class Prediction {
 		mrr = sumMRR / countMRR;
 
 		try {
-			File f = new File(ouput_path + "/" + pred_mode + "_NewUserLevel_PrecisionRecall.csv");
+			File f = new File(outputPath + "/" + predMode + "_NewUserLevel_PrecisionRecall.csv");
 			FileWriter fo = new FileWriter(f, false);
 
 			for (int i = 0; i < k; i++) {
@@ -697,7 +818,7 @@ public class Prediction {
 		}
 	}
 
-	public <K, V extends Comparable<? super V>> List<Entry<K, V>> sortByValue(Map<K, V> map) {
+	private <K, V extends Comparable<? super V>> List<Entry<K, V>> sortByValue(Map<K, V> map) {
 		List<Entry<K, V>> sortedEntries = new ArrayList<Entry<K, V>>(map.entrySet());
 		Collections.sort(sortedEntries, new Comparator<Entry<K, V>>() {
 			@Override
