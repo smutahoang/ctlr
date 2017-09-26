@@ -147,6 +147,8 @@ public class Runner {
 					predict(datasetPath, mode, setting, topics,PredictionMode.COMMON_NEIGHBOR);
 				} else if (pred_mode == 3){
 					predict(datasetPath, mode, setting, topics,PredictionMode.HITS);
+				} else if (pred_mode == 4){
+					predict(datasetPath, mode, setting, topics,PredictionMode.WTFW);
 				}
 			} else if (args[0].equals("hits")) {
 				String datasetPath = args[1];

@@ -70,6 +70,7 @@ public class Prediction {
 		String relationshipFile = String.format("%s/relationships.csv", path);
 		String nonRelationshipFile = String.format("%s/nonrelationships.csv", path);
 		String hitsFile = String.format("%s/user_hits.csv", path);
+		String wtfwFile = String.format("%s/wtfw_results.csv", path);
 		String newUserFile = String.format("%s/newusers.csv", path);
 		loadTestData(relationshipFile, nonRelationshipFile);
 		loadNewUserData(newUserFile);
@@ -103,6 +104,8 @@ public class Prediction {
 		} else if (pred_mode == PredictionMode.HITS){
 			loadTraditionalHITS(hitsFile);
 			computeHITSScores();
+		} else if (pred_mode == PredictionMode.WTFW){
+			loadWTFWResults(wtfwFile);
 		}
 		
 		output_PredictionScores();
@@ -443,6 +446,38 @@ public class Prediction {
 			System.exit(0);
 		}
 	}
+	
+	public void loadWTFWResults(String filename) {
+		Scanner sc = null;
+		BufferedReader br = null;
+		String line = null;
+		try {
+			File wtfwFile = new File(filename);
+			br = new BufferedReader(new FileReader(wtfwFile.getAbsolutePath()));
+			int index=0;
+			while ((line = br.readLine()) != null) {
+				sc = new Scanner(line.toString());
+				sc.useDelimiter(",");
+				String uid= "";
+				float authority = 0f;
+				float hub = 0f;
+				while (sc.hasNext()) {
+					sc.next();//src_uid
+					sc.next();//des_uid
+					float score = sc.nextFloat(); 
+					sc.next();//label
+					predictionScores[index]=score;
+					index++;
+				}
+			}
+			br.close();
+		} catch (Exception e) {
+			System.out.println("Error in reading user file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	
 	
 	public void computeCTLRScores(){
 		String uid = "";

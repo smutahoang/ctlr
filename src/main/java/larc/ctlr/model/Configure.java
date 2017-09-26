@@ -11,5 +11,6 @@ public class Configure {
 		COMMON_INTEREST,// Using u and v topical interests
 		COMMON_NEIGHBOR, // Using Jaccard Coefficient of u and v common neighborhood 
 		HITS,
+		WTFW,
 	}
 }
