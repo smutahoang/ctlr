@@ -4,12 +4,12 @@
 package larc.ctlr.runner;
 
 import larc.ctlr.data.Synthetic;
+import larc.ctlr.evaluation.Prediction;
 import larc.ctlr.model.CTLR;
 import larc.ctlr.model.Configure.ModelMode;
 import larc.ctlr.model.Configure.PredictionMode;
 import larc.ctlr.model.HITS;
 import larc.ctlr.model.MultithreadCTLR;
-import larc.ctlr.model.Prediction;
 
 public class Runner {
 
@@ -52,15 +52,17 @@ public class Runner {
 		// model.init();
 		model.train();
 	}
-	
-	static void predict(String datasetPath, String mode, String setting, int nTopics, PredictionMode pred_mode) {
-		larc.ctlr.model.Prediction prediction = new Prediction(datasetPath, mode, setting, nTopics, pred_mode);
-		
+
+	static void predict(String datasetPath, String resultPath, String mode, String setting, int nTopics,
+			PredictionMode predMode, String outputPath) {
+		larc.ctlr.evaluation.Prediction prediction = new Prediction(datasetPath, resultPath, mode, setting, nTopics,
+				predMode, outputPath);
+		prediction.evaluate();
 	}
-	
+
 	static void hits(String datasetPath) {
 		larc.ctlr.model.HITS hits = new HITS(datasetPath);
-		
+
 	}
 
 	static void test() {
@@ -135,20 +137,24 @@ public class Runner {
 
 			} else if (args[0].equals("predict")) {
 				String datasetPath = args[1];
-				String mode = args[2];
-				String setting = args[3];
-				int topics = Integer.parseInt(args[4]);
-				int pred_mode = Integer.parseInt(args[5]);
-				if (pred_mode == 0){
-					predict(datasetPath, mode, setting, topics,PredictionMode.CTLR);
-				} else if (pred_mode == 1){
-					predict(datasetPath, mode, setting, topics,PredictionMode.COMMON_INTEREST);
-				} else if (pred_mode == 2){
-					predict(datasetPath, mode, setting, topics,PredictionMode.COMMON_NEIGHBOR);
-				} else if (pred_mode == 3){
-					predict(datasetPath, mode, setting, topics,PredictionMode.HITS);
-				} else if (pred_mode == 4){
-					predict(datasetPath, mode, setting, topics,PredictionMode.WTFW);
+				String resultPath = args[2];
+				String mode = args[3];
+				String setting = args[4];
+				int topics = Integer.parseInt(args[5]);
+				int predMode = Integer.parseInt(args[6]);
+				String outputPath = args[7];
+				if (predMode == 0) {
+					predict(datasetPath, resultPath, mode, setting, topics, PredictionMode.CTLR, outputPath);
+				} else if (predMode == 1) {
+					predict(datasetPath, resultPath, mode, setting, topics, PredictionMode.COMMON_INTEREST, outputPath);
+				} else if (predMode == 2) {
+					predict(datasetPath, resultPath, mode, setting, topics, PredictionMode.COMMON_NEIGHBOR, outputPath);
+				} else if (predMode == 3) {
+					predict(datasetPath, resultPath, mode, setting, topics, PredictionMode.HITS, outputPath);
+				} else if (predMode == 4) {
+					predict(datasetPath, resultPath, mode, setting, topics, PredictionMode.CTR, outputPath);
+				} else if (predMode == 5){
+					predict(datasetPath, resultPath, mode, setting, topics, PredictionMode.WTFW, outputPath);
 				}
 			} else if (args[0].equals("hits")) {
 				String datasetPath = args[1];
