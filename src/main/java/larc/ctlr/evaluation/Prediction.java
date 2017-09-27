@@ -22,6 +22,7 @@ public class Prediction {
 	private String modelMode;
 	private String setting;
 	private int nTopics;
+	private int testBatch;
 	private PredictionMode predMode;
 	private String outputPath;
 	// CTRL model
@@ -55,12 +56,13 @@ public class Prediction {
 	 * @param dataPath
 	 */
 	public Prediction(String _path, String _resultPath, String _modelMode, String _setting, int _nTopics,
-			PredictionMode _predMode, String _outputPath) {
+			int _testBatch, PredictionMode _predMode, String _outputPath) {
 		this.dataPath = _path;
 		this.resultPath = _resultPath;
 		this.modelMode = _modelMode;
 		this.setting = _setting;
 		this.nTopics = _nTopics;
+		this.testBatch = _testBatch;
 		this.predMode = _predMode;
 		if (predMode == PredictionMode.CTLR) {
 			this.outputPath = String.format("%s/%d/%s/%s", _outputPath, nTopics, setting, modelMode);
@@ -93,10 +95,8 @@ public class Prediction {
 		String userFile = String.format("%s/users.csv", dataPath);
 		String hitsFile = String.format("%s/user_hits.csv", dataPath);
 		String wtfwFile = String.format("%s/wtfw_results.csv", dataPath);
-		//String newUserFile = String.format("%s/newusers.csv", dataPath);
 		loadTestData(relationshipFile, userFile);
-		//loadNewUserData(newUserFile);
-
+		
 		if (predMode == PredictionMode.CTLR) {
 			String authFilePath = String.format("%s/%s/%s/%d/l_OptUserAuthorityDistributions.csv", resultPath,
 					modelMode, setting, nTopics);
@@ -379,8 +379,8 @@ public class Prediction {
 				String vid = tokens[1];
 				String link = uid.trim()+" "+vid.trim();
 				userAllPositiveLinks.put(link, link);
-				int flag = Integer.parseInt(tokens[2]);
-				if (flag == 0) {
+				int batch = Integer.parseInt(tokens[2]);
+				if (batch == testBatch) {
 					maxOverallTopK++;
 					nTest++;
 					if (userTestPositiveLinks.containsKey(uid)) {
@@ -429,8 +429,8 @@ public class Prediction {
 				String[] tokens = line.split(",");
 				String uid = tokens[0];
 				String vid = tokens[1];
-				int flag = Integer.parseInt(tokens[2]);
-				if (flag == 0) {
+				int batch = Integer.parseInt(tokens[2]);
+				if (batch == testBatch) {
 					testSrcUsers[iTest] = uid;
 					testDesUsers[iTest] = vid;
 					testLabels[iTest] = 1;
@@ -448,24 +448,6 @@ public class Prediction {
 		}
 		
 		
-	}
-
-	private void loadNewUserData(String NewUserFile) {
-		BufferedReader br = null;
-		String line = null;
-		newUsers = new HashSet<String>();
-		try {
-			File linkFile = new File(NewUserFile);
-			br = new BufferedReader(new FileReader(linkFile.getAbsolutePath()));
-			while ((line = br.readLine()) != null) {
-				newUsers.add(line);
-			}
-			br.close();
-		} catch (Exception e) {
-			System.out.println("Error in reading user file!");
-			e.printStackTrace();
-			System.exit(0);
-		}
 	}
 
 	private void loadWTFWScores(String filename){

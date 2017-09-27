@@ -149,22 +149,26 @@ public class CTLR {
 					// Only compute likelihood of non followings which are in
 					// training
 					// batch (i.e. batch = 1)
-					if (currUser.nonFollowingBatches[i] == batch) {
-						int v = currUser.nonFollowings[i];
-						User nonFollowing = dataset.users[v];
 
-						// Compute H_u * A_v
-						double HuAv = 0;
-						for (int z = 0; z < nTopics; z++) {
-							HuAv += currUser.hubs[z] * nonFollowing.authorities[z];
-						}
-						HuAv = HuAv * lamda;
-						double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-						linkRelationshipLikelihood += Math.log(1.0 - fHuAv);
-						if (Double.isInfinite(linkRelationshipLikelihood)) {
-							System.out.printf("[non-followees] HuAv = %.12f fHuAv = %.12f\n", HuAv, fHuAv);
-						}
+					// if (currUser.nonFollowingBatches[i] != batch) {
+					// continue;
+					// }
+
+					int v = currUser.nonFollowings[i];
+					User nonFollowing = dataset.users[v];
+
+					// Compute H_u * A_v
+					double HuAv = 0;
+					for (int z = 0; z < nTopics; z++) {
+						HuAv += currUser.hubs[z] * nonFollowing.authorities[z];
 					}
+					HuAv = HuAv * lamda;
+					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
+					linkRelationshipLikelihood += Math.log(1.0 - fHuAv);
+					if (Double.isInfinite(linkRelationshipLikelihood)) {
+						System.out.printf("[non-followees] HuAv = %.12f fHuAv = %.12f\n", HuAv, fHuAv);
+					}
+
 				}
 			}
 
@@ -728,20 +732,22 @@ public class CTLR {
 				// Only compute likelihood of non followings which are in
 				// training
 				// batch (i.e. batch = 1)
-				if (currUser.nonFollowingBatches[i] == batch) {
-					int v = currUser.nonFollowings[i];
-					User nonFollowing = dataset.users[v];
 
-					// Compute H_u * A_v
-					double HuAv = 0;
-					for (int z = 0; z < nTopics; z++) {
-						HuAv += x[z] * nonFollowing.authorities[z];
-					}
-					HuAv = HuAv * lamda;
-					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-					nonFollowingLikelihood += Math.log(1.0 - fHuAv);
-					;
+				// if (currUser.nonFollowingBatches[i] != batch) {
+				// continue;
+				// }
+
+				int v = currUser.nonFollowings[i];
+				User nonFollowing = dataset.users[v];
+
+				// Compute H_u * A_v
+				double HuAv = 0;
+				for (int z = 0; z < nTopics; z++) {
+					HuAv += x[z] * nonFollowing.authorities[z];
 				}
+				HuAv = HuAv * lamda;
+				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
+				nonFollowingLikelihood += Math.log(1.0 - fHuAv);
 			}
 		}
 
@@ -805,23 +811,24 @@ public class CTLR {
 				// Only compute likelihood of non followings which are in
 				// training
 				// batch (i.e. batch = 1)
-				if (currUser.nonFollowingBatches[i] == batch) {
-					int v = currUser.nonFollowings[i];
-					User nonFollowing = dataset.users[v];
+				// if (currUser.nonFollowingBatches[i] != batch) {
+				// continue;
+				// }
+				int v = currUser.nonFollowings[i];
+				User nonFollowing = dataset.users[v];
 
-					// Compute H_u * A_v
-					double HuAv = 0;
-					for (int z = 0; z < nTopics; z++) {
-						if (z == k) {
-							HuAv += x * nonFollowing.authorities[z];
-						} else {
-							HuAv += currUser.hubs[z] * nonFollowing.authorities[z];
-						}
+				// Compute H_u * A_v
+				double HuAv = 0;
+				for (int z = 0; z < nTopics; z++) {
+					if (z == k) {
+						HuAv += x * nonFollowing.authorities[z];
+					} else {
+						HuAv += currUser.hubs[z] * nonFollowing.authorities[z];
 					}
-					HuAv = HuAv * lamda;
-					nonFollowingLikelihood += -(lamda * nonFollowing.authorities[k])
-							- 1 / (Math.exp(-HuAv) + 1) * Math.exp(-HuAv) * -(lamda * nonFollowing.authorities[k]);
 				}
+				HuAv = HuAv * lamda;
+				nonFollowingLikelihood += -(lamda * nonFollowing.authorities[k])
+						- 1 / (Math.exp(-HuAv) + 1) * Math.exp(-HuAv) * -(lamda * nonFollowing.authorities[k]);
 			}
 		}
 

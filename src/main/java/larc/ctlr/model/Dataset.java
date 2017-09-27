@@ -3,15 +3,23 @@ package larc.ctlr.model;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.concurrent.PriorityBlockingQueue;
 
-import org.apache.commons.io.FilenameUtils;
+import larc.ctlr.tool.KeyValuePair;
 
 public class Dataset {
 	public String path;
 	public int nUsers;
 	public User[] users;
+
+	// for selecting non-links
+	private KeyValuePair[] userPopularRank;
+
 	// public int nWords; // number of words in vocabulary
 	public String[] vocabulary;
 
@@ -23,8 +31,8 @@ public class Dataset {
 	 * 
 	 * @param path
 	 */
-	public Dataset(String path) {
-		this.path = path;
+	public Dataset(String _path) {
+		this.path = _path;
 		System.out.println("loading user list");
 		loadUsers(String.format("%s/users.csv", path));
 		System.out.println("loading posts");
@@ -33,11 +41,11 @@ public class Dataset {
 		loadVocabulary(String.format("%s/vocabulary.csv", path));
 		System.out.println("loading links");
 		loadRelationship(String.format("%s/relationships.csv", path));
-		System.out.println("loading non-links");
-		loadNonRelationship(String.format("%s/nonrelationships.csv", path));
+		// System.out.println("loading non-links");
+		// loadNonRelationship(String.format("%s/nonrelationships.csv", path));
 	}
 
-	public void loadUsers(String filename) {
+	private void loadUsers(String filename) {
 		Scanner sc = null;
 		BufferedReader br = null;
 		String line = null;
@@ -83,7 +91,7 @@ public class Dataset {
 		}
 	}
 
-	public void loadPosts(String filename) {
+	private void loadPosts(String filename) {
 
 		BufferedReader br = null;
 		String line = null;
@@ -127,9 +135,9 @@ public class Dataset {
 				users[u].posts[users[u].nPosts].nWords = tokens.length;
 				users[u].posts[users[u].nPosts].words = new int[tokens.length];
 				for (int i = 0; i < tokens.length; i++) {
-					//System.out.println(postId+","+tokens[i]);
+					// System.out.println(postId+","+tokens[i]);
 					users[u].posts[users[u].nPosts].words[i] = Integer.parseInt(tokens[i]);
-					
+
 				}
 				users[u].nPosts++;
 
@@ -142,7 +150,7 @@ public class Dataset {
 		}
 	}
 
-	public void loadVocabulary(String filename) {
+	private void loadVocabulary(String filename) {
 		BufferedReader br = null;
 		String line = null;
 
@@ -171,7 +179,7 @@ public class Dataset {
 		}
 	}
 
-	public void loadRelationship(String filename) {
+	private void loadRelationship(String filename) {
 		BufferedReader br = null;
 		String line = null;
 
@@ -240,6 +248,119 @@ public class Dataset {
 		}
 	}
 
+	private void rankUserbyPopuarlity() {
+		userPopularRank = new KeyValuePair[nUsers];
+		for (int u = 0; u < nUsers; u++) {
+			userPopularRank[u] = new KeyValuePair(u, users[u].nFollowers);
+		}
+		Arrays.sort(userPopularRank);
+	}
+
+	public void selectNonRelationship(int batch) {
+		rankUserbyPopuarlity();
+		for (int u = 0; u < nUsers; u++) {
+			// get followee set
+			HashSet<Integer> followees = new HashSet<Integer>();
+			for (int i = 0; i < users[u].nFollowings; i++) {
+				if (users[u].followingBatches[i] != batch) {
+					continue;
+				}
+				followees.add(users[u].followings[i]);
+			}
+
+			// #selected non-followees:
+			int nNonFollowees = (int) ((nUsers - users[u].nFollowings) * Configure.PROPTION_OF_NONLINKS);
+
+			// select non-followees
+			HashSet<Integer> nonfollwees = new HashSet<Integer>();
+			// (1): select from popular users
+			int nPopularUsers = (int) (nUsers * Configure.PROPTION_OF_POPULAR_USERS);
+			for (int i = 0; i < nPopularUsers; i++) {
+				int v = userPopularRank[nUsers - i - 1].getIntKey();
+				if (followees.contains(v)) {
+					continue;
+				}
+				nonfollwees.add(v);
+				nNonFollowees--;
+				if (nNonFollowees == 0) {
+					break;
+				}
+			}
+			// (2): if not enough, select the remaining from top non-followees
+			// of followees
+			if (nNonFollowees > 0) {
+				// get nonfollwees among followees of followees
+				HashMap<Integer, Integer> followeesOfFollowees = new HashMap<Integer, Integer>();
+				for (int i = 0; i < users[u].nFollowings; i++) {
+					if (users[u].followingBatches[i] != batch) {
+						continue;
+					}
+					int v = users[u].followings[i];
+					for (int j = 0; j < users[v].nFollowings; j++) {
+						if (users[v].followingBatches[j] != batch) {
+							continue;
+						}
+						int w = users[v].followings[j];
+						if (followees.contains(w)) {
+							continue;
+						}
+						if (followeesOfFollowees.containsKey(w)) {
+							followeesOfFollowees.put(w, 1 + followeesOfFollowees.get(w));
+						} else {
+							followeesOfFollowees.put(w, 1);
+						}
+					}
+				}
+				// rank by #intermediate followees
+				PriorityBlockingQueue<KeyValuePair> queue = new PriorityBlockingQueue<KeyValuePair>();
+				for (Map.Entry<Integer, Integer> pair : followeesOfFollowees.entrySet()) {
+
+					if (nonfollwees.contains(pair.getKey())) {
+						// already among the popular users
+						continue;
+					}
+
+					if (queue.size() < nNonFollowees) {
+						queue.add(new KeyValuePair(pair.getKey(), pair.getValue()));
+					} else {
+						KeyValuePair head = queue.peek();
+						if (head.getIntValue() < pair.getValue()) {
+							queue.poll();
+							queue.add(new KeyValuePair(pair.getKey(), pair.getValue()));
+						}
+					}
+				}
+				// add into selected list
+				while (!queue.isEmpty()) {
+					nonfollwees.add(queue.poll().getIntKey());
+					nNonFollowees--;
+				}
+			}
+			// (3): if still not enough, continue to select from less popular users
+			if (nNonFollowees > 0) {
+				for (int i = nPopularUsers; i < nUsers; i++) {
+					int v = userPopularRank[nUsers - i - 1].getIntKey();
+					if (followees.contains(v)) {
+						continue;
+					}
+					nonfollwees.add(v);
+					nNonFollowees--;
+					if (nNonFollowees == 0) {
+						break;
+					}
+				}
+			}
+
+			// add into user's non-followee list
+			users[u].nNonFollowings = 0;
+			users[u].nonFollowings = new int[nonfollwees.size()];
+			for (int v : nonfollwees) {
+				users[u].nonFollowings[users[u].nNonFollowings] = v;
+				users[u].nNonFollowings++;
+			}
+		}
+	}
+
 	public void loadNonRelationship(String filename) {
 
 		BufferedReader br = null;
@@ -279,7 +400,8 @@ public class Dataset {
 				}
 				if (users[u].nNonFollowings > 0) {
 					users[u].nonFollowings = new int[users[u].nNonFollowings];
-					users[u].nonFollowingBatches = new int[users[u].nNonFollowings];
+					// users[u].nonFollowingBatches = new
+					// int[users[u].nNonFollowings];
 					users[u].nNonFollowings = 0;
 				}
 			}
@@ -290,14 +412,15 @@ public class Dataset {
 				String[] tokens = line.split(",");
 				String src_user = tokens[0];
 				String des_user = tokens[1];
-				int batch = Integer.parseInt(tokens[2]);
+				// int batch = Integer.parseInt(tokens[2]);
 				int src_user_index = userId2Index.get(src_user);
 				int des_user_index = userId2Index.get(des_user);
 				users[des_user_index].nonFollowers[users[des_user_index].nNonFollowers] = src_user_index;
 				users[des_user_index].nNonFollowers++;
 
 				users[src_user_index].nonFollowings[users[src_user_index].nNonFollowings] = des_user_index;
-				users[src_user_index].nonFollowingBatches[users[src_user_index].nNonFollowings] = batch;
+				// users[src_user_index].nonFollowingBatches[users[src_user_index].nNonFollowings]
+				// = batch;
 				users[src_user_index].nNonFollowings++;
 
 			}
@@ -306,6 +429,17 @@ public class Dataset {
 			System.out.println("Error in reading user file!");
 			e.printStackTrace();
 			System.exit(0);
+		}
+	}
+
+	public static void main(String[] args) {
+		KeyValuePair[] x = new KeyValuePair[10];
+		for (int i = 0; i < 10; i++) {
+			x[i] = new KeyValuePair(i, i * 2 % 5);
+		}
+		Arrays.sort(x);
+		for (int i = 0; i < 10; i++) {
+			System.out.printf("x[%d] = (%d, %d)\n", i, x[i].getIntKey(), x[i].getIntValue());
 		}
 	}
 

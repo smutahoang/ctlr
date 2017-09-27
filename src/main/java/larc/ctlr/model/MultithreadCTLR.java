@@ -67,10 +67,10 @@ public class MultithreadCTLR {
 	public static int gibbs_BurningPeriods = 10;
 	public static int max_Gibbs_Iterations = 50;
 	public static int gibbs_Sampling_Gap = 2;
-	
-	//public static int gibbs_BurningPeriods = 100;
-	//public static int max_Gibbs_Iterations = 500;
-	//public static int gibbs_Sampling_Gap = 20;
+
+	// public static int gibbs_BurningPeriods = 100;
+	// public static int max_Gibbs_Iterations = 500;
+	// public static int gibbs_Sampling_Gap = 20;
 
 	public int nParallelThreads = 10;
 	public int[] threadStartIndexes = null;
@@ -230,6 +230,9 @@ public class MultithreadCTLR {
 		MultithreadCTLR.nTopics = _nTopics;
 		MultithreadCTLR.batch = _batch;
 		MultithreadCTLR.mode = _mode;
+
+		// select sub-sample of non-links:
+		MultithreadCTLR.dataset.selectNonRelationship(MultithreadCTLR.batch);
 	}
 
 	/***
@@ -302,22 +305,26 @@ public class MultithreadCTLR {
 				// Only compute likelihood of non followings which are in
 				// training
 				// batch (i.e. batch = 1)
-				if (currUser.nonFollowingBatches[i] == batch) {
-					int v = currUser.nonFollowings[i];
-					User nonFollowing = dataset.users[v];
 
-					// Compute H_u * A_v
-					double HuAv = 0;
-					for (int z = 0; z < nTopics; z++) {
-						HuAv += currUser.hubs[z] * nonFollowing.authorities[z];
-					}
-					HuAv = HuAv * lamda;
-					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-					linkRelationshipLikelihood += Math.log(1.0 - fHuAv);
-					if (Double.isInfinite(linkRelationshipLikelihood) || Double.isNaN(linkRelationshipLikelihood)) {
-						System.out.printf("[non-followees] HuAv = %.12f fHuAv = %.12f\n", HuAv, fHuAv);
-					}
+				// if (currUser.nonFollowingBatches[i] != batch) {
+				// continue;
+				// }
+
+				int v = currUser.nonFollowings[i];
+				User nonFollowing = dataset.users[v];
+
+				// Compute H_u * A_v
+				double HuAv = 0;
+				for (int z = 0; z < nTopics; z++) {
+					HuAv += currUser.hubs[z] * nonFollowing.authorities[z];
 				}
+				HuAv = HuAv * lamda;
+				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
+				linkRelationshipLikelihood += Math.log(1.0 - fHuAv);
+				if (Double.isInfinite(linkRelationshipLikelihood) || Double.isNaN(linkRelationshipLikelihood)) {
+					System.out.printf("[non-followees] HuAv = %.12f fHuAv = %.12f\n", HuAv, fHuAv);
+				}
+
 			}
 		}
 
@@ -934,19 +941,23 @@ public class MultithreadCTLR {
 			for (int i = 0; i < currUser.nonFollowings.length; i++) {
 				// Only compute likelihood of non followings which are in
 				// training batch (i.e. batch = 1)
-				if (currUser.nonFollowingBatches[i] == batch) {
-					int v = currUser.nonFollowings[i];
-					User nonFollowing = dataset.users[v];
 
-					// Compute H_u * A_v
-					double HuAv = 0;
-					for (int z = 0; z < nTopics; z++) {
-						HuAv += x[z] * nonFollowing.authorities[z];
-					}
-					HuAv = HuAv * lamda;
-					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-					nonFollowingLikelihood += Math.log(1.0 - fHuAv);
+				// if (currUser.nonFollowingBatches[i] != batch) {
+				// continue;
+				// }
+
+				int v = currUser.nonFollowings[i];
+				User nonFollowing = dataset.users[v];
+
+				// Compute H_u * A_v
+				double HuAv = 0;
+				for (int z = 0; z < nTopics; z++) {
+					HuAv += x[z] * nonFollowing.authorities[z];
 				}
+				HuAv = HuAv * lamda;
+				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
+				nonFollowingLikelihood += Math.log(1.0 - fHuAv);
+
 			}
 		}
 
@@ -1008,23 +1019,27 @@ public class MultithreadCTLR {
 				// Only compute likelihood of non followings which are in
 				// training
 				// batch (i.e. batch = 1)
-				if (currUser.nonFollowingBatches[i] == batch) {
-					int v = currUser.nonFollowings[i];
-					User nonFollowing = dataset.users[v];
 
-					// Compute H_u * A_v
-					double HuAv = 0;
-					for (int z = 0; z < nTopics; z++) {
-						if (z == k) {
-							HuAv += x * nonFollowing.authorities[z];
-						} else {
-							HuAv += currUser.hubs[z] * nonFollowing.authorities[z];
-						}
+				// if (currUser.nonFollowingBatches[i] != batch) {
+				// continue;
+				// }
+
+				int v = currUser.nonFollowings[i];
+				User nonFollowing = dataset.users[v];
+
+				// Compute H_u * A_v
+				double HuAv = 0;
+				for (int z = 0; z < nTopics; z++) {
+					if (z == k) {
+						HuAv += x * nonFollowing.authorities[z];
+					} else {
+						HuAv += currUser.hubs[z] * nonFollowing.authorities[z];
 					}
-					HuAv = HuAv * lamda;
-					nonFollowingLikelihood += -(lamda * nonFollowing.authorities[k])
-							- 1 / (Math.exp(-HuAv) + 1) * Math.exp(-HuAv) * -(lamda * nonFollowing.authorities[k]);
 				}
+				HuAv = HuAv * lamda;
+				nonFollowingLikelihood += -(lamda * nonFollowing.authorities[k])
+						- 1 / (Math.exp(-HuAv) + 1) * Math.exp(-HuAv) * -(lamda * nonFollowing.authorities[k]);
+
 			}
 		}
 
@@ -1663,8 +1678,8 @@ public class MultithreadCTLR {
 		System.out.println("initializing");
 		getThreadIndexes();
 		init();
-		
-		if (onlyLearnGibbs){
+
+		if (onlyLearnGibbs) {
 			output_GibbTopicInterest();
 			System.exit(-1);
 		}
@@ -2040,7 +2055,7 @@ public class MultithreadCTLR {
 			System.exit(0);
 		}
 	}
-	
+
 	public void output_GibbTopicInterest() {
 		try {
 			File f = new File(
@@ -2431,15 +2446,19 @@ public class MultithreadCTLR {
 				fo = new FileWriter(f);
 				if (currUser.nonFollowings != null) {
 					for (int v = 0; v < currUser.nNonFollowings; v++) {
-						if (currUser.nonFollowingBatches[v] == batch) {
-							int nonFolloweeId = currUser.nonFollowings[v];
-							User nonFollowee = dataset.users[nonFolloweeId];
-							String text = nonFollowee.userId;
-							for (int k = 0; k < nTopics; k++) {
-								text = text + "," + Double.toString(nonFollowee.optAuthorities[k]);
-							}
-							fo.write(text + "\n");
+
+						// if (currUser.nonFollowingBatches[v] != batch) {
+						// continue;
+						// }
+
+						int nonFolloweeId = currUser.nonFollowings[v];
+						User nonFollowee = dataset.users[nonFolloweeId];
+						String text = nonFollowee.userId;
+						for (int k = 0; k < nTopics; k++) {
+							text = text + "," + Double.toString(nonFollowee.optAuthorities[k]);
 						}
+						fo.write(text + "\n");
+
 					}
 				}
 				fo.close();
