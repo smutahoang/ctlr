@@ -1567,8 +1567,8 @@ public class MultithreadCTLR {
 	private void init() {
 		alpha = (double) (20) / (double) (nTopics);// prior for users' interest
 		gamma = 0.001;
-		sigma = 0.3;// variance of users' authorities
-		delta = 0.3;// variance of users' hubs
+		sigma = 0.4;// variance of users' authorities
+		delta = 0.4;// variance of users' hubs
 		rand = new Random();
 
 		// allocate memory for counts
