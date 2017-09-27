@@ -11,7 +11,11 @@ public class Configure {
 		CTR, // Collaborative topic regression model
 		WTFW, // KDD2014,Who to follow and Why
 		COMMON_INTEREST, // Using u and v topical interests
-		COMMON_NEIGHBOR, // Using Jaccard Coefficient of u and v common neighborhood
+		COMMON_NEIGHBOR, // Using Jaccard Coefficient of u and v common
+							// neighborhood
 		HITS,
 	}
+
+	public final static double PROPTION_OF_POPULAR_USERS = 0.1;
+	public final static double PROPTION_OF_NONLINKS = 0.1;
 }
