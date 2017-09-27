@@ -63,7 +63,7 @@ public class Prediction {
 		if (predMode == PredictionMode.CTLR) {
 			this.outputPath = String.format("%s/%d/%s/%s", _outputPath, nTopics, setting, modelMode);
 		} else if (predMode == PredictionMode.WTFW) {
-			this.outputPath = String.format("%s/%s/%d", _outputPath, nTopics, setting);
+			this.outputPath = String.format("%s/%d/%s", _outputPath, nTopics, setting);
 		} else if (predMode == PredictionMode.CTR) {
 			this.outputPath = String.format("%s/%d", _outputPath, nTopics);
 		} else {
@@ -89,6 +89,7 @@ public class Prediction {
 		String relationshipFile = String.format("%s/relationships.csv", dataPath);
 		String nonRelationshipFile = String.format("%s/nonrelationships.csv", dataPath);
 		String hitsFile = String.format("%s/user_hits.csv", dataPath);
+		String wtfwFile = String.format("%s/wtfw_results.csv", dataPath);
 		//String newUserFile = String.format("%s/newusers.csv", dataPath);
 		loadTestData(relationshipFile, nonRelationshipFile);
 		//loadNewUserData(newUserFile);
@@ -130,20 +131,14 @@ public class Prediction {
 		} else if (predMode == PredictionMode.HITS) {
 			loadTraditionalHITS(hitsFile);
 			computeHITSScores();
+		} else if (predMode == PredictionMode.WTFW) {
+			loadWTFWScores(wtfwFile);
 		}
 
 		output_PredictionScores();
 		output_EvaluateOverallPrecisionRecall(5, maxOverallTopK);
 		output_EvaluateUserLevelPrecisionRecall(5);
-		//outout_EvaluateNewUserPrecisionRecall(5);
-
-		/*
-		 * if (_model_mode.equals("TWITTER_LDA")){
-		 * output_EvaluateOverallPrecisionRecall(5, maxOverallTopK);
-		 * output_EvaluateUserLevelPrecisionRecall(5); } else{
-		 * output_EvaluateOverallPrecisionRecall(5, maxOverallTopK);
-		 * output_EvaluateUserLevelPrecisionRecall(5); }
-		 */
+		
 	}
 
 	private int loadUserAuthorities(String filename, int nTopics) {
@@ -236,7 +231,6 @@ public class Prediction {
 				String[] tokens = line.split(",");
 				String uid = tokens[0];
 				String vid = tokens[1];
-				;
 				int flag = Integer.parseInt(tokens[2]);
 				if (flag == 1) {
 					if (userNeighbors.containsKey(uid)) {
@@ -451,6 +445,27 @@ public class Prediction {
 		}
 	}
 
+	private void loadWTFWScores(String filename){
+		BufferedReader br = null;
+		String line = null;
+		int index =0;
+		try {
+			File wtfwFile = new File(filename);
+			br = new BufferedReader(new FileReader(wtfwFile.getAbsolutePath()));
+			while ((line = br.readLine()) != null) {
+				String[] tokens = line.split(",");
+				double score = Double.parseDouble(tokens[2]);
+				predictionScores[index] = score;
+				index++;
+			}
+			br.close();
+		} catch (Exception e) {
+			System.out.println("Error in reading user file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	
 	private void computeCTLRScores() {
 		String uid = "";
 		String vid = "";
