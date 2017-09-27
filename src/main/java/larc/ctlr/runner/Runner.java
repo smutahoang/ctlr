@@ -53,16 +53,15 @@ public class Runner {
 		model.train();
 	}
 
-	static void predict(String datasetPath, String resultPath, String mode, String setting, int nTopics,
+	static void predict(String datasetPath, String resultPath, String mode, String setting, int nTopics, int testBatch,
 			PredictionMode predMode, String outputPath) {
 		larc.ctlr.evaluation.Prediction prediction = new Prediction(datasetPath, resultPath, mode, setting, nTopics,
-				predMode, outputPath);
+				testBatch, predMode, outputPath);
 		prediction.evaluate();
 	}
 
 	static void hits(String datasetPath) {
 		larc.ctlr.model.HITS hits = new HITS(datasetPath);
-
 	}
 
 	static void test() {
@@ -141,20 +140,23 @@ public class Runner {
 				String mode = args[3];
 				String setting = args[4];
 				int topics = Integer.parseInt(args[5]);
-				int predMode = Integer.parseInt(args[6]);
-				String outputPath = args[7];
+				int testBatch = Integer.parseInt(args[6]);
+				int predMode = Integer.parseInt(args[7]);
+				String outputPath = args[8];
 				if (predMode == 0) {
-					predict(datasetPath, resultPath, mode, setting, topics, PredictionMode.CTLR, outputPath);
+					predict(datasetPath, resultPath, mode, setting, topics, testBatch, PredictionMode.CTLR, outputPath);
 				} else if (predMode == 1) {
-					predict(datasetPath, resultPath, mode, setting, topics, PredictionMode.COMMON_INTEREST, outputPath);
+					predict(datasetPath, resultPath, mode, setting, topics, testBatch, PredictionMode.COMMON_INTEREST,
+							outputPath);
 				} else if (predMode == 2) {
-					predict(datasetPath, resultPath, mode, setting, topics, PredictionMode.COMMON_NEIGHBOR, outputPath);
+					predict(datasetPath, resultPath, mode, setting, topics, testBatch, PredictionMode.COMMON_NEIGHBOR,
+							outputPath);
 				} else if (predMode == 3) {
-					predict(datasetPath, resultPath, mode, setting, topics, PredictionMode.HITS, outputPath);
+					predict(datasetPath, resultPath, mode, setting, topics, testBatch, PredictionMode.HITS, outputPath);
 				} else if (predMode == 4) {
-					predict(datasetPath, resultPath, mode, setting, topics, PredictionMode.CTR, outputPath);
-				} else if (predMode == 5){
-					predict(datasetPath, resultPath, mode, setting, topics, PredictionMode.WTFW, outputPath);
+					predict(datasetPath, resultPath, mode, setting, topics, testBatch, PredictionMode.CTR, outputPath);
+				} else if (predMode == 5) {
+					predict(datasetPath, resultPath, mode, setting, topics, testBatch, PredictionMode.WTFW, outputPath);
 				}
 			} else if (args[0].equals("hits")) {
 				String datasetPath = args[1];

@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.List;
@@ -22,6 +21,7 @@ public class Prediction {
 	private String modelMode;
 	private String setting;
 	private int nTopics;
+	private int testBatch;
 	private PredictionMode predMode;
 	private String outputPath;
 	// CTRL model
@@ -37,14 +37,16 @@ public class Prediction {
 	private HashMap<String, double[]> userUserLatentFactors;
 	private HashMap<String, double[]> userItemLatentFactors;
 	// data
-	private HashMap<String, Integer> userPositiveLinks;
+	private HashMap<String, HashSet<String>> positiveTestLinks;
+	HashMap<String, HashSet<String>> trainingLinks;
+	HashSet<String> allUsers;
+
 	private HashSet<String> newUsers;
-	private HashSet<String> users;
 	private String[] testSrcUsers;
 	private String[] testDesUsers;
 	private int[] testLabels;
 	private double[] predictionScores;
-	private double[] newUserPredictionScores;
+	//private double[] newUserPredictionScores;
 	private int maxOverallTopK;
 
 	/***
@@ -53,12 +55,14 @@ public class Prediction {
 	 * @param dataPath
 	 */
 	public Prediction(String _path, String _resultPath, String _modelMode, String _setting, int _nTopics,
-			PredictionMode _predMode, String _outputPath) {
+			int _testBatch, PredictionMode _predMode, String _outputPath) {
 		this.dataPath = _path;
 		this.resultPath = _resultPath;
 		this.modelMode = _modelMode;
 		this.setting = _setting;
 		this.nTopics = _nTopics;
+		this.testBatch = _testBatch;
+
 		this.predMode = _predMode;
 		if (predMode == PredictionMode.CTLR) {
 			this.outputPath = String.format("%s/%d/%s/%s", _outputPath, nTopics, setting, modelMode);
@@ -87,12 +91,11 @@ public class Prediction {
 	public void evaluate() {
 		System.out.println("loading testing data");
 		String relationshipFile = String.format("%s/relationships.csv", dataPath);
-		String nonRelationshipFile = String.format("%s/nonrelationships.csv", dataPath);
 		String hitsFile = String.format("%s/user_hits.csv", dataPath);
 		String wtfwFile = String.format("%s/wtfw_results.csv", dataPath);
-		//String newUserFile = String.format("%s/newusers.csv", dataPath);
-		loadTestData(relationshipFile, nonRelationshipFile);
-		//loadNewUserData(newUserFile);
+		// String newUserFile = String.format("%s/newusers.csv", dataPath);
+		loadTestData(relationshipFile);
+		// loadNewUserData(newUserFile);
 
 		if (predMode == PredictionMode.CTLR) {
 			String authFilePath = String.format("%s/%s/%s/%d/l_OptUserAuthorityDistributions.csv", resultPath,
@@ -138,7 +141,7 @@ public class Prediction {
 		output_PredictionScores();
 		output_EvaluateOverallPrecisionRecall(5, maxOverallTopK);
 		output_EvaluateUserLevelPrecisionRecall(5);
-		
+
 	}
 
 	private int loadUserAuthorities(String filename, int nTopics) {
@@ -340,83 +343,112 @@ public class Prediction {
 		}
 	}
 
-	private void loadTestData(String relationshipFile, String nonRelationshipFile) {
+	private void loadTestData(String relationshipFile) {
 		BufferedReader br = null;
 		String line = null;
 		int nTest = 0;
-		int iTest = 0;
 		maxOverallTopK = 0;
-		userPositiveLinks = new HashMap<String, Integer>();
-		users = new HashSet<String>();
+		positiveTestLinks = new HashMap<String, HashSet<String>>();
+		trainingLinks = new HashMap<String, HashSet<String>>();
 
 		try {
 			File linkFile = new File(relationshipFile);
-			File nonLinkFile = new File(nonRelationshipFile);
-
-			br = new BufferedReader(new FileReader(nonLinkFile.getAbsolutePath()));
-			while ((line = br.readLine()) != null) {
-				if (Integer.parseInt(line.split(",")[2]) == 0) {
-					nTest++;
-				}
-			}
-			br.close();
-
 			br = new BufferedReader(new FileReader(linkFile.getAbsolutePath()));
 			while ((line = br.readLine()) != null) {
 				String[] tokens = line.split(",");
 				String uid = tokens[0];
-				int flag = Integer.parseInt(tokens[2]);
-				if (flag == 0) {
+				String vid = tokens[1];
+
+				allUsers.add(uid);
+				allUsers.add(vid);
+
+				int batch = Integer.parseInt(tokens[2]);
+				if (batch == testBatch) {
 					maxOverallTopK++;
-					nTest++;
-					if (userPositiveLinks.containsKey(uid)) {
-						int count = userPositiveLinks.get(uid) + 1;
-						userPositiveLinks.put(uid, count);
+					HashSet<String> followees = positiveTestLinks.get(uid);
+					if (followees != null) {
+						followees.add(vid);
 					} else {
-						userPositiveLinks.put(uid, 1);
+						followees = new HashSet<String>();
+						followees.add(vid);
+						positiveTestLinks.put(uid, followees);
+					}
+				} else {
+					HashSet<String> followees = trainingLinks.get(uid);
+					if (followees != null) {
+						followees.add(vid);
+					} else {
+						followees = new HashSet<String>();
+						followees.add(vid);
+						trainingLinks.put(uid, followees);
 					}
 				}
 			}
 			br.close();
 
+			nTest = 0;
+			for (String uid : allUsers) {
+				// positive test links
+				HashSet<String> testFollowees = positiveTestLinks.get(uid);
+				if (testFollowees != null) {
+					nTest += testFollowees.size();
+				}
+
+				// negative test links
+				HashSet<String> trainingFollowees = trainingLinks.get(uid);
+				for (String vid : allUsers) {
+					if (vid.equals(uid)) {
+						continue;
+					}
+					if (testFollowees != null) {
+						if (testFollowees.contains(vid)) {
+							continue;
+						}
+					}
+					if (trainingFollowees.contains(vid)) {
+						continue;
+					}
+					nTest++;
+				}
+			}
+
 			testSrcUsers = new String[nTest];
 			testDesUsers = new String[nTest];
 			testLabels = new int[nTest];
-
 			predictionScores = new double[nTest];
 
-			br = new BufferedReader(new FileReader(nonLinkFile.getAbsolutePath()));
-			while ((line = br.readLine()) != null) {
-				String[] tokens = line.split(",");
-				String uid = tokens[0];
-				String vid = tokens[1];
-				int flag = Integer.parseInt(tokens[2]);
-				if (flag == 0) {
-					users.add(uid);
-					testSrcUsers[iTest] = uid;
-					testDesUsers[iTest] = vid;
-					testLabels[iTest] = 0;
-					iTest++;
+			nTest = 0;
+			for (String uid : allUsers) {
+				// positive test links
+				HashSet<String> testFollowees = positiveTestLinks.get(uid);
+				if (testFollowees != null) {
+					for (String vid : testFollowees) {
+						testSrcUsers[nTest] = uid;
+						testDesUsers[nTest] = vid;
+						testLabels[nTest] = 1;
+						nTest++;
+					}
 				}
-
-			}
-			br.close();
-
-			br = new BufferedReader(new FileReader(linkFile.getAbsolutePath()));
-			while ((line = br.readLine()) != null) {
-				String[] tokens = line.split(",");
-				String uid = tokens[0];
-				String vid = tokens[1];
-				int flag = Integer.parseInt(tokens[2]);
-				if (flag == 0) {
-					users.add(uid);
-					testSrcUsers[iTest] = uid;
-					testDesUsers[iTest] = vid;
-					testLabels[iTest] = 1;
-					iTest++;
+				// negative test links
+				HashSet<String> trainingFollowees = trainingLinks.get(uid);
+				for (String vid : allUsers) {
+					if (vid.equals(uid)) {
+						continue;
+					}
+					if (testFollowees != null) {
+						if (testFollowees.contains(vid)) {
+							continue;
+						}
+					}
+					if (trainingFollowees.contains(vid)) {
+						continue;
+					}
+					testSrcUsers[nTest] = uid;
+					testDesUsers[nTest] = vid;
+					testLabels[nTest] = 0;
+					nTest++;
 				}
 			}
-			br.close();
 
 			System.out.println("Loaded " + nTest + " testing user pairs");
 
@@ -425,6 +457,7 @@ public class Prediction {
 			e.printStackTrace();
 			System.exit(0);
 		}
+
 	}
 
 	private void loadNewUserData(String NewUserFile) {
@@ -445,10 +478,10 @@ public class Prediction {
 		}
 	}
 
-	private void loadWTFWScores(String filename){
+	private void loadWTFWScores(String filename) {
 		BufferedReader br = null;
 		String line = null;
-		int index =0;
+		int index = 0;
 		try {
 			File wtfwFile = new File(filename);
 			br = new BufferedReader(new FileReader(wtfwFile.getAbsolutePath()));
@@ -465,7 +498,7 @@ public class Prediction {
 			System.exit(0);
 		}
 	}
-	
+
 	private void computeCTLRScores() {
 		String uid = "";
 		String vid = "";
@@ -659,11 +692,11 @@ public class Prediction {
 			float sumPrecision = 0;
 			float sumRecall = 0;
 			int count = 0;
-			Iterator<String> it = users.iterator();
-			while (it.hasNext()) {
-				String uid = it.next();
+			for (Map.Entry<String, HashSet<String>> pair : positiveTestLinks.entrySet()) {
+				String uid = pair.getKey();
+				HashSet<String> followees = pair.getValue();
 				int posCount = 0;
-				if (userPositiveLinks.containsKey(uid) && userPositiveLinks.get(uid) >= currK) {
+				if (followees.size() >= currK) {
 					count++;
 					ArrayList<Integer> labels = UserLinkLabels.get(uid);
 					for (int j = 0; j < currK; j++) {
@@ -671,22 +704,21 @@ public class Prediction {
 							posCount++;
 						}
 					}
-					sumPrecision += (float) posCount / (float) currK;
-					sumRecall += (float) posCount / (float) userPositiveLinks.get(uid);
+					sumPrecision += (float) posCount / currK;
+					sumRecall += (float) posCount / followees.size();
 				}
 			}
 			precision[i] = sumPrecision / count;
 			recall[i] = sumRecall / count;
 		}
 
-		int[] rank = new int[users.size()];
+		int[] rank = new int[positiveTestLinks.size()];
 		int iRank = 0;
-		Iterator<String> it = users.iterator();
-		while (it.hasNext()) {
+		for (Map.Entry<String, HashSet<String>> pair : positiveTestLinks.entrySet()) {
+			String uid = pair.getKey();
 			rank[iRank] = 0;
-			String uid = it.next();
 			int posCount = 0;
-			if (userPositiveLinks.containsKey(uid)) {
+			if (positiveTestLinks.containsKey(uid)) {
 				ArrayList<Integer> labels = UserLinkLabels.get(uid);
 				for (int j = 0; j < labels.size(); j++) {
 					if (labels.get(j) == 1) {
@@ -758,12 +790,12 @@ public class Prediction {
 			float sumPrecision = 0;
 			float sumRecall = 0;
 			int count = 0;
-			Iterator<String> it = users.iterator();
-			while (it.hasNext()) {
-				String uid = it.next();
+			for (Map.Entry<String, HashSet<String>> pair : positiveTestLinks.entrySet()) {
+				String uid = pair.getKey();
+				HashSet<String> followees = pair.getValue();
 				int posCount = 0;
 				if (newUsers.contains(uid)) {
-					if (userPositiveLinks.containsKey(uid) && userPositiveLinks.get(uid) >= currK) {
+					if (followees.size() >= currK) {
 						count++;
 						ArrayList<Integer> labels = UserLinkLabels.get(uid);
 						for (int j = 0; j < currK; j++) {
@@ -772,7 +804,7 @@ public class Prediction {
 							}
 						}
 						sumPrecision += (double) posCount / currK;
-						sumRecall += (double) posCount / userPositiveLinks.get(uid);
+						sumRecall += (double) posCount / followees.size();
 					}
 				}
 			}
@@ -780,15 +812,14 @@ public class Prediction {
 			recall[i] = sumRecall / count;
 		}
 
-		int[] rank = new int[users.size()];
+		int[] rank = new int[positiveTestLinks.size()];
 		int iRank = 0;
-		Iterator<String> it = users.iterator();
-		while (it.hasNext()) {
+		for (Map.Entry<String, HashSet<String>> pair : positiveTestLinks.entrySet()) {
+			String uid = pair.getKey();
 			rank[iRank] = 0;
-			String uid = it.next();
 			int posCount = 0;
 			if (newUsers.contains(uid)) {
-				if (userPositiveLinks.containsKey(uid)) {
+				if (positiveTestLinks.containsKey(uid)) {
 					ArrayList<Integer> labels = UserLinkLabels.get(uid);
 					for (int j = 0; j < labels.size(); j++) {
 						if (labels.get(j) == 1) {
