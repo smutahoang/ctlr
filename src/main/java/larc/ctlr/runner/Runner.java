@@ -47,8 +47,8 @@ public class Runner {
 		model.train();
 	}
 
-	static void multiTrain(String datasetPath, int nTopics, int batch, ModelMode mode) {
-		larc.ctlr.model.MultithreadCTLR model = new MultithreadCTLR(datasetPath, nTopics, batch, mode);
+	static void multiTrain(String datasetPath, int nTopics, int batch, ModelMode mode, String outputPath) {
+		larc.ctlr.model.MultithreadCTLR model = new MultithreadCTLR(datasetPath, nTopics, batch, mode, outputPath);
 		// model.init();
 		model.train();
 	}
@@ -69,9 +69,9 @@ public class Runner {
 		int nTopics = 10;
 		int batch = 1;
 		ModelMode mode = ModelMode.TWITTER_LDA;
-		larc.ctlr.model.MultithreadCTLR model = new MultithreadCTLR(datasetPath, nTopics, batch, mode);
+		//larc.ctlr.model.MultithreadCTLR model = new MultithreadCTLR(datasetPath, nTopics, batch, mode);
 		// model.init();
-		model.train();
+		//model.train();
 	}
 
 	public static void main(String[] args) {
@@ -112,10 +112,11 @@ public class Runner {
 				int nTopics = Integer.parseInt(args[2]);
 				int batch = Integer.parseInt(args[3]);
 				int mode = Integer.parseInt(args[4]);
+				String output = args[5];
 				if (mode == 0) {
-					multiTrain(datasetPath, nTopics, batch, ModelMode.TWITTER_LDA);
+					multiTrain(datasetPath, nTopics, batch, ModelMode.TWITTER_LDA,output);
 				} else {
-					multiTrain(datasetPath, nTopics, batch, ModelMode.ORIGINAL_LDA);
+					multiTrain(datasetPath, nTopics, batch, ModelMode.ORIGINAL_LDA,output);
 				}
 			} else if (args[0].equals("3x-multiTrain")) {
 				String datasetPath = args[1];
@@ -124,14 +125,15 @@ public class Runner {
 				int nTopics3 = Integer.parseInt(args[4]);
 				int batch = Integer.parseInt(args[5]);
 				int mode = Integer.parseInt(args[6]);
+				String output = args[7];
 				if (mode == 0) {
-					multiTrain(datasetPath, nTopics1, batch, ModelMode.TWITTER_LDA);
-					multiTrain(datasetPath, nTopics2, batch, ModelMode.TWITTER_LDA);
-					multiTrain(datasetPath, nTopics3, batch, ModelMode.TWITTER_LDA);
+					multiTrain(datasetPath, nTopics1, batch, ModelMode.TWITTER_LDA,output);
+					multiTrain(datasetPath, nTopics2, batch, ModelMode.TWITTER_LDA,output);
+					multiTrain(datasetPath, nTopics3, batch, ModelMode.TWITTER_LDA,output);
 				} else {
-					multiTrain(datasetPath, nTopics1, batch, ModelMode.ORIGINAL_LDA);
-					multiTrain(datasetPath, nTopics2, batch, ModelMode.ORIGINAL_LDA);
-					multiTrain(datasetPath, nTopics3, batch, ModelMode.ORIGINAL_LDA);
+					multiTrain(datasetPath, nTopics1, batch, ModelMode.ORIGINAL_LDA,output);
+					multiTrain(datasetPath, nTopics2, batch, ModelMode.ORIGINAL_LDA,output);
+					multiTrain(datasetPath, nTopics3, batch, ModelMode.ORIGINAL_LDA,output);
 				}
 
 			} else if (args[0].equals("predict")) {

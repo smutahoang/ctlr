@@ -1,3 +1,4 @@
+
 package larc.ctlr.model;
 
 import larc.ctlr.model.Configure.ModelMode;
@@ -13,6 +14,7 @@ import java.util.concurrent.Executors;
 
 public class MultithreadCTLR {
 	private String datapath;
+	private String outputpath;
 	private static Dataset dataset;
 	private static int nTopics;
 	private static int batch;
@@ -27,7 +29,7 @@ public class MultithreadCTLR {
 	private static double lamda = 0.01;
 
 	private static boolean initByTopicModeling = true;
-	private static boolean onlyLearnAuthorityHub = false;
+	private static boolean onlyLearnAuthorityHub = true;
 	private static boolean onlyLearnGibbs = false;
 
 	private static Random rand;
@@ -64,13 +66,13 @@ public class MultithreadCTLR {
 	public static int maxIteration_Hubs = 10;
 	public static int max_GibbsEM_Iterations = 500;
 
-	public static int gibbs_BurningPeriods = 10;
-	public static int max_Gibbs_Iterations = 50;
-	public static int gibbs_Sampling_Gap = 2;
-
-	// public static int gibbs_BurningPeriods = 100;
-	// public static int max_Gibbs_Iterations = 500;
-	// public static int gibbs_Sampling_Gap = 20;
+	//public static int gibbs_BurningPeriods = 10;
+	//public static int max_Gibbs_Iterations = 50;
+	//public static int gibbs_Sampling_Gap = 2;
+	
+	public static int gibbs_BurningPeriods = 100;
+	public static int max_Gibbs_Iterations = 500;
+	public static int gibbs_Sampling_Gap = 20;
 
 	public int nParallelThreads = 10;
 	public int[] threadStartIndexes = null;
@@ -224,15 +226,14 @@ public class MultithreadCTLR {
 	 * @param _datasetPath
 	 * @param _nTopics
 	 */
-	public MultithreadCTLR(String _datasetPath, int _nTopics, int _batch, ModelMode _mode) {
+	public MultithreadCTLR(String _datasetPath, int _nTopics, int _batch, ModelMode _mode, String _outputPath) {
 		this.datapath = _datasetPath;
-		MultithreadCTLR.dataset = new Dataset(_datasetPath);
+		this.outputpath = _outputPath;
 		MultithreadCTLR.nTopics = _nTopics;
 		MultithreadCTLR.batch = _batch;
 		MultithreadCTLR.mode = _mode;
-
-		// select sub-sample of non-links:
-		MultithreadCTLR.dataset.selectNonRelationship(MultithreadCTLR.batch);
+		MultithreadCTLR.dataset = new Dataset(_datasetPath,MultithreadCTLR.batch);
+		
 	}
 
 	/***
@@ -305,26 +306,22 @@ public class MultithreadCTLR {
 				// Only compute likelihood of non followings which are in
 				// training
 				// batch (i.e. batch = 1)
+				if (currUser.nonFollowingBatches[i] == batch) {
+					int v = currUser.nonFollowings[i];
+					User nonFollowing = dataset.users[v];
 
-				// if (currUser.nonFollowingBatches[i] != batch) {
-				// continue;
-				// }
-
-				int v = currUser.nonFollowings[i];
-				User nonFollowing = dataset.users[v];
-
-				// Compute H_u * A_v
-				double HuAv = 0;
-				for (int z = 0; z < nTopics; z++) {
-					HuAv += currUser.hubs[z] * nonFollowing.authorities[z];
+					// Compute H_u * A_v
+					double HuAv = 0;
+					for (int z = 0; z < nTopics; z++) {
+						HuAv += currUser.hubs[z] * nonFollowing.authorities[z];
+					}
+					HuAv = HuAv * lamda;
+					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
+					linkRelationshipLikelihood += Math.log(1.0 - fHuAv);
+					if (Double.isInfinite(linkRelationshipLikelihood) || Double.isNaN(linkRelationshipLikelihood)) {
+						System.out.printf("[non-followees] HuAv = %.12f fHuAv = %.12f\n", HuAv, fHuAv);
+					}
 				}
-				HuAv = HuAv * lamda;
-				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-				linkRelationshipLikelihood += Math.log(1.0 - fHuAv);
-				if (Double.isInfinite(linkRelationshipLikelihood) || Double.isNaN(linkRelationshipLikelihood)) {
-					System.out.printf("[non-followees] HuAv = %.12f fHuAv = %.12f\n", HuAv, fHuAv);
-				}
-
 			}
 		}
 
@@ -941,23 +938,19 @@ public class MultithreadCTLR {
 			for (int i = 0; i < currUser.nonFollowings.length; i++) {
 				// Only compute likelihood of non followings which are in
 				// training batch (i.e. batch = 1)
+				if (currUser.nonFollowingBatches[i] == batch) {
+					int v = currUser.nonFollowings[i];
+					User nonFollowing = dataset.users[v];
 
-				// if (currUser.nonFollowingBatches[i] != batch) {
-				// continue;
-				// }
-
-				int v = currUser.nonFollowings[i];
-				User nonFollowing = dataset.users[v];
-
-				// Compute H_u * A_v
-				double HuAv = 0;
-				for (int z = 0; z < nTopics; z++) {
-					HuAv += x[z] * nonFollowing.authorities[z];
+					// Compute H_u * A_v
+					double HuAv = 0;
+					for (int z = 0; z < nTopics; z++) {
+						HuAv += x[z] * nonFollowing.authorities[z];
+					}
+					HuAv = HuAv * lamda;
+					double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
+					nonFollowingLikelihood += Math.log(1.0 - fHuAv);
 				}
-				HuAv = HuAv * lamda;
-				double fHuAv = 2 * ((1 / (Math.exp(-HuAv) + 1)) - 0.5);
-				nonFollowingLikelihood += Math.log(1.0 - fHuAv);
-
 			}
 		}
 
@@ -1019,27 +1012,23 @@ public class MultithreadCTLR {
 				// Only compute likelihood of non followings which are in
 				// training
 				// batch (i.e. batch = 1)
+				if (currUser.nonFollowingBatches[i] == batch) {
+					int v = currUser.nonFollowings[i];
+					User nonFollowing = dataset.users[v];
 
-				// if (currUser.nonFollowingBatches[i] != batch) {
-				// continue;
-				// }
-
-				int v = currUser.nonFollowings[i];
-				User nonFollowing = dataset.users[v];
-
-				// Compute H_u * A_v
-				double HuAv = 0;
-				for (int z = 0; z < nTopics; z++) {
-					if (z == k) {
-						HuAv += x * nonFollowing.authorities[z];
-					} else {
-						HuAv += currUser.hubs[z] * nonFollowing.authorities[z];
+					// Compute H_u * A_v
+					double HuAv = 0;
+					for (int z = 0; z < nTopics; z++) {
+						if (z == k) {
+							HuAv += x * nonFollowing.authorities[z];
+						} else {
+							HuAv += currUser.hubs[z] * nonFollowing.authorities[z];
+						}
 					}
+					HuAv = HuAv * lamda;
+					nonFollowingLikelihood += -(lamda * nonFollowing.authorities[k])
+							- 1 / (Math.exp(-HuAv) + 1) * Math.exp(-HuAv) * -(lamda * nonFollowing.authorities[k]);
 				}
-				HuAv = HuAv * lamda;
-				nonFollowingLikelihood += -(lamda * nonFollowing.authorities[k])
-						- 1 / (Math.exp(-HuAv) + 1) * Math.exp(-HuAv) * -(lamda * nonFollowing.authorities[k]);
-
 			}
 		}
 
@@ -1582,8 +1571,8 @@ public class MultithreadCTLR {
 	private void init() {
 		alpha = (double) (20) / (double) (nTopics);// prior for users' interest
 		gamma = 0.001;
-		sigma = 0.4;// variance of users' authorities
-		delta = 0.4;// variance of users' hubs
+		sigma = 0.45;// variance of users' authorities
+		delta = 0.45;// variance of users' hubs
 		rand = new Random();
 
 		// allocate memory for counts
@@ -1678,8 +1667,8 @@ public class MultithreadCTLR {
 		System.out.println("initializing");
 		getThreadIndexes();
 		init();
-
-		if (onlyLearnGibbs) {
+		
+		if (onlyLearnGibbs){
 			output_GibbTopicInterest();
 			System.exit(-1);
 		}
@@ -1699,7 +1688,7 @@ public class MultithreadCTLR {
 		System.out.println("\tLine Search Beta:" + MultithreadCTLR.lineSearch_beta);
 		System.out.println("\tLine Search Max Iterations:" + MultithreadCTLR.lineSearch_MaxIterations);
 		System.out.println("\t#Topics:" + MultithreadCTLR.nTopics);
-
+		
 		threadLikelihood = new double[nParallelThreads];
 		for (int iter = 0; iter < max_GibbsEM_Iterations; iter++) {
 			// EM part that employs alternating optimization
@@ -1939,7 +1928,7 @@ public class MultithreadCTLR {
 
 	public void output_OptTopicWord() {
 		try {
-			File f = new File(dataset.path + "/" + mode + "/" + nTopics + "/l_OptTopicalWordDistributions.csv");
+			File f = new File(outputpath + "/l_OptTopicalWordDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int k = 0; k < nTopics; k++) {
 				String text = Integer.toString(k);
@@ -1958,7 +1947,7 @@ public class MultithreadCTLR {
 
 	public void output_LastTopicWord() {
 		try {
-			File f = new File(dataset.path + "/" + mode + "/" + nTopics + "/l_LastTopicalWordDistributions.csv");
+			File f = new File(outputpath + "/l_LastTopicalWordDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int k = 0; k < nTopics; k++) {
 				String text = Integer.toString(k);
@@ -1977,7 +1966,7 @@ public class MultithreadCTLR {
 
 	private void output_OptPostTopicTopWords(int k) {
 		try {
-			File f = new File(dataset.path + "/" + mode + "/" + nTopics + "/l_OptTopTopicWords.csv");
+			File f = new File(outputpath + "/l_OptTopTopicWords.csv");
 			BufferedWriter bw = new BufferedWriter(new FileWriter(f.getAbsoluteFile()));
 			RankingTool rankTool = new RankingTool();
 			WeightedElement[] topWords = null;
@@ -1997,7 +1986,7 @@ public class MultithreadCTLR {
 
 	private void output_LastPostTopicTopWords(int k) {
 		try {
-			File f = new File(dataset.path + "/" + mode + "/" + nTopics + "/l_LastTopTopicWords.csv");
+			File f = new File(outputpath + "/l_LastTopTopicWords.csv");
 			BufferedWriter bw = new BufferedWriter(new FileWriter(f.getAbsoluteFile()));
 			RankingTool rankTool = new RankingTool();
 			WeightedElement[] topWords = null;
@@ -2017,7 +2006,7 @@ public class MultithreadCTLR {
 
 	public void output_OptTopicInterest() {
 		try {
-			File f = new File(dataset.path + "/" + mode + "/" + nTopics + "/l_OptUserTopicalInterestDistributions.csv");
+			File f = new File(outputpath + "/l_OptUserTopicalInterestDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
@@ -2037,8 +2026,7 @@ public class MultithreadCTLR {
 
 	public void output_LastTopicInterest() {
 		try {
-			File f = new File(
-					dataset.path + "/" + mode + "/" + nTopics + "/l_LastUserTopicalInterestDistributions.csv");
+			File f = new File(outputpath + "/l_LastUserTopicalInterestDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
@@ -2055,11 +2043,10 @@ public class MultithreadCTLR {
 			System.exit(0);
 		}
 	}
-
+	
 	public void output_GibbTopicInterest() {
 		try {
-			File f = new File(
-					dataset.path + "/" + mode + "/" + nTopics + "/l_GibbUserTopicalInterestDistributions.csv");
+			File f = new File(outputpath + "/l_GibbUserTopicalInterestDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
@@ -2079,7 +2066,7 @@ public class MultithreadCTLR {
 
 	public void output_OptAuthority() {
 		try {
-			File f = new File(dataset.path + "/" + mode + "/" + nTopics + "/l_OptUserAuthorityDistributions.csv");
+			File f = new File(outputpath + "/l_OptUserAuthorityDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
@@ -2124,7 +2111,7 @@ public class MultithreadCTLR {
 
 	public void output_LastAuthority() {
 		try {
-			File f = new File(dataset.path + "/" + mode + "/" + nTopics + "/l_LastUserAuthorityDistributions.csv");
+			File f = new File(outputpath + "/l_LastUserAuthorityDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
@@ -2144,7 +2131,7 @@ public class MultithreadCTLR {
 
 	public void output_OptHub() {
 		try {
-			File f = new File(dataset.path + "/" + mode + "/" + nTopics + "/l_OptUserHubDistributions.csv");
+			File f = new File(outputpath + "/l_OptUserHubDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
@@ -2189,7 +2176,7 @@ public class MultithreadCTLR {
 
 	public void output_LastHub() {
 		try {
-			File f = new File(dataset.path + "/" + mode + "/" + nTopics + "/l_LastUserHubDistributions.csv");
+			File f = new File(outputpath + "/l_LastUserHubDistributions.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
@@ -2209,7 +2196,7 @@ public class MultithreadCTLR {
 
 	public void output_OptLikelihoodPerplexityMode0() {
 		try {
-			File f = new File(dataset.path + "/" + mode + "/" + "/" + nTopics + "/l_OptLikelihoodPerplexityMode0.csv");
+			File f = new File(outputpath + "/l_OptLikelihoodPerplexityMode0.csv");
 			FileWriter fo = new FileWriter(f);
 			fo.write("PostLogLikelihood:" + postOptLogLikelidhoodMode0 + "\n");
 			fo.write("PostLogPerplexity:" + postOptLogPerplexityMode0 + "\n");
@@ -2223,7 +2210,7 @@ public class MultithreadCTLR {
 
 	public void output_OptLikelihoodPerplexityMode1() {
 		try {
-			File f = new File(dataset.path + "/" + mode + "/" + nTopics + "/l_OptLikelihoodPerplexityMode1.csv");
+			File f = new File(outputpath + "/l_OptLikelihoodPerplexityMode1.csv");
 			FileWriter fo = new FileWriter(f);
 			fo.write("PostLogLikelihood:" + postOptLogLikelidhoodMode1 + "\n");
 			fo.write("PostLogPerplexity:" + postOptLogPerplexityMode1 + "\n");
@@ -2237,7 +2224,7 @@ public class MultithreadCTLR {
 
 	public void output_LastLikelihoodPerplexityMode0() {
 		try {
-			File f = new File(dataset.path + "/" + mode + "/" + +nTopics + "/l_LastLikelihoodPerplexityMode0.csv");
+			File f = new File(outputpath + "/l_LastLikelihoodPerplexityMode0.csv");
 			FileWriter fo = new FileWriter(f);
 			fo.write("PostLogLikelihood:" + postLastLogLikelidhoodMode0 + "\n");
 			fo.write("PostLogPerplexity:" + postLastLogPerplexityMode0 + "\n");
@@ -2251,7 +2238,7 @@ public class MultithreadCTLR {
 
 	public void output_LastLikelihoodPerplexityMode1() {
 		try {
-			File f = new File(dataset.path + "/" + mode + "/" + +nTopics + "/l_LastLikelihoodPerplexityMode1.csv");
+			File f = new File(outputpath + "/l_LastLikelihoodPerplexityMode1.csv");
 			FileWriter fo = new FileWriter(f);
 			fo.write("PostLogLikelihood:" + postLastLogLikelidhoodMode1 + "\n");
 			fo.write("PostLogPerplexity:" + postLastLogPerplexityMode1 + "\n");
@@ -2265,7 +2252,7 @@ public class MultithreadCTLR {
 
 	public void output_optPostTopic() {
 		try {
-			File f = new File(dataset.path + "/" + mode + "/" + +nTopics + "/l_OptPostTopic.csv");
+			File f = new File(outputpath + "/l_OptPostTopic.csv");
 			FileWriter fo = new FileWriter(f);
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
@@ -2292,7 +2279,7 @@ public class MultithreadCTLR {
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
 				String filename = currUser.userId;
-				f = new File(dataset.path + "/" + mode + "/" + nTopics + "/follower_hubs/" + filename + ".csv");
+				f = new File(outputpath + filename + ".csv");
 				fo = new FileWriter(f);
 				if (currUser.followers != null) {
 					for (int v = 0; v < currUser.nFollowers; v++) {
@@ -2321,7 +2308,7 @@ public class MultithreadCTLR {
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
 				String filename = currUser.userId;
-				f = new File(dataset.path + "/" + mode + "/" + nTopics + "/follower_Interests/" + filename + ".csv");
+				f = new File(outputpath + filename + ".csv");
 				fo = new FileWriter(f);
 				if (currUser.followers != null) {
 					for (int v = 0; v < currUser.nFollowers; v++) {
@@ -2350,7 +2337,7 @@ public class MultithreadCTLR {
 			for (int u = 0; u < dataset.nUsers; u++) {
 				User currUser = dataset.users[u];
 				String filename = currUser.userId;
-				f = new File(dataset.path + "/" + mode + "/" + nTopics + "/followee_authorities/" + filename + ".csv");
+				f = new File(outputpath + filename + ".csv");
 				fo = new FileWriter(f);
 				if (currUser.followings != null) {
 					for (int v = 0; v < currUser.nFollowings; v++) {
@@ -2446,19 +2433,15 @@ public class MultithreadCTLR {
 				fo = new FileWriter(f);
 				if (currUser.nonFollowings != null) {
 					for (int v = 0; v < currUser.nNonFollowings; v++) {
-
-						// if (currUser.nonFollowingBatches[v] != batch) {
-						// continue;
-						// }
-
-						int nonFolloweeId = currUser.nonFollowings[v];
-						User nonFollowee = dataset.users[nonFolloweeId];
-						String text = nonFollowee.userId;
-						for (int k = 0; k < nTopics; k++) {
-							text = text + "," + Double.toString(nonFollowee.optAuthorities[k]);
+						if (currUser.nonFollowingBatches[v] == batch) {
+							int nonFolloweeId = currUser.nonFollowings[v];
+							User nonFollowee = dataset.users[nonFolloweeId];
+							String text = nonFollowee.userId;
+							for (int k = 0; k < nTopics; k++) {
+								text = text + "," + Double.toString(nonFollowee.optAuthorities[k]);
+							}
+							fo.write(text + "\n");
 						}
-						fo.write(text + "\n");
-
 					}
 				}
 				fo.close();

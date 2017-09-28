@@ -18,7 +18,7 @@ public class User {
 	public int nNonFollowings;
 	public int[] nonFollowings;// index of non_followings
 	
-	// public int[] nonFollowingBatches;// WE DON'T NEED THIS
+	 public int[] nonFollowingBatches;// WE DON'T NEED THIS
 	// batch index of non_followings, to be used for K-fold cross validation
 
 	public int nFollowers;
