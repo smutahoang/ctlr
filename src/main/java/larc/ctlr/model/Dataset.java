@@ -17,12 +17,12 @@ public class Dataset {
 	public String path;
 	public int nUsers;
 	public User[] users;
-	public int nLinks =0;
-	public int nNonLinks =0;
-	
+	public int nLinks = 0;
+	public int nNonLinks = 0;
 
 	// for selecting non-links
-	private KeyValuePair[] userPopularRank;
+	private KeyValuePair[] userRankByNFollowers;
+	private KeyValuePair[] userRankByNFollowees;
 
 	// public int nWords; // number of words in vocabulary
 	public String[] vocabulary;
@@ -46,12 +46,12 @@ public class Dataset {
 		System.out.println("loading links");
 		loadRelationship(String.format("%s/relationships.csv", path));
 		// System.out.println("loading non-links");
-		//loadNonRelationship(String.format("%s/nonrelationships.csv", path));
+		// loadNonRelationship(String.format("%s/nonrelationships.csv", path));
 		selectNonRelationship(batch);
 		System.out.println("#Links:" + nLinks);
 		System.out.println("#NonLinks:" + nNonLinks);
 		output_NonLinks();
-		
+
 	}
 
 	private void loadUsers(String filename) {
@@ -247,7 +247,7 @@ public class Dataset {
 				users[src_user_index].followings[users[src_user_index].nFollowings] = des_user_index;
 				users[src_user_index].followingBatches[users[src_user_index].nFollowings] = batch;
 				users[src_user_index].nFollowings++;
-				if (batch == 1){
+				if (batch == 1) {
 					nLinks++;
 				}
 			}
@@ -260,27 +260,34 @@ public class Dataset {
 	}
 
 	private void rankUserbyPopuarlity() {
-		userPopularRank = new KeyValuePair[nUsers];
+		userRankByNFollowers = new KeyValuePair[nUsers];
+		userRankByNFollowees = new KeyValuePair[nUsers];
 		for (int u = 0; u < nUsers; u++) {
-			userPopularRank[u] = new KeyValuePair(u, users[u].nFollowers);
+			userRankByNFollowers[u] = new KeyValuePair(u, users[u].nFollowers);
+			userRankByNFollowees[u] = new KeyValuePair(u, users[u].nFollowings);
 		}
-		Arrays.sort(userPopularRank);
+		Arrays.sort(userRankByNFollowers);
+		Arrays.sort(userRankByNFollowees);
 	}
 
 	public void selectNonRelationship(int batch) {
 		rankUserbyPopuarlity();
-		HashMap<Integer, Integer> maxNonFollowers = new HashMap<Integer, Integer>();
-		HashMap<Integer, Integer> userNonFollowerCounts = new HashMap<Integer, Integer>();
-		HashMap<Integer, String> userNonFollowers = new HashMap<Integer, String>();
-		
+
+		int[] userNonFollowerCounts = new int[nUsers];
+		int[] maxNonFollowers = new int[nUsers];
+
+		HashMap<Integer, HashSet<Integer>> userNonFollowers = new HashMap<Integer, HashSet<Integer>>();
+
 		for (int u = 0; u < nUsers; u++) {
-			int max = (int) ((nUsers - users[u].nFollowers - 1) * Configure.PROPTION_OF_NONLINKS);
-			maxNonFollowers.put(u, max);
-			userNonFollowerCounts.put(u, 0);
+			maxNonFollowers[u] = (int) ((nUsers - users[u].nFollowers - 1) * Configure.PROPTION_OF_NONLINKS);
+			userNonFollowerCounts[u] = 0;
 		}
-		
-		
-		for (int u = 0; u < nUsers; u++) {
+
+		for (int r = 0; r < nUsers; r++) {
+			int u = userRankByNFollowees[r].getIntKey();
+			// this will make most of the non-links are from less-followees
+			// users to many-followers (e.g., popular) users
+
 			// get followee set
 			HashSet<Integer> followees = new HashSet<Integer>();
 			for (int i = 0; i < users[u].nFollowings; i++) {
@@ -292,38 +299,41 @@ public class Dataset {
 
 			// #selected non-followees:
 			int nNonFollowees = (int) ((nUsers - users[u].nFollowings - 1) * Configure.PROPTION_OF_NONLINKS);
-			
+
 			// select non-followees
 			HashSet<Integer> nonfollwees = new HashSet<Integer>();
 			// (1): select from popular users
 			int nPopularUsers = (int) (nUsers * Configure.PROPTION_OF_POPULAR_USERS);
 			for (int i = 0; i < nPopularUsers; i++) {
-				int v = userPopularRank[nUsers - i - 1].getIntKey();
-				if (followees.contains(v) || users[u].userId.equals(users[v].userId)) {
+				int v = userRankByNFollowers[nUsers - i - 1].getIntKey();
+				if (v == u) {
 					continue;
 				}
-				if (userNonFollowerCounts.get(v)>=maxNonFollowers.get(v)) {
+				if (followees.contains(v)) {
 					continue;
 				}
-				
+				if (userNonFollowerCounts[v] >= maxNonFollowers[v]) {
+					continue;
+				}
+
 				nonfollwees.add(v);
 				nNonFollowees--;
-				
-				if(userNonFollowers.containsKey(v)){
-					String nonFollowers = userNonFollowers.get(v);
-					userNonFollowers.put(v, nonFollowers+" "+Integer.toString(u));
-					int count = userNonFollowerCounts.get(v);
-					userNonFollowerCounts.put(v,count+1);
-				} else{
-					userNonFollowers.put(v, Integer.toString(u));
-					userNonFollowerCounts.put(v,1);
+
+				userNonFollowerCounts[v]++;
+
+				if (userNonFollowers.containsKey(v)) {
+					userNonFollowers.get(v).add(u);
+				} else {
+					HashSet<Integer> nonFollowers = new HashSet<Integer>();
+					nonFollowers.add(u);
+					userNonFollowers.put(v, nonFollowers);
 				}
-				
+
 				if (nNonFollowees == 0) {
 					break;
 				}
 			}
-			
+
 			// (2): if not enough, select the remaining from top non-followees
 			// of followees
 			if (nNonFollowees > 0) {
@@ -339,6 +349,9 @@ public class Dataset {
 							continue;
 						}
 						int w = users[v].followings[j];
+						if (w == u) {
+							continue;
+						}
 						if (followees.contains(w) || users[u].userId.equals(users[w].userId)) {
 							continue;
 						}
@@ -371,17 +384,16 @@ public class Dataset {
 				// add into selected list
 				while (!queue.isEmpty()) {
 					int v = queue.poll().getIntKey();
-					if (userNonFollowerCounts.get(v)>=maxNonFollowers.get(v)){
+					if (userNonFollowerCounts[v] >= maxNonFollowers[v]) {
 						continue;
 					}
-					if(userNonFollowers.containsKey(v)){
-						String nonFollowers = userNonFollowers.get(v);
-						userNonFollowers.put(v, nonFollowers+" "+Integer.toString(u));
-						int count = userNonFollowerCounts.get(v);
-						userNonFollowerCounts.put(v,count+1);
-					} else{
-						userNonFollowers.put(v, Integer.toString(u));
-						userNonFollowerCounts.put(v,1);
+					userNonFollowerCounts[v]++;
+					if (userNonFollowers.containsKey(v)) {
+						userNonFollowers.get(v).add(u);
+					} else {
+						HashSet<Integer> nonFollowers = new HashSet<Integer>();
+						nonFollowers.add(u);
+						userNonFollowers.put(v, nonFollowers);
 					}
 					nonfollwees.add(v);
 					nNonFollowees--;
@@ -390,24 +402,27 @@ public class Dataset {
 					}
 				}
 			}
-			// (3): if still not enough, continue to select from less popular users
+			// (3): if still not enough, continue to select from less popular
+			// users
 			if (nNonFollowees > 0) {
 				for (int i = nPopularUsers; i < nUsers; i++) {
-					int v = userPopularRank[nUsers - i - 1].getIntKey();
+					int v = userRankByNFollowers[nUsers - i - 1].getIntKey();
+					if (v == u) {
+						continue;
+					}
 					if (followees.contains(v) || users[u].userId.equals(users[v].userId)) {
 						continue;
 					}
-					if (userNonFollowerCounts.get(v)>=maxNonFollowers.get(v)){
+					if (userNonFollowerCounts[v] >= maxNonFollowers[v]) {
 						continue;
 					}
-					if(userNonFollowers.containsKey(v)){
-						String nonFollowers = userNonFollowers.get(v);
-						userNonFollowers.put(v, nonFollowers+" "+Integer.toString(u));
-						int count = userNonFollowerCounts.get(v);
-						userNonFollowerCounts.put(v,count+1);
-					} else{
-						userNonFollowers.put(v, Integer.toString(u));
-						userNonFollowerCounts.put(v,1);
+					userNonFollowerCounts[v]++;
+					if (userNonFollowers.containsKey(v)) {
+						userNonFollowers.get(v).add(u);
+					} else {
+						HashSet<Integer> nonFollowers = new HashSet<Integer>();
+						nonFollowers.add(u);
+						userNonFollowers.put(v, nonFollowers);
 					}
 					nonfollwees.add(v);
 					nNonFollowees--;
@@ -416,7 +431,7 @@ public class Dataset {
 					}
 				}
 			}
-			
+
 			// add into user's non-followee list
 			users[u].nNonFollowings = 0;
 			users[u].nonFollowings = new int[nonfollwees.size()];
@@ -428,19 +443,22 @@ public class Dataset {
 				nNonLinks++;
 			}
 		}
-		
-		//Reverse infer the non-followers from the non-following
-		for (int v=0; v<users.length; v++){
-			String[] tokens =  userNonFollowers.get(v).split(" ");
-			
-			users[v].nonFollowers = new int[tokens.length];
-			users[v].nFollowers = tokens.length;
-			for (int i=0; i<tokens.length;i++){
-				users[v].nonFollowers[i] =  Integer.parseInt(tokens[i]);
+
+		// Reverse infer the non-followers from the non-following
+		for (int v = 0; v < users.length; v++) {
+			HashSet<Integer> nonFollowers = userNonFollowers.get(v);
+			if (nonFollowers == null) {
+				continue;
 			}
-			System.out.println(users[v].userId+" "+users[v].nonFollowers.length);
+			users[v].nonFollowers = new int[nonFollowers.size()];
+			users[v].nFollowers = 0;
+			for (int u : nonFollowers) {
+				users[v].nonFollowers[users[v].nFollowers] = u;
+				users[v].nFollowers++;
+			}
+			System.out.println(users[v].userId + " " + users[v].nonFollowers.length);
 		}
-		
+
 	}
 
 	public void loadNonRelationship(String filename) {
@@ -482,8 +500,7 @@ public class Dataset {
 				}
 				if (users[u].nNonFollowings > 0) {
 					users[u].nonFollowings = new int[users[u].nNonFollowings];
-					 users[u].nonFollowingBatches = new
-					 int[users[u].nNonFollowings];
+					users[u].nonFollowingBatches = new int[users[u].nNonFollowings];
 					users[u].nNonFollowings = 0;
 				}
 			}
@@ -501,10 +518,9 @@ public class Dataset {
 				users[des_user_index].nNonFollowers++;
 
 				users[src_user_index].nonFollowings[users[src_user_index].nNonFollowings] = des_user_index;
-				 users[src_user_index].nonFollowingBatches[users[src_user_index].nNonFollowings]
-				 = batch;
+				users[src_user_index].nonFollowingBatches[users[src_user_index].nNonFollowings] = batch;
 				users[src_user_index].nNonFollowings++;
-				if (batch==1){
+				if (batch == 1) {
 					nNonLinks++;
 				}
 			}
@@ -533,9 +549,9 @@ public class Dataset {
 			FileWriter fo = new FileWriter(f);
 			for (int u = 0; u < users.length; u++) {
 				String uid = users[u].userId;
-				for (int v=0; v < users[u].nonFollowings.length; v++){
+				for (int v = 0; v < users[u].nonFollowings.length; v++) {
 					String vid = users[users[u].nonFollowings[v]].userId;
-					fo.write(uid +","+vid + "\n");
+					fo.write(uid + "," + vid + "\n");
 				}
 			}
 			fo.close();

@@ -13,9 +13,9 @@ public class HITS {
 	public static float[] hubs;
 	public static int nUsers;
 
-	public HITS(String _path) {
+	public HITS(String _path, int _batch) {
 		path = _path;
-		HITS.dataset = new Dataset(_path);
+		HITS.dataset = new Dataset(_path, _batch);
 		nUsers = dataset.nUsers;
 		init();
 		updateAuthorityHub(5);
