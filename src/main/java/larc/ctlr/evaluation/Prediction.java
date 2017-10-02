@@ -40,14 +40,16 @@ public class Prediction {
 	// data
 	private HashMap<String, String> userAllPositiveLinks;
 	private HashMap<String, Integer> userTestPositiveLinks;
+	private HashMap<String, Integer> userTestNegativeLinks;
+	private HashMap<String, String> userNonLinks;
 	private HashSet<String> newUsers;
 	private int nUsers;
+	private int nTest;
 	private String[] users;
 	private String[] testSrcUsers;
 	private String[] testDesUsers;
 	private int[] testLabels;
 	private double[] predictionScores;
-	private double[] newUserPredictionScores;
 	private int maxOverallTopK;
 
 	/***
@@ -65,7 +67,7 @@ public class Prediction {
 		this.testBatch = _testBatch;
 		this.predMode = _predMode;
 		if (predMode == PredictionMode.CTLR) {
-			this.outputPath = String.format("%s/%d/%s/%s", _outputPath, nTopics, setting, modelMode);
+			this.outputPath = String.format("%s/%s/%s/%d", _outputPath, modelMode, setting, nTopics);
 		} else if (predMode == PredictionMode.WTFW) {
 			this.outputPath = String.format("%s/%d/%s", _outputPath, nTopics, setting);
 		} else if (predMode == PredictionMode.CTR) {
@@ -95,7 +97,10 @@ public class Prediction {
 		String userFile = String.format("%s/users.csv", dataPath);
 		String hitsFile = String.format("%s/user_hits.csv", dataPath);
 		String wtfwFile = String.format("%s/wtfw_results.csv", dataPath);
+		int neighhorSize = loadUserNeighbors(relationshipFile);
+		System.out.println("loaded neighbors of " + neighhorSize + " users");
 		loadTestData(relationshipFile, userFile);
+		output_NonLinks();
 		
 		if (predMode == PredictionMode.CTLR) {
 			String authFilePath = String.format("%s/%s/%s/%d/l_OptUserAuthorityDistributions.csv", resultPath,
@@ -117,19 +122,17 @@ public class Prediction {
 		}
 
 		else if (predMode == PredictionMode.COMMON_INTEREST) {
-			String interestFilePath = String.format("%s/%s/%d/l_GibbUserTopicalInterestDistributions.csv", resultPath,
-					modelMode, nTopics);
+			String interestFilePath = String.format("%s/%s/%s/%d/l_GibbUserTopicalInterestDistributions.csv", resultPath,
+					modelMode,setting, nTopics);
 			int interestSize = loadUserInterests(interestFilePath, nTopics);
 			System.out.println("loaded interests of " + interestSize + " users");
 
 			System.out.println("compute prediction scores");
 			computeCommonInterestScores();
 
-			this.outputPath = String.format("%s/%s/%s", dataPath, modelMode, nTopics);
+			this.outputPath = String.format("%s/%s/%s/%d", dataPath, modelMode,setting, nTopics);
 
 		} else if (predMode == PredictionMode.COMMON_NEIGHBOR) {
-			int neighhorSize = loadUserNeighbors(relationshipFile);
-			System.out.println("loaded neighbors of " + neighhorSize + " users");
 			computeCommonNeighborScores();
 		} else if (predMode == PredictionMode.HITS) {
 			loadTraditionalHITS(hitsFile);
@@ -343,14 +346,37 @@ public class Prediction {
 		}
 	}
 
+	private void loadWTFWScores(String filename){
+		BufferedReader br = null;
+		String line = null;
+		int index =0;
+		try {
+			File wtfwFile = new File(filename);
+			br = new BufferedReader(new FileReader(wtfwFile.getAbsolutePath()));
+			while ((line = br.readLine()) != null) {
+				String[] tokens = line.split(",");
+				double score = Double.parseDouble(tokens[2]);
+				predictionScores[index] = score;
+				index++;
+			}
+			br.close();
+		} catch (Exception e) {
+			System.out.println("Error in reading user file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	
 	private void loadTestData(String _relationshipFile, String _userFile){
 		BufferedReader br = null;
 		String line = null;
 		int nUser =0;
-		int nTest = 0;
+		nTest = 0;
 		maxOverallTopK = 0;
 		userTestPositiveLinks = new HashMap<String, Integer>();
 		userAllPositiveLinks =  new HashMap<String, String>();
+		userNonLinks =  new HashMap<String, String>();
+		userTestNegativeLinks = new HashMap<String, Integer>();
 		
 		try {
 			File userFile = new File(_userFile);
@@ -392,35 +418,64 @@ public class Prediction {
 				}
 			}
 			br.close();
-			System.out.println(nTest);
 			
-			nTest = nTest + (users.length * (users.length-1)) - userAllPositiveLinks.size();
-			
-			System.out.println(nTest);
-			
-			testSrcUsers = new String[nTest];
-			testDesUsers = new String[nTest];
-			testLabels = new int[nTest];
-			predictionScores = new double[nTest];
-			
-			System.out.println(userAllPositiveLinks.size());
-			System.out.println(users.length);
-			int iTest = 0;
+			//find non-links with common neighbor (2-hops)
 			String nonLink = "";
 			for (int u=0; u<users.length; u++){
 				String uid = users[u];
 				for (int v=0; v<users.length; v++){
 					String vid = users[v];
 					nonLink = uid.trim() + " " + vid.trim();
-					
-					if (!uid.equals(vid) && !userAllPositiveLinks.containsKey(nonLink)){
-						testSrcUsers[iTest] = uid;
-						testDesUsers[iTest] = vid;
-						testLabels[iTest] = 0;
-						iTest++;
+					if (u==v){
+						continue;
+					}
+					if (userNeighbors.containsKey(uid) == false){
+						continue;
+					} 
+					if(userNeighbors.containsKey(vid) == false){
+						continue;
+					}
+					if (userAllPositiveLinks.containsKey(nonLink)){
+						continue;
+					}
+			
+					HashSet<String> uNeighborsSet = userNeighbors.get(uid);
+					HashSet<String> vNeighborsSet = userNeighbors.get(vid);
+					HashSet<String> unionSet = new HashSet<String>();
+					unionSet.addAll(uNeighborsSet);
+					unionSet.addAll(vNeighborsSet);
+					HashSet<String> intersectionSet = new HashSet<String>();
+					intersectionSet.addAll(uNeighborsSet);
+					intersectionSet.retainAll(vNeighborsSet);
+					float score = (float) intersectionSet.size() / (float) unionSet.size();
+					if (score>=0.05){
+						nTest++;
+						userNonLinks.put(nonLink, nonLink);
+						if(userTestNegativeLinks.containsKey(uid)){
+							int count = userTestNegativeLinks.get(uid)+1;
+							userTestNegativeLinks.put(uid,count);
+						} else {
+							userTestNegativeLinks.put(uid,1);
+						}
 					}
 				}
 			}
+			
+			testSrcUsers = new String[nTest];
+			testDesUsers = new String[nTest];
+			testLabels = new int[nTest];
+			predictionScores = new double[nTest];
+			
+			int iTest = 0;
+			Iterator it = userNonLinks.entrySet().iterator();
+		    while (it.hasNext()) {
+		        Map.Entry pair = (Map.Entry)it.next();
+		        String[] nonLinkPair = pair.getValue().toString().split(" ");
+		        testSrcUsers[iTest] = nonLinkPair[0];
+				testDesUsers[iTest] = nonLinkPair[1];
+				testLabels[iTest] = 0;
+				iTest++;
+		    }
 			
 			System.out.println("Generated " + iTest + " non links");
 
@@ -446,30 +501,8 @@ public class Prediction {
 			e.printStackTrace();
 			System.exit(0);
 		}
-		
-		
 	}
-
-	private void loadWTFWScores(String filename){
-		BufferedReader br = null;
-		String line = null;
-		int index =0;
-		try {
-			File wtfwFile = new File(filename);
-			br = new BufferedReader(new FileReader(wtfwFile.getAbsolutePath()));
-			while ((line = br.readLine()) != null) {
-				String[] tokens = line.split(",");
-				double score = Double.parseDouble(tokens[2]);
-				predictionScores[index] = score;
-				index++;
-			}
-			br.close();
-		} catch (Exception e) {
-			System.out.println("Error in reading user file!");
-			e.printStackTrace();
-			System.exit(0);
-		}
-	}
+	
 	
 	private void computeCTLRScores() {
 		String uid = "";
@@ -491,6 +524,7 @@ public class Prediction {
 		}
 	}
 
+	
 	private void computeCTRScores() {
 		String uid = null;
 		String vid = null;
@@ -514,6 +548,7 @@ public class Prediction {
 		}
 	}
 
+	
 	private void computeCommonInterestScores() {
 		String uid = "";
 		String vid = "";
@@ -559,6 +594,7 @@ public class Prediction {
 		}
 	}
 
+	
 	private void computeHITSScores() {
 		String uid = "";
 		String vid = "";
@@ -575,6 +611,7 @@ public class Prediction {
 		}
 	}
 
+	
 	private void output_PredictionScores() {
 		try {
 			File f = new File(outputPath + "/" + predMode + "_pred_scores.csv");
@@ -592,6 +629,7 @@ public class Prediction {
 		}
 	}
 
+	
 	private void output_EvaluateOverallPrecisionRecall(int k, int totalPositive) {
 		float[] precision = new float[k];
 		float[] recall = new float[k];
@@ -638,6 +676,7 @@ public class Prediction {
 		}
 	}
 
+	
 	private void output_EvaluateUserLevelPrecisionRecall(int k) {
 		double[] precision = new double[k];
 		double[] recall = new double[k];
@@ -660,6 +699,7 @@ public class Prediction {
 		}
 
 		for (int i = 0; i < k; i++) {
+			int checkPosCount = 0;
 			int currK = i + 1;
 			float sumPrecision = 0;
 			float sumRecall = 0;
@@ -668,17 +708,21 @@ public class Prediction {
 				String uid = users[u];
 				int posCount = 0;
 				if (userTestPositiveLinks.containsKey(uid) && userTestPositiveLinks.get(uid) >= currK) {
-					count++;
-					ArrayList<Integer> labels = UserLinkLabels.get(uid);
-					for (int j = 0; j < currK; j++) {
-						if (labels.get(j) == 1) {
-							posCount++;
+					//if (userTestNegativeLinks.containsKey(uid) && userTestNegativeLinks.get(uid)>=currK){
+						checkPosCount += userTestPositiveLinks.get(uid);
+						count++;
+						ArrayList<Integer> labels = UserLinkLabels.get(uid);
+						for (int j = 0; j < currK; j++) {
+							if (labels.get(j) == 1) {
+								posCount++;
+							}
 						}
-					}
-					sumPrecision += (float) posCount / (float) currK;
-					sumRecall += (float) posCount / (float) userTestPositiveLinks.get(uid);
+						sumPrecision += (float) posCount / (float) currK;
+						sumRecall += (float) posCount / (float) userTestPositiveLinks.get(uid);
+					//}
 				}
 			}
+			System.out.println("#PositiveLinks@"+k+": "+checkPosCount);
 			precision[i] = sumPrecision / count;
 			recall[i] = sumRecall / count;
 		}
@@ -689,7 +733,7 @@ public class Prediction {
 			String uid = users[u];	
 			rank[iRank] = 0;
 			int posCount = 0;
-			if (userTestPositiveLinks.containsKey(uid)) {
+			if (userTestPositiveLinks.containsKey(uid) && userTestNegativeLinks.containsKey(uid)) {
 				ArrayList<Integer> labels = UserLinkLabels.get(uid);
 				for (int j = 0; j < labels.size(); j++) {
 					if (labels.get(j) == 1) {
@@ -733,6 +777,7 @@ public class Prediction {
 
 	}
 
+	
 	private <K, V extends Comparable<? super V>> List<Entry<K, V>> sortByValue(Map<K, V> map) {
 		List<Entry<K, V>> sortedEntries = new ArrayList<Entry<K, V>>(map.entrySet());
 		Collections.sort(sortedEntries, new Comparator<Entry<K, V>>() {
@@ -745,4 +790,20 @@ public class Prediction {
 		return sortedEntries;
 	}
 
+	public void output_NonLinks() {
+		try {
+			File f = new File(outputPath + "/" + "l_predictionTestLinks.csv");
+			FileWriter fo = new FileWriter(f, false);
+
+			for (int i = 0; i < testLabels.length; i++) {
+				fo.write(testSrcUsers[i] + "," + testDesUsers[i] + "," + testLabels[i] + "\n");
+			}
+			fo.close();
+		} catch (Exception e) {
+			System.out.println("Error in writing out post topic top words to file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	
 }

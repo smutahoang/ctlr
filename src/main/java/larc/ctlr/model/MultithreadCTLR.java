@@ -64,7 +64,7 @@ public class MultithreadCTLR {
 	public static int maxIteration_topicalInterest = 10;
 	public static int maxIteration_Authorities = 10;
 	public static int maxIteration_Hubs = 10;
-	public static int max_GibbsEM_Iterations = 500;
+	public static int max_GibbsEM_Iterations = 200;
 
 	//public static int gibbs_BurningPeriods = 10;
 	//public static int max_Gibbs_Iterations = 50;
@@ -1571,8 +1571,8 @@ public class MultithreadCTLR {
 	private void init() {
 		alpha = (double) (20) / (double) (nTopics);// prior for users' interest
 		gamma = 0.001;
-		sigma = 0.45;// variance of users' authorities
-		delta = 0.45;// variance of users' hubs
+		sigma = 0.1;// variance of users' authorities
+		delta = 0.1;// variance of users' hubs
 		rand = new Random();
 
 		// allocate memory for counts
@@ -1669,7 +1669,15 @@ public class MultithreadCTLR {
 		init();
 		
 		if (onlyLearnGibbs){
+			// TopicWordsDist
+			for (int z = 0; z < nTopics; z++) {
+				for (int w = 0; w < dataset.vocabulary.length; w++)
+					optTopicWordDist[z][w] = topicWordDist[z][w];
+			}
+			
 			output_GibbTopicInterest();
+			output_OptPostTopicTopWords(50);
+			//output_OptTopicWord();
 			System.exit(-1);
 		}
 
@@ -1786,7 +1794,7 @@ public class MultithreadCTLR {
 		output_LastPostTopicTopWords(20);
 		output_LastLikelihoodPerplexityMode0();
 		output_LastLikelihoodPerplexityMode1();
-		// output_OptTopicWord();
+		//output_OptTopicWord();
 		output_optPostTopic();
 		// output_userFollowerHub();
 		// output_userFolloweeAuthority();

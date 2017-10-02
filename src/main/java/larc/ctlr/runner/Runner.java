@@ -63,7 +63,7 @@ public class Runner {
 	static void hits(String datasetPath, int batch) {
 		larc.ctlr.model.HITS hits = new HITS(datasetPath, batch);
 	}
-
+	
 	static void test() {
 		String datasetPath = "E:/code/java/ctlr/data/acm";
 		int nTopics = 10;
@@ -172,4 +172,6 @@ public class Runner {
 			e.printStackTrace();
 		}
 	}
+
+
 }
