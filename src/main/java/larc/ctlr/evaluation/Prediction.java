@@ -100,7 +100,7 @@ public class Prediction {
 		int neighhorSize = loadUserNeighbors(relationshipFile);
 		System.out.println("loaded neighbors of " + neighhorSize + " users");
 		loadTestData(relationshipFile, userFile);
-		output_NonLinks();
+		//output_NonLinks();
 		
 		if (predMode == PredictionMode.CTLR) {
 			String authFilePath = String.format("%s/%s/%s/%d/l_OptUserAuthorityDistributions.csv", resultPath,
@@ -448,7 +448,7 @@ public class Prediction {
 					intersectionSet.addAll(uNeighborsSet);
 					intersectionSet.retainAll(vNeighborsSet);
 					float score = (float) intersectionSet.size() / (float) unionSet.size();
-					if (score>=0.05){
+					if (score>=0.02){
 						nTest++;
 						userNonLinks.put(nonLink, nonLink);
 						if(userTestNegativeLinks.containsKey(uid)){
