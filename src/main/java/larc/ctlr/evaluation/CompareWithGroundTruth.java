@@ -54,7 +54,7 @@ public class CompareWithGroundTruth {
 	private void getGroundTruth() {
 		try {
 			// Topics Words Distributions
-			String filename = String.format("%s/topicWordDistributions.csv", groundtruthPath);
+			String filename = String.format("%s/l_OptTopicalWordDistributions.csv", groundtruthPath);
 			BufferedReader br = new BufferedReader(new FileReader(filename));
 			nTopics = 1;
 			String line = br.readLine();
@@ -75,7 +75,8 @@ public class CompareWithGroundTruth {
 				}
 			}
 			br.close();
-
+			
+			/*
 			// User Topic Interest Distributions
 			filename = String.format("%s/userTopicInterestDistributions.csv", groundtruthPath);
 			br = new BufferedReader(new FileReader(filename));
@@ -127,7 +128,7 @@ public class CompareWithGroundTruth {
 				}
 			}
 			br.close();
-
+		*/
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(-1);
@@ -137,7 +138,7 @@ public class CompareWithGroundTruth {
 	private void getLearntParams() {
 		try {
 			// Topics Words Distributions
-			String filename = String.format("%s/topicWordDistributions.csv", learntPath);
+			String filename = String.format("%s/l_OptTopicalWordDistributions.csv", learntPath);
 			BufferedReader br = new BufferedReader(new FileReader(filename));
 			nTopics = 1;
 			String line = br.readLine();
@@ -158,7 +159,7 @@ public class CompareWithGroundTruth {
 				}
 			}
 			br.close();
-
+			/*
 			// User Topic Interest Distributions
 			filename = String.format("%s/userTopicInterestDistributions.csv", learntPath);
 			// br = new BufferedReader(new FileReader(filename));
@@ -202,7 +203,7 @@ public class CompareWithGroundTruth {
 				}
 			}
 			br.close();
-
+			*/
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(-1);
@@ -277,6 +278,7 @@ public class CompareWithGroundTruth {
 			}
 			bw.close();
 
+			/*
 			System.out.println("measuring user topic interest distribution distance");
 			Vector vector = new Vector();
 			filename = String.format("%s/userTopicInterestDistance.csv", outputPath);
@@ -297,7 +299,7 @@ public class CompareWithGroundTruth {
 				}
 			}
 			bw.close();
-
+	
 			System.out.println("measuring user authority distribution distance");
 			vector = new Vector();
 			filename = String.format("%s/userAuthorityDistance.csv", outputPath);
@@ -367,7 +369,7 @@ public class CompareWithGroundTruth {
 				}
 			}
 			bw.close();
-
+			*/
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(-1);
@@ -376,8 +378,8 @@ public class CompareWithGroundTruth {
 	}
 
 	public static void main(String[] args) {
-		CompareWithGroundTruth comparator = new CompareWithGroundTruth("F:/Users/roylee/CTLR/data/synthetic_mode_1/groundtruth",
-				"F:/Users/roylee/CTLR/data/synthetic_mode_1/learnt", 1, "euclidean", "F:/Users/roylee/CTLR/data/synthetic_mode_1/evaluation");
+		CompareWithGroundTruth comparator = new CompareWithGroundTruth("F:/Users/roylee/CTLR/data/instagram/50-50/HITS_CTLR_Correlation/CTLR",
+				"F:/Users/roylee/CTLR/data/instagram/50-50/HITS_CTLR_Correlation/TWITTER_LDA", 1, "euclidean", "F:/Users/roylee/CTLR/data/instagram/50-50/HITS_CTLR_Correlation/evaluation");
 		comparator.measureGoodness();
 	}
 
