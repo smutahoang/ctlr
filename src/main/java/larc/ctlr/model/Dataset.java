@@ -51,7 +51,6 @@ public class Dataset {
 		System.out.println("#Links:" + nLinks);
 		System.out.println("#NonLinks:" + nNonLinks);
 		output_NonLinks();
-
 	}
 
 	private void loadUsers(String filename) {
@@ -229,7 +228,7 @@ public class Dataset {
 					users[u].nFollowings = 0;
 				}
 			}
-
+			
 			// Read and load user into users' follower and following array
 			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
 			while ((line = br.readLine()) != null) {
@@ -252,6 +251,7 @@ public class Dataset {
 				}
 			}
 			br.close();
+
 		} catch (Exception e) {
 			System.out.println("Error in reading user file!");
 			e.printStackTrace();
@@ -451,10 +451,10 @@ public class Dataset {
 				continue;
 			}
 			users[v].nonFollowers = new int[nonFollowers.size()];
-			users[v].nFollowers = 0;
+			users[v].nNonFollowers = 0;
 			for (int u : nonFollowers) {
-				users[v].nonFollowers[users[v].nFollowers] = u;
-				users[v].nFollowers++;
+				users[v].nonFollowers[users[v].nNonFollowers] = u;
+				users[v].nNonFollowers++;
 			}
 			System.out.println(users[v].userId + " " + users[v].nonFollowers.length);
 		}
