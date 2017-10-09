@@ -67,7 +67,7 @@ public class CTLR {
 	 */
 	public CTLR(String _datasetPath, int _nTopics, int _batch) {
 		this.datapath = _datasetPath;
-		this.dataset = new Dataset(_datasetPath,_batch);
+		//this.dataset = new Dataset(_datasetPath,_batch);
 		this.nTopics = _nTopics;
 		this.batch = _batch;
 		n_zu = new int[nTopics][dataset.nUsers];

@@ -126,15 +126,17 @@ public class Runner {
 				int nTopics3 = Integer.parseInt(args[4]);
 				int batch = Integer.parseInt(args[5]);
 				int mode = Integer.parseInt(args[6]);
-				String output = args[7];
+				String output1 = args[7];
+				String output2 = args[8];
+				String output3 = args[9];
 				if (mode == 0) {
-					multiTrain(datasetPath, nTopics1, batch, ModelMode.TWITTER_LDA, output);
-					multiTrain(datasetPath, nTopics2, batch, ModelMode.TWITTER_LDA, output);
-					multiTrain(datasetPath, nTopics3, batch, ModelMode.TWITTER_LDA, output);
+					multiTrain(datasetPath, nTopics1, batch, ModelMode.TWITTER_LDA, output1);
+					multiTrain(datasetPath, nTopics2, batch, ModelMode.TWITTER_LDA, output2);
+					multiTrain(datasetPath, nTopics3, batch, ModelMode.TWITTER_LDA, output3);
 				} else {
-					multiTrain(datasetPath, nTopics1, batch, ModelMode.ORIGINAL_LDA, output);
-					multiTrain(datasetPath, nTopics2, batch, ModelMode.ORIGINAL_LDA, output);
-					multiTrain(datasetPath, nTopics3, batch, ModelMode.ORIGINAL_LDA, output);
+					multiTrain(datasetPath, nTopics1, batch, ModelMode.ORIGINAL_LDA, output1);
+					multiTrain(datasetPath, nTopics2, batch, ModelMode.ORIGINAL_LDA, output2);
+					multiTrain(datasetPath, nTopics3, batch, ModelMode.ORIGINAL_LDA, output3);
 				}
 
 			} else if (args[0].equals("predict")) {

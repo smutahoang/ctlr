@@ -35,7 +35,7 @@ public class Dataset {
 	 * 
 	 * @param path
 	 */
-	public Dataset(String _path, int batch) {
+	public Dataset(String _path, int batch, boolean onlyLearnGibbs) {
 		this.path = _path;
 		System.out.println("loading user list");
 		loadUsers(String.format("%s/users.csv", path));
@@ -43,14 +43,16 @@ public class Dataset {
 		loadPosts(String.format("%s/posts.csv", path));
 		System.out.println("loading vocabulary");
 		loadVocabulary(String.format("%s/vocabulary.csv", path));
-		System.out.println("loading links");
-		loadRelationship(String.format("%s/relationships.csv", path));
-		// System.out.println("loading non-links");
-		// loadNonRelationship(String.format("%s/nonrelationships.csv", path));
-		selectNonRelationship(batch);
-		System.out.println("#Links:" + nLinks);
-		System.out.println("#NonLinks:" + nNonLinks);
-		output_NonLinks();
+		
+		if (onlyLearnGibbs==false){
+			System.out.println("loading links");
+			loadRelationship(String.format("%s/relationships.csv", path));
+			// System.out.println("loading non-links");
+			// loadNonRelationship(String.format("%s/nonrelationships.csv", path));
+			selectNonRelationship(batch);
+			System.out.println("#Links:" + nLinks);
+			System.out.println("#NonLinks:" + nNonLinks);
+		}
 	}
 
 	private void loadUsers(String filename) {
@@ -456,7 +458,7 @@ public class Dataset {
 				users[v].nonFollowers[users[v].nNonFollowers] = u;
 				users[v].nNonFollowers++;
 			}
-			System.out.println(users[v].userId + " " + users[v].nonFollowers.length);
+			//System.out.println(users[v].userId + " " + users[v].nonFollowers.length);
 		}
 
 	}

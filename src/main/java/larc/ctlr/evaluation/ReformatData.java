@@ -24,7 +24,7 @@ public class ReformatData {
 				}
 			}
 			// readin the dataset
-			Dataset dataset = new Dataset(dataPath, batch);
+			Dataset dataset = new Dataset(dataPath, batch,false);
 
 			// reformatting
 

@@ -31,6 +31,8 @@ public class Prediction {
 	private HashMap<String, double[]> userInterests;
 	// Common-Neighbor
 	private HashMap<String, HashSet<String>> userNeighbors;
+	private HashMap<String, HashSet<String>> userFollowers;
+	private HashMap<String, HashSet<String>> userFollowees;
 	private HashMap<String, Double> traditionalAuthorities;
 	// HIST
 	private HashMap<String, Double> traditionalHubs;
@@ -72,7 +74,9 @@ public class Prediction {
 			this.outputPath = String.format("%s/%d/%s", _outputPath, nTopics, setting);
 		} else if (predMode == PredictionMode.CTR) {
 			this.outputPath = String.format("%s/%d", _outputPath, nTopics);
-		} else {
+		} else if (predMode == PredictionMode.COMMON_INTEREST) {
+			this.outputPath = String.format("%s/%s/%s/%d", _outputPath, modelMode, setting, nTopics);
+		}else {
 			this.outputPath = _outputPath;
 		}
 
@@ -97,7 +101,8 @@ public class Prediction {
 		String userFile = String.format("%s/users.csv", dataPath);
 		String hitsFile = String.format("%s/user_hits.csv", dataPath);
 		String wtfwFile = String.format("%s/wtfw_results.csv", dataPath);
-		int neighhorSize = loadUserNeighbors(relationshipFile);
+		//int neighhorSize = loadUserNeighbors(relationshipFile);
+		int neighhorSize = loadUserDirectedNeighbors(relationshipFile);
 		System.out.println("loaded neighbors of " + neighhorSize + " users");
 		loadTestData(relationshipFile, userFile);
 		//output_NonLinks();
@@ -129,11 +134,9 @@ public class Prediction {
 
 			System.out.println("compute prediction scores");
 			computeCommonInterestScores();
-
-			this.outputPath = String.format("%s/%s/%s/%d", dataPath, modelMode,setting, nTopics);
-
 		} else if (predMode == PredictionMode.COMMON_NEIGHBOR) {
-			computeCommonNeighborScores();
+			//computeCommonNeighborScores();
+			computeCommonDirectedNeighborScores();
 		} else if (predMode == PredictionMode.HITS) {
 			loadTraditionalHITS(hitsFile);
 			computeHITSScores();
@@ -263,6 +266,48 @@ public class Prediction {
 			System.exit(0);
 		}
 		return userNeighbors.size();
+	}
+
+	private int loadUserDirectedNeighbors(String relationshipFile) {
+		BufferedReader br = null;
+		String line = null;
+		userNeighbors = new HashMap<String, HashSet<String>>();
+		userFollowers = new HashMap<String, HashSet<String>>();
+		userFollowees = new HashMap<String, HashSet<String>>();
+		try {
+			File linkFile = new File(relationshipFile);
+
+			br = new BufferedReader(new FileReader(linkFile.getAbsolutePath()));
+			while ((line = br.readLine()) != null) {
+				String[] tokens = line.split(",");
+				String uid = tokens[0];
+				String vid = tokens[1];
+				int flag = Integer.parseInt(tokens[2]);
+				if (flag == 1) {
+					if (userFollowees.containsKey(uid)) {
+						userFollowees.get(uid).add(vid);
+					} else {
+						HashSet<String> followees = new HashSet<String>();
+						followees.add(vid);
+						userFollowees.put(uid, followees);
+					}
+					if (userFollowers.containsKey(vid)) {
+						userFollowers.get(vid).add(uid);
+					} else {
+						HashSet<String> followers = new HashSet<String>();
+						followers.add(uid);
+						userFollowers.put(vid, followers);
+					}
+				}
+			}
+			br.close();
+
+		} catch (Exception e) {
+			System.out.println("Error in reading user file!");
+			e.printStackTrace();
+			System.exit(0);
+		}
+		return userFollowers.size();
 	}
 
 	private void loadTraditionalHITS(String filename) {
@@ -429,26 +474,25 @@ public class Prediction {
 					if (u==v){
 						continue;
 					}
-					if (userNeighbors.containsKey(uid) == false){
+					if (userFollowers.containsKey(uid) == false){
 						continue;
 					} 
-					if(userNeighbors.containsKey(vid) == false){
+					if(userFollowees.containsKey(vid) == false){
 						continue;
 					}
 					if (userAllPositiveLinks.containsKey(nonLink)){
 						continue;
 					}
 			
-					HashSet<String> uNeighborsSet = userNeighbors.get(uid);
-					HashSet<String> vNeighborsSet = userNeighbors.get(vid);
-					HashSet<String> unionSet = new HashSet<String>();
-					unionSet.addAll(uNeighborsSet);
-					unionSet.addAll(vNeighborsSet);
+					HashSet<String> uNeighborsSet = userFollowers.get(uid);
+					HashSet<String> vNeighborsSet = userFollowees.get(vid);
+					//HashSet<String> unionSet = new HashSet<String>();
+					//unionSet.addAll(uNeighborsSet);
+					//unionSet.addAll(vNeighborsSet);
 					HashSet<String> intersectionSet = new HashSet<String>();
 					intersectionSet.addAll(uNeighborsSet);
 					intersectionSet.retainAll(vNeighborsSet);
-					float score = (float) intersectionSet.size() / (float) unionSet.size();
-					if (score>=0.02){
+					if (intersectionSet.size()>=1){
 						nTest++;
 						userNonLinks.put(nonLink, nonLink);
 						if(userTestNegativeLinks.containsKey(uid)){
@@ -460,6 +504,48 @@ public class Prediction {
 					}
 				}
 			}
+			
+//			//find non-links with common neighbor (2-hops)
+//			String nonLink = "";
+//			for (int u=0; u<users.length; u++){
+//				String uid = users[u];
+//				for (int v=0; v<users.length; v++){
+//					String vid = users[v];
+//					nonLink = uid.trim() + " " + vid.trim();
+//					if (u==v){
+//						continue;
+//					}
+//					if (userNeighbors.containsKey(uid) == false){
+//						continue;
+//					} 
+//					if(userNeighbors.containsKey(vid) == false){
+//						continue;
+//					}
+//					if (userAllPositiveLinks.containsKey(nonLink)){
+//						continue;
+//					}
+//			
+//					HashSet<String> uNeighborsSet = userNeighbors.get(uid);
+//					HashSet<String> vNeighborsSet = userNeighbors.get(vid);
+//					HashSet<String> unionSet = new HashSet<String>();
+//					unionSet.addAll(uNeighborsSet);
+//					unionSet.addAll(vNeighborsSet);
+//					HashSet<String> intersectionSet = new HashSet<String>();
+//					intersectionSet.addAll(uNeighborsSet);
+//					intersectionSet.retainAll(vNeighborsSet);
+//					float score = (float) intersectionSet.size() / (float) unionSet.size();
+//					if (score>=0.008){
+//						nTest++;
+//						userNonLinks.put(nonLink, nonLink);
+//						if(userTestNegativeLinks.containsKey(uid)){
+//							int count = userTestNegativeLinks.get(uid)+1;
+//							userTestNegativeLinks.put(uid,count);
+//						} else {
+//							userTestNegativeLinks.put(uid,1);
+//						}
+//					}
+//				}
+//			}
 			
 			testSrcUsers = new String[nTest];
 			testDesUsers = new String[nTest];
@@ -502,8 +588,7 @@ public class Prediction {
 			System.exit(0);
 		}
 	}
-	
-	
+		
 	private void computeCTLRScores() {
 		String uid = "";
 		String vid = "";
@@ -524,7 +609,6 @@ public class Prediction {
 		}
 	}
 
-	
 	private void computeCTRScores() {
 		String uid = null;
 		String vid = null;
@@ -548,7 +632,6 @@ public class Prediction {
 		}
 	}
 
-	
 	private void computeCommonInterestScores() {
 		String uid = "";
 		String vid = "";
@@ -593,7 +676,32 @@ public class Prediction {
 			predictionScores[i] = (float) intersectionSet.size() / (float) unionSet.size();
 		}
 	}
+	
+	private void computeCommonDirectedNeighborScores() {
+		String uid = "";
+		String vid = "";
+		for (int i = 0; i < testLabels.length; i++) {
+			uid = testSrcUsers[i];
+			vid = testDesUsers[i];
+			if (userFollowees.containsKey(uid) == false || userFollowers.containsKey(vid) == false) {
+				predictionScores[i] = 0f;
+				continue;
+			}
 
+			HashSet<String> uNeighborsSet = userFollowees.get(uid);
+			HashSet<String> vNeighborsSet = userFollowers.get(vid);
+
+			HashSet<String> unionSet = new HashSet<String>();
+			unionSet.addAll(uNeighborsSet);
+			unionSet.addAll(vNeighborsSet);
+
+			HashSet<String> intersectionSet = new HashSet<String>();
+			intersectionSet.addAll(uNeighborsSet);
+			intersectionSet.retainAll(vNeighborsSet);
+
+			predictionScores[i] = (float) intersectionSet.size() / (float) unionSet.size();
+		}
+	}
 	
 	private void computeHITSScores() {
 		String uid = "";
@@ -610,7 +718,6 @@ public class Prediction {
 			predictionScores[i] = HuAv;
 		}
 	}
-
 	
 	private void output_PredictionScores() {
 		try {
@@ -628,7 +735,6 @@ public class Prediction {
 			System.exit(0);
 		}
 	}
-
 	
 	private void output_EvaluateOverallPrecisionRecall(int k, int totalPositive) {
 		float[] precision = new float[k];
@@ -675,7 +781,6 @@ public class Prediction {
 			System.exit(0);
 		}
 	}
-
 	
 	private void output_EvaluateUserLevelPrecisionRecall(int k) {
 		double[] precision = new double[k];
@@ -708,7 +813,7 @@ public class Prediction {
 				String uid = users[u];
 				int posCount = 0;
 				if (userTestPositiveLinks.containsKey(uid) && userTestPositiveLinks.get(uid) >= currK) {
-					//if (userTestNegativeLinks.containsKey(uid) && userTestNegativeLinks.get(uid)>=currK){
+					if (userTestNegativeLinks.containsKey(uid) && userTestNegativeLinks.get(uid)>=currK){
 						checkPosCount += userTestPositiveLinks.get(uid);
 						count++;
 						ArrayList<Integer> labels = UserLinkLabels.get(uid);
@@ -719,7 +824,7 @@ public class Prediction {
 						}
 						sumPrecision += (float) posCount / (float) currK;
 						sumRecall += (float) posCount / (float) userTestPositiveLinks.get(uid);
-					//}
+					}
 				}
 			}
 			System.out.println("#PositiveLinks@"+k+": "+checkPosCount);
@@ -776,7 +881,6 @@ public class Prediction {
 		}
 
 	}
-
 	
 	private <K, V extends Comparable<? super V>> List<Entry<K, V>> sortByValue(Map<K, V> map) {
 		List<Entry<K, V>> sortedEntries = new ArrayList<Entry<K, V>>(map.entrySet());

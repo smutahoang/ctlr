@@ -26,7 +26,8 @@ public class MultithreadCTLR {
 	private static double delta;// variance of users' hubs
 
 	private static double epsilon = 0.0001;
-	private static double lamda = 0.01;
+	//private static double lamda = 0.01;
+	private static double lamda = 0.1;
 
 	private static boolean initByTopicModeling = true;
 	private static boolean onlyLearnAuthorityHub = true;
@@ -64,7 +65,7 @@ public class MultithreadCTLR {
 	public static int maxIteration_topicalInterest = 10;
 	public static int maxIteration_Authorities = 10;
 	public static int maxIteration_Hubs = 10;
-	public static int max_GibbsEM_Iterations = 200;
+	public static int max_GibbsEM_Iterations =200;
 
 	//public static int gibbs_BurningPeriods = 10;
 	//public static int max_Gibbs_Iterations = 50;
@@ -232,7 +233,7 @@ public class MultithreadCTLR {
 		MultithreadCTLR.nTopics = _nTopics;
 		MultithreadCTLR.batch = _batch;
 		MultithreadCTLR.mode = _mode;
-		MultithreadCTLR.dataset = new Dataset(_datasetPath,MultithreadCTLR.batch);
+		MultithreadCTLR.dataset = new Dataset(_datasetPath,MultithreadCTLR.batch,onlyLearnGibbs);
 		
 	}
 
@@ -1675,10 +1676,22 @@ public class MultithreadCTLR {
 					optTopicWordDist[z][w] = topicWordDist[z][w];
 			}
 			
+			// UserTopicalInterest
+			for (int u=0; u<dataset.nUsers; u++){
+				for (int z = 0; z < nTopics; z++) {
+					dataset.users[u].optTopicalInterests[z] = dataset.users[u].topicalInterests[z];
+				}
+			}
+			getOptLikelihoodPerplexity_TwitterLDA();
+			getOptLikelihoodPerplexity_OriginalLDA();
+			getLastLikelihoodPerplexity_TwitterLDA();
+			getLastLikelihoodPerplexity_OriginalLDA();
 			output_GibbTopicInterest();
 			output_OptPostTopicTopWords(50);
 			//output_OptTopicWord();
-			System.exit(-1);
+			output_OptLikelihoodPerplexityMode0();
+			output_OptLikelihoodPerplexityMode1();
+			return;
 		}
 
 		System.out.println("TEST");

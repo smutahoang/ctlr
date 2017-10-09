@@ -15,7 +15,7 @@ public class HITS {
 
 	public HITS(String _path, int _batch) {
 		path = _path;
-		HITS.dataset = new Dataset(_path, _batch);
+		HITS.dataset = new Dataset(_path, _batch,false);
 		nUsers = dataset.nUsers;
 		init();
 		updateAuthorityHub(5);
