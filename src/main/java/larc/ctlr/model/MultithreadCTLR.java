@@ -27,11 +27,11 @@ public class MultithreadCTLR {
 
 	private static double epsilon = 0.0001;
 	//private static double lamda = 0.01;
-	private static double lamda = 0.1;
+	private static double lamda = 0.2;
 
 	private static boolean initByTopicModeling = true;
-	private static boolean onlyLearnAuthorityHub = true;
-	private static boolean onlyLearnGibbs = false;
+	private static boolean onlyLearnAuthorityHub = false;
+	private static boolean onlyLearnGibbs = true;
 
 	private static Random rand;
 
@@ -58,6 +58,7 @@ public class MultithreadCTLR {
 
 	// options for learning
 	public static double lineSearch_alpha = 0.0001;
+	//public static double lineSearch_alpha = 0.00001;
 	public static double lineSearch_beta = 0.1;
 	public static int lineSearch_MaxIterations = 12;
 	public static double lineSearch_lambda;
@@ -487,9 +488,9 @@ public class MultithreadCTLR {
 			}
 		}
 
-		for (int k = 0; k < nTopics; k++) {
-			topicLikelihood += (alpha - 1) * Math.log(x[k]);
-		}
+		//for (int k = 0; k < nTopics; k++) {
+		//	topicLikelihood += (alpha - 1) * Math.log(x[k]);
+		//}
 		// finalLikelihood = authorityLikelihood + hubLikelihood +
 		// postLikelihood + topicLikelihood;
 
@@ -502,6 +503,7 @@ public class MultithreadCTLR {
 		finalLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + topicLikelihood;
 		// finalLikelihood = authorityLikelihood + hubLikelihood +
 		// postLikelihood;
+		//System.out.println(finalLikelihood);
 		return finalLikelihood;
 	}
 
@@ -552,8 +554,8 @@ public class MultithreadCTLR {
 			}
 
 		}
-
-		gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + ((alpha - 1) / x);
+		gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood;
+		//gradLikelihood = authorityLikelihood + hubLikelihood + postLikelihood + ((alpha - 1) / x);
 		// gradLikelihood = authorityLikelihood + hubLikelihood +
 		// postLikelihood;
 
@@ -605,8 +607,8 @@ public class MultithreadCTLR {
 		for (int i = 0; i < x.length; i++) {
 			p = x[i] - theta;
 			if (p < 0) {
-				p = 0.0;
-				// p = epsilon;
+				//p = 0.0;
+				p = epsilon;
 			}
 			projX[i] = p;
 		}
